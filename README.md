@@ -1,4 +1,4 @@
-# vitamin_b
+# VItamin_B
 Welcome to VItamin_B, a python toolkit for producing fast gravitational wave posterior samples.
 
 Package is based off of the paper "Bayesian Parameter Estimation using Conditional Variational 
