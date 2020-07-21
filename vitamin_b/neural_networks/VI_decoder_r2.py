@@ -6,7 +6,7 @@ tf.disable_v2_behavior()
 import numpy as np
 import math as m
 
-from Neural_Networks import vae_utils
+from neural_networks import vae_utils
 
 # based on implementation here:
 # https://github.com/tensorflow/models/blob/master/autoencoder/autoencoder_models/VariationalAutoencoder.py
@@ -48,7 +48,7 @@ class VariationalAutoencoder(object):
         self.weights = network_weights
 
     def calc_reconstruction(self, z, y):
-        with tf.name_scope("VICI_decoder"):
+        with tf.name_scope("VI_decoder_r2"):
 
             # Reshape input to a 3D tensor - single channel
             if self.n_conv is not None:
@@ -57,7 +57,7 @@ class VariationalAutoencoder(object):
                     weight_name = 'w_conv_' + str(i)
                     bias_name = 'b_conv_' + str(i)
                     bnorm_name = 'bn_conv_' + str(i)
-                    conv_pre1 = tf.add(tf.nn.conv2d(conv_pool, self.weights['VICI_decoder'][weight_name + '1'],strides=1,padding='SAME'),self.weights['VICI_decoder'][bias_name + '1'])
+                    conv_pre1 = tf.add(tf.nn.conv2d(conv_pool, self.weights['VI_decoder_r2'][weight_name + '1'],strides=1,padding='SAME'),self.weights['VI_decoder_r2'][bias_name + '1'])
                     conv_post = self.nonlinearity(conv_pre1)
                     conv_batchnorm = tf.nn.batch_normalization(conv_post,tf.Variable(tf.zeros([1,1,self.n_filters[i]], dtype=tf.float32)),tf.Variable(tf.ones([1,1,self.n_filters[i]], dtype=tf.float32)),None,None,1e-6,name=bnorm_name)
                     conv_pool = tf.nn.max_pool2d(conv_batchnorm,ksize=[self.maxpool[i],1],strides=[self.maxpool[i],1],padding='SAME')
@@ -72,12 +72,12 @@ class VariationalAutoencoder(object):
                 weight_name = 'w_hidden_' + str(i)
                 bias_name = 'b_hidden' + str(i)
                 bnorm_name = 'bn_hidden' + str(i)
-                hidden_pre = tf.add(tf.matmul(hidden_dropout, self.weights['VICI_decoder'][weight_name]), self.weights['VICI_decoder'][bias_name])
+                hidden_pre = tf.add(tf.matmul(hidden_dropout, self.weights['VI_decoder_r2'][weight_name]), self.weights['VI_decoder_r2'][bias_name])
                 hidden_post = self.nonlinearity(hidden_pre)
                 hidden_batchnorm = tf.nn.batch_normalization(hidden_post,tf.Variable(tf.zeros([self.n_weights[i]], dtype=tf.float32)),tf.Variable(tf.ones([self.n_weights[i]], dtype=tf.float32)),None,None,1e-6,name=bnorm_name)
                 hidden_dropout = tf.layers.dropout(hidden_batchnorm,rate=self.drate)
-            loc_all = tf.add(tf.matmul(hidden_dropout, self.weights['VICI_decoder']['w_loc']), self.weights['VICI_decoder']['b_loc'])
-            scale_all = tf.add(tf.matmul(hidden_dropout, self.weights['VICI_decoder']['w_scale']), self.weights['VICI_decoder']['b_scale'])
+            loc_all = tf.add(tf.matmul(hidden_dropout, self.weights['VI_decoder_r2']['w_loc']), self.weights['VI_decoder_r2']['b_loc'])
+            scale_all = tf.add(tf.matmul(hidden_dropout, self.weights['VI_decoder_r2']['w_scale']), self.weights['VI_decoder_r2']['b_scale'])
 
             # split up the output into non-wrapped and wrapped params and apply appropriate activation
             loc_nowrap = self.nonlinear_loc_nowrap(tf.boolean_mask(loc_all,self.nowrap_mask + [False],axis=1))   # add an extra null element to the mask
@@ -96,18 +96,18 @@ class VariationalAutoencoder(object):
         all_weights = collections.OrderedDict()
 
         # Decoder
-        with tf.variable_scope("VICI_DEC"):
-            all_weights['VICI_decoder'] = collections.OrderedDict()
+        with tf.variable_scope("VI_DEC"):
+            all_weights['VI_decoder_r2'] = collections.OrderedDict()
             
             if self.n_conv is not None:
                 dummy = self.n_channels
                 for i in range(self.n_conv):
                     weight_name = 'w_conv_' + str(i)
                     bias_name = 'b_conv_' + str(i)
-                    all_weights['VICI_decoder'][weight_name + '1'] = tf.Variable(tf.reshape(vae_utils.xavier_init(self.filter_size[i], dummy*self.n_filters[i]),[self.filter_size[i], 1, dummy, self.n_filters[i]]), dtype=tf.float32)
-                    all_weights['VICI_decoder'][bias_name + '1'] = tf.Variable(tf.zeros([self.n_filters[i]], dtype=tf.float32))
-                    tf.summary.histogram(weight_name + '1', all_weights['VICI_decoder'][weight_name + '1'])
-                    tf.summary.histogram(bias_name + '1', all_weights['VICI_decoder'][bias_name + '1'])
+                    all_weights['VI_decoder_r2'][weight_name + '1'] = tf.Variable(tf.reshape(vae_utils.xavier_init(self.filter_size[i], dummy*self.n_filters[i]),[self.filter_size[i], 1, dummy, self.n_filters[i]]), dtype=tf.float32)
+                    all_weights['VI_decoder_r2'][bias_name + '1'] = tf.Variable(tf.zeros([self.n_filters[i]], dtype=tf.float32))
+                    tf.summary.histogram(weight_name + '1', all_weights['VI_decoder_r2'][weight_name + '1'])
+                    tf.summary.histogram(bias_name + '1', all_weights['VI_decoder_r2'][bias_name + '1'])
                     dummy = self.n_filters[i]
 
                 fc_input_size = self.n_input1 + int(self.n_input2*self.n_filters[-1]/(np.prod(self.maxpool)))
@@ -117,19 +117,19 @@ class VariationalAutoencoder(object):
             for i in range(self.n_hlayers):
                 weight_name = 'w_hidden_' + str(i)
                 bias_name = 'b_hidden' + str(i)
-                all_weights['VICI_decoder'][weight_name] = tf.Variable(vae_utils.xavier_init(fc_input_size, self.n_weights[i]), dtype=tf.float32)
-                all_weights['VICI_decoder'][bias_name] = tf.Variable(tf.zeros([self.n_weights[i]], dtype=tf.float32))
-                tf.summary.histogram(weight_name, all_weights['VICI_decoder'][weight_name])
-                tf.summary.histogram(bias_name, all_weights['VICI_decoder'][bias_name])
+                all_weights['VI_decoder_r2'][weight_name] = tf.Variable(vae_utils.xavier_init(fc_input_size, self.n_weights[i]), dtype=tf.float32)
+                all_weights['VI_decoder_r2'][bias_name] = tf.Variable(tf.zeros([self.n_weights[i]], dtype=tf.float32))
+                tf.summary.histogram(weight_name, all_weights['VI_decoder_r2'][weight_name])
+                tf.summary.histogram(bias_name, all_weights['VI_decoder_r2'][bias_name])
                 fc_input_size = self.n_weights[i]
-            all_weights['VICI_decoder']['w_loc'] = tf.Variable(vae_utils.xavier_init(self.n_weights[-1], self.n_output+1),dtype=tf.float32)  # +1 for extra sky param
-            all_weights['VICI_decoder']['b_loc'] = tf.Variable(tf.zeros([self.n_output+1], dtype=tf.float32), dtype=tf.float32) # +1 for extra sky param
-            tf.summary.histogram('w_loc', all_weights['VICI_decoder']['w_loc'])
-            tf.summary.histogram('b_loc', all_weights['VICI_decoder']['b_loc'])
-            all_weights['VICI_decoder']['w_scale'] = tf.Variable(vae_utils.xavier_init(self.n_weights[-1], self.n_output-1),dtype=tf.float32) # # -1 for common concentration par in VMF dist
-            all_weights['VICI_decoder']['b_scale'] = tf.Variable(tf.zeros([self.n_output-1], dtype=tf.float32), dtype=tf.float32)  # -1 for common concentration par in VMF dist
-            tf.summary.histogram('w_scale', all_weights['VICI_decoder']['w_scale'])
-            tf.summary.histogram('b_scale', all_weights['VICI_decoder']['b_scale'])
+            all_weights['VI_decoder_r2']['w_loc'] = tf.Variable(vae_utils.xavier_init(self.n_weights[-1], self.n_output+1),dtype=tf.float32)  # +1 for extra sky param
+            all_weights['VI_decoder_r2']['b_loc'] = tf.Variable(tf.zeros([self.n_output+1], dtype=tf.float32), dtype=tf.float32) # +1 for extra sky param
+            tf.summary.histogram('w_loc', all_weights['VI_decoder_r2']['w_loc'])
+            tf.summary.histogram('b_loc', all_weights['VI_decoder_r2']['b_loc'])
+            all_weights['VI_decoder_r2']['w_scale'] = tf.Variable(vae_utils.xavier_init(self.n_weights[-1], self.n_output-1),dtype=tf.float32) # # -1 for common concentration par in VMF dist
+            all_weights['VI_decoder_r2']['b_scale'] = tf.Variable(tf.zeros([self.n_output-1], dtype=tf.float32), dtype=tf.float32)  # -1 for common concentration par in VMF dist
+            tf.summary.histogram('w_scale', all_weights['VI_decoder_r2']['w_scale'])
+            tf.summary.histogram('b_scale', all_weights['VI_decoder_r2']['b_scale'])
             
             all_weights['prior_param'] = collections.OrderedDict()
         

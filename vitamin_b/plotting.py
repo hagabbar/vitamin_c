@@ -20,11 +20,6 @@ from matplotlib.ticker import (MultipleLocator, FormatStrFormatter, FixedLocator
                                AutoMinorLocator)
 import matplotlib.ticker as ticker
 
-from data import chris_data as data_maker
-#from VICI_code_usage_example import prune_samples
-#from Models import VICI_inverse_model
-#from Models import CVAE
-
 """
 def prune_samples(chain_file_loc,params):
     nsteps = 5000
@@ -246,7 +241,7 @@ class make_plots:
                 VI_pred_all = []
                 for i in range(params['r']*params['r']):
                     # The trained inverse model weights can then be used to infer a probability density of solutions given new measurements
-                    VI_pred, dt, _  = model.run(params, np.expand_dims(sig_test[i],axis=0), np.shape(par_test)[1],
+                    VI_pred,dt,_  = model.run(params, np.expand_dims(sig_test[i],axis=0), np.shape(par_test)[1],
                                                              y_normscale,
                                                              "inverse_model_dir_%s/inverse_model.ckpt" % params['run_label'])
                     VI_pred_all.append(VI_pred)
@@ -923,56 +918,6 @@ class make_plots:
                 set1 = sampset_1.T
                 set2 = sampset_2.T
       
-            
-#            plt.hist(sampset_1[:,0])
-#            plt.savefig('/home/hunter.gabbard/public_html/test1.png')
-#            plt.close()
-#            set1 = sampset_1.T
-#            set2 = sampset_2.T
-#            plt.hist(set1[1,:])
-#            plt.savefig('/home/hunter.gabbard/public_html/test2.png')
-#            plt.close()
-
-#            idx_set = [5,6]
-#            set1 = set1[idx_set,:]
-#            set2 = set2[idx_set,:]
-#            kl_samps = []
-#            n_samps = self.params['n_samples']
-#            n_pars = len(self.params['inf_pars'])
-           
-            """
-            set1 = set1.T
-            set2 = set2.T
-            def MMD_multiscale(x, y):
-                xx, yy, zz = np.matmul(x,x.T), np.matmul(y,y.T), np.matmul(x,y.T)
-
-                rx = (np.expand_dims(np.diag(xx),axis=0))
-                ry = (np.expand_dims(np.diag(yy),axis=0))
-                rx = np.tile(rx,(rx.shape[1],1))
-                ry = np.tile(ry,(ry.shape[1],1))
-                
-
-                dxx = rx.T + rx - 2.*xx
-                dyy = ry.T + ry - 2.*yy
-                dxy = rx.T + ry - 2.*zz
-
-                XX, YY, XY = (np.zeros(xx.shape),
-                  np.zeros(xx.shape),
-                  np.zeros(xx.shape))
-
-                alphas = [0.05,0.2,0.5,0.9,1.3]
-                for a in alphas:
-                    XX += a**2 * (a**2 + dxx)**-1
-                    YY += a**2 * (a**2 + dyy)**-1
-                    XY += a**2 * (a**2 + dxy)**-1
-
-                return np.mean(XX + YY - 2.*XY)
-
-            mmd_result = MMD_multiscale(set1,set2)
-            return mmd_result * 1e3
-
-            exit()
-            """
             # Iterate over number of randomized sample slices
             SMALL_CONSTANT = 1e-162 # 1e-4 works best for some reason
             def my_kde_bandwidth(obj, fac=1.0):
@@ -1090,30 +1035,47 @@ class make_plots:
                 for j in range(tmp_idx):
                     # Load appropriate test sets
                     if samplers[i] == samplers[::-1][j]:
+                        print_cnt+=1
                         continue
                     else:
                         sampler1, sampler2 = samplers[i]+'1', samplers[::-1][j]+'1'
 
-                    tot_kl = np.array(hf['%s-%s' % (sampler1,sampler2)])
+                        if self.params['load_plot_data'] == False:
+                            set1,time1 = self.load_test_set(model,sig_test,par_test,normscales,bounds,sampler=sampler1,vitamin_pred_made=vi_pred_made)
+                            set2,time2 = self.load_test_set(model,sig_test,par_test,normscales,bounds,sampler=sampler2,vitamin_pred_made=vi_pred_made)
+
+                            # check if vitamin test posteriors were generated for the first time
+                            if sampler1 == 'vitamin1' and vi_pred_made == None:
+                                vi_pred_made = [set1,time1]
+                            elif sampler2 == 'vitamin1' and vi_pred_made == None:
+                                vi_pred_made = [set2,time2]
+
+
+                    if self.params['load_plot_data'] == True:
+                        tot_kl = np.array(hf['%s-%s' % (sampler1,sampler2)])
+                    else:
+                        # Iterate over test cases
+                        tot_kl = []  # total KL over all infered parameters
+
+                        for r in range(self.params['r']**2):
+                            tot_kl.append(compute_kl(set1[r],set2[r],[sampler1,sampler2]))
+                            print('Completed KL for set %s-%s and test sample %s' % (sampler1,sampler2,str(r)))
+                        tot_kl = np.array(tot_kl)
+
+                    if self.params['load_plot_data'] == False:
+                        # Save results to h5py file
+                        hf.create_dataset('%s-%s' % (sampler1,sampler2), data=tot_kl)
 
                     logbins = np.logspace(-3,2.5,50)
                     logbins_indi = np.logspace(-3,3,50)
 
                     # plot colored hist
                     if samplers[i] == 'vitamin' and samplers[::-1][j] == samplers[1:][k]: 
-#                        print(tot_kl.argsort()[-15:][::-1])
-#                        print(np.sort(tot_kl)[-15:][::-1])
-#                        print(tot_kl.argsort()[:15][:])
-#                        print(np.sort(tot_kl)[:15][:])
                         axis_kl[kl_idx_1,kl_idx_2].hist(tot_kl,bins=logbins,alpha=0.5,histtype='stepfilled',density=True,color=CB_color_cycle[print_cnt],label=r'$\mathrm{%s \ vs. \ %s}$' % (fig_samplers[i],fig_samplers[::-1][j]),zorder=2)
                         axis_kl[kl_idx_1,kl_idx_2].hist(tot_kl,bins=logbins,histtype='step',density=True,facecolor='None',ls='-',lw=2,edgecolor=CB_color_cycle[print_cnt],zorder=10)
                     # record non-colored hists
                     elif samplers[i] != 'vitamin' and samplers[::-1][j] != 'vitamin':
                         if samplers[i] == samplers[1:][k] or samplers[::-1][j] == samplers[1:][k]:
-#                            print(tot_kl.argsort()[-15:][::-1])
-#                            print(np.sort(tot_kl)[-15:][::-1])
-#                            print(tot_kl.argsort()[:15][:])
-#                            print(np.sort(tot_kl)[:15][:])
 
                             tot_kl_grey = np.append(tot_kl_grey,tot_kl)
 
@@ -1773,7 +1735,7 @@ class make_plots:
 
                             # plot the samples and the true contours
                             axes[i,j].clear()
-                            axes[i,j].scatter(self.rev_x[cnt,k,mask].reshape(mask.shape[0]), self.rev_x[cnt,nextk,mask].reshape(mask.shape[0]),c='r',s=0.2,alpha=0.5, label='VICI')
+                            axes[i,j].scatter(self.rev_x[cnt,k,mask].reshape(mask.shape[0]), self.rev_x[cnt,nextk,mask].reshape(mask.shape[0]),c='r',s=0.2,alpha=0.5, label='VI')
                             axes[i,j].scatter(self.samples[cnt,mask,k].reshape(mask.shape[0]), self.samples[cnt,mask,nextk].reshape(mask.shape[0]),c='b',s=0.2,alpha=0.5, label='MCMC')
                             #axes[i,j].set_xlim([0,1])
                             #axes[i,j].set_ylim([0,1])
@@ -1832,13 +1794,13 @@ class make_plots:
                             # Plot statistic histograms
                             try:
                                 axis_ks[i,j].hist(adksVec[i,j,k,0,:],bins=n_hist_bins,alpha=0.5,color='blue',normed=True,label='Bilby')
-                                axis_ks[i,j].hist(adksVec[i,j,k,1,:],bins=n_hist_bins,alpha=0.5,color='red',normed=True,label='VICI')
+                                axis_ks[i,j].hist(adksVec[i,j,k,1,:],bins=n_hist_bins,alpha=0.5,color='red',normed=True,label='VI')
                                 for xtick,ytick in zip(axis_ks[i,j].xaxis.get_major_ticks(),axis_ks[i,j].yaxis.get_major_ticks()):
                                     xtick.label.set_fontsize(4)
                                     ytick.label.set_fontsize(4)
 
                                 axis_ad[i,j].hist(adksVec[i,j,k,2,:],bins=n_hist_bins,alpha=0.5,color='blue',normed=True,label='Bilby')
-                                axis_ad[i,j].hist(adksVec[i,j,k,3,:],bins=n_hist_bins,alpha=0.5,color='red',normed=True,label='VICI')
+                                axis_ad[i,j].hist(adksVec[i,j,k,3,:],bins=n_hist_bins,alpha=0.5,color='red',normed=True,label='VI')
                                 for xtick,ytick in zip(axis_ad[i,j].xaxis.get_major_ticks(),axis_ad[i,j].yaxis.get_major_ticks()):
                                     xtick.label.set_fontsize(4)
                                     ytick.label.set_fontsize(4)

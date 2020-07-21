@@ -24,13 +24,12 @@ import glob
 from matplotlib.lines import Line2D
 import pandas as pd
 
-from Models import VICI_inverse_model
-from bilby_pe import run
-from Neural_Networks import batch_manager
-from data import chris_data
-import plots
-from plots import prune_samples
-from plotsky import plot_sky
+from models import CVAE_model
+from gen_benchmark_pe import run
+from neural_networks import batch_manager
+import plotting
+from plotting import prune_samples
+from skyplotting import plot_sky
 
 import skopt
 from skopt import gp_minimize, forest_minimize
@@ -90,7 +89,7 @@ bounds = {'mass_1_min':35.0, 'mass_1_max':80.0,
         'luminosity_distance_min':1000.0, 'luminosity_distance_max':3000.0}
 
 # define which gpu to use during training
-gpu_num = str(1)                                            # first GPU used by default
+gpu_num = str(0)                                            # first GPU used by default
 os.environ["CUDA_VISIBLE_DEVICES"]=gpu_num
 
 # Let GPU consumption grow as needed
@@ -107,19 +106,19 @@ def get_params():
     ndata = 256                    # length of input to NN == fs * num_detectors
     rand_pars = ['mass_1','mass_2','luminosity_distance','geocent_time','phase',
                  'theta_jn','psi','ra','dec'] # parameters to randomize
-    run_label = 'multi-modal_%ddet_%dpar_%dHz_run10' % (len(fixed_vals['det']),len(rand_pars),ndata) # label of run
+    run_label = 'multi-modal_%ddet_%dpar_%dHz_run1' % (len(fixed_vals['det']),len(rand_pars),ndata) # label of run
     bilby_results_label = 'all_4_samplers' #'one_khz_sampling' #'all_4_samplers' # label given to bilby results directory
     r = 2                                  # number (to the power of 2) of test samples to use for testing
     pe_test_num = 256                      # total number of test samples available to use in directory
-    tot_dataset_size = int(1e7)            # total number of training samples available to use
+    tot_dataset_size = int(1e3)            # total number of training samples available to use
 
     tset_split = int(1e3)                  # number of training samples in each training data file
-    save_interval = int(2.5e4)             # number of iterations to save model and plot validation results corner plots
+    save_interval = int(1e3)             # number of iterations to save model and plot validation results corner plots
     ref_geocent_time=1126259642.5          # reference gps time (not advised to change this)
-    load_chunk_size = 1e4                  # Number of training samples to load in at a time.
+    load_chunk_size = 1e3                  # Number of training samples to load in at a time.
     batch_size = 64                       # Number training samples shown to neural network per iteration
     params = dict(
-        make_corner_plots = True,        # if True, make corner plots
+        make_corner_plots = False,        # if True, make corner plots
         make_kl_plot = False,           # If True, go through kl plotting function
         make_indi_kl=False,             # If True, generate individual KL plots
         make_pp_plot = False,            # If True, go through pp plotting function
@@ -132,7 +131,7 @@ def get_params():
         bilby_results_label=bilby_results_label, # label given to results for bilby posteriors
         tot_dataset_size = tot_dataset_size, # total number of training samples available to use
         tset_split = tset_split,             # number of training samples in each training data file (should be in label of filename)
-        plot_dir="/home/hunter.gabbard/public_html/CBC/VItamin/gw_results/%s" % run_label,  # directory to save results plots
+        plot_dir="/home/hunter.gabbard/public_html/CBC/vitamin_b/gw_results/%s" % run_label,  # directory to save results plots
         hyperparam_optim = False,          # optimize hyperparameters for model during training using gaussian process minimization
         hyperparam_optim_stop = int(1.5e6), # stopping iteration of hyperparameter optimizer per call (ideally 1.5 million) 
         hyperparam_n_call = 30,           # number of hyperparameter optimization calls (ideally 30)
@@ -145,7 +144,7 @@ def get_params():
         gen_indi_KLs=False,
 
         print_values=True,            # optionally print loss values every report interval
-        n_samples = 10000,             # number of posterior samples to save per reconstruction upon inference (default 3000) 
+        n_samples = 1000,             # number of posterior samples to save per reconstruction upon inference (default 3000) 
         num_iterations=int(1e7)+1,    # total number of iterations before ending training of model
         initial_training_rate=1e-4,   # initial training rate for ADAM optimiser inference model (inverse reconstruction)
         batch_size=batch_size,        # Number training samples shown to neural network per iteration
@@ -198,14 +197,14 @@ def get_params():
         weighted_pars=None,#['ra','dec','geocent_time'],                     # set to None if not using, parameters to weight during training
         weighted_pars_factor=1,                       # Factor by which to weight parameters if `weighted_pars` is not None.
         inf_pars=['mass_1','mass_2','luminosity_distance','geocent_time','theta_jn','ra','dec'], # psi phase before ra and dec
-        train_set_dir='/home/hunter.gabbard/CBC/VItamin/training_sets_second_sub_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(fixed_vals['det']),len(rand_pars),ndata,tot_dataset_size,tset_split), #location of training set
-        test_set_dir='/home/hunter.gabbard/CBC/VItamin/condor_runs_second_paper_sub/%s/test_waveforms' % bilby_results_label, # lovation of test set directory waveforms
-        pe_dir='/home/hunter.gabbard/CBC/VItamin/condor_runs_second_paper_sub/%s/test' % bilby_results_label, # location of test set directory Bayesian PE samples
+        train_set_dir='./training_sets_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(fixed_vals['det']),len(rand_pars),ndata,tot_dataset_size,tset_split), #location of training set
+        test_set_dir='./test_samples/%s/test_waveforms' % bilby_results_label, # lovation of test set directory waveforms
+        pe_dir='./test_samples/%s/test' % bilby_results_label, # location of test set directory Bayesian PE samples
         # attempt_to_fix_astropy_bug is default directory
         KL_cycles = 1,                                                         # number of cycles to repeat for the KL approximation
-        load_plot_data=True,                                                  # Plotting data which has already been generated
-        samplers=['vitamin','dynesty','ptemcee'],#,'cpnest','emcee'],          # samplers to use when plotting (vitamin is ML approach) dynesty,ptemcee,cpnest,emcee
-        figure_sampler_names = ['VItamin','Dynesty','ptemcee','CPNest','emcee'],
+        load_plot_data=False,                                                  # Plotting data which has already been generated
+        samplers=['vitamin','dynesty'],#,'ptemcee','cpnest','emcee'],          # samplers to use when plotting (vitamin is ML approach) dynesty,ptemcee,cpnest,emcee
+        figure_sampler_names = ['VItamin','Dynesty'],#,'ptemcee','CPNest','emcee'],
 
         doPE = True,                          # if True then do bilby PE when generating new testing samples (not advised to change this)
         y_normscale = 36.43879218007172,
@@ -360,7 +359,6 @@ def load_data(input_dir,inf_pars,load_condor=False):
     # Iterate over all training/testing files and store source parameters, time series and SNR info in dictionary
     for filename in train_files:
         try:
-            print(filename)
             data_temp={'x_data': h5py.File(dataLocations[0]+'/'+filename, 'r')['x_data'][:],
                   'y_data_noisefree': h5py.File(dataLocations[0]+'/'+filename, 'r')['y_data_noisefree'][:],
                   'y_data_noisy': h5py.File(dataLocations[0]+'/'+filename, 'r')['y_data_noisy'][:],
@@ -597,9 +595,8 @@ if args.gen_test:
     os.system('mkdir -p %s' % params['test_set_dir'])
 
     # Make testing samples
-    signal_test_noisy, signal_test_noisefree, signal_test_pars = [], [], [] 
     for i in range(params['r']*params['r']):
-        temp_noisy, temp_noisefree, temp_pars = run(sampling_frequency=params['ndata']/params['duration'],
+        temp_noisy, temp_noisefree, temp_pars, temp_snr = run(sampling_frequency=params['ndata']/params['duration'],
                                                       duration=params['duration'],
                                                       N_gen=1,
                                                       ref_geocent_time=params['ref_geocent_time'],
@@ -607,31 +604,35 @@ if args.gen_test:
                                                       fixed_vals=fixed_vals,
                                                       rand_pars=params['rand_pars'],
                                                       inf_pars=params['inf_pars'],
-                                                      label=params['run_label'] + '_' + str(i),
+                                                      label=params['bilby_results_label'] + '_' + str(i),
                                                       out_dir=params['pe_dir'],
+                                                      samplers=params['samplers'],
                                                       training=False,
                                                       seed=params['testing_data_seed']+i,
                                                       do_pe=params['doPE'])
-        signal_test_noisy.append(temp_noisy)
-        signal_test_noisefree.append(temp_noisefree)
-        signal_test_pars.append([temp_pars])
 
-    print("Generated: %s/data_%s.h5py ..." % (params['test_set_dir'],params['run_label']))
+        signal_test_noisy = temp_noisy
+        signal_test_noisefree = temp_noisefree
+        signal_test_pars = temp_pars
+        signal_test_snr = temp_snr
 
-    # Save generated testing samples in h5py format
-    hf = h5py.File('%s/data_%d.h5py' % (params['test_set_dir'],params['r']*params['r']),'w')
-    for k, v in params.items():
-        try:
+        print("Generated: %s/data_%s.h5py ..." % (params['test_set_dir'],params['run_label']))
+
+        # Save generated testing samples in h5py format
+        hf = h5py.File('%s/data_%d.h5py' % (params['test_set_dir'],i),'w')
+        for k, v in params.items():
+            try:
+                hf.create_dataset(k,data=v)
+            except:
+                pass
+        hf.create_dataset('x_data', data=signal_test_pars)
+        for k, v in bounds.items():
             hf.create_dataset(k,data=v)
-        except:
-            pass
-    hf.create_dataset('x_data', data=signal_test_pars)
-    for k, v in bounds.items():
-        hf.create_dataset(k,data=v)
-    hf.create_dataset('y_data_noisefree', data=signal_test_noisefree)
-    hf.create_dataset('y_data_noisy', data=signal_test_noisy)
-    hf.create_dataset('rand_pars', data=np.string_(params['rand_pars']))
-    hf.close()
+        hf.create_dataset('y_data_noisefree', data=signal_test_noisefree)
+        hf.create_dataset('y_data_noisy', data=signal_test_noisy)
+        hf.create_dataset('rand_pars', data=np.string_(params['rand_pars']))
+        hf.create_dataset('snrs', data=signal_test_snr)
+        hf.close()
 
 ####################################
 # Train neural network
@@ -783,7 +784,7 @@ if args.train:
 
     # train using user defined params
     else:
-        VICI_inverse_model.train(params, x_data_train, y_data_train,
+        CVAE_model.train(params, x_data_train, y_data_train,
                                  x_data_test, y_data_test, y_data_test_noisefree,
                                  y_normscale,
                                  "inverse_model_dir_%s/inverse_model.ckpt" % params['run_label'],
@@ -959,11 +960,11 @@ if args.test:
         
         # Generate ML posteriors using pre-trained model
         if params['reduce'] == True or params['n_filters_r1'] != None: # for convolutional approach
-             VI_pred, dt, _  = VICI_inverse_model.run(params, np.expand_dims(y_data_test[i],axis=0), np.shape(x_data_test)[1],
+             VI_pred, dt, _  = CVAE_model.run(params, np.expand_dims(y_data_test[i],axis=0), np.shape(x_data_test)[1],
                                                          y_normscale,
                                                          "inverse_model_dir_%s/inverse_model.ckpt" % params['run_label'])
         else:                                                          # for fully-connected approach
-            VI_pred, dt, _  = VICI_inverse_model.run(params, y_data_test[i].reshape([1,-1]), np.shape(x_data_test)[1],
+            VI_pred, dt, _  = CVAE_model.run(params, y_data_test[i].reshape([1,-1]), np.shape(x_data_test)[1],
                                                          y_normscale,
                                                          "inverse_model_dir_%s/inverse_model.ckpt" % params['run_label'])
 
@@ -1077,12 +1078,12 @@ if args.test:
     VI_pred_all = np.array(VI_pred_all)
 
     # Define pp and KL plotting class
-    XS_all = None; x_data_test = None; y_data_test = None; y_normscale = None; snrs_test = None
-    plotter = plots.make_plots(params,XS_all,VI_pred_all,x_data_test)
+#    XS_all = None; x_data_test = None; y_data_test = None; y_normscale = None; snrs_test = None
+    plotter = plotting.make_plots(params,XS_all,VI_pred_all,x_data_test)
 
     if params['make_kl_plot'] == True:    
         # Make KL plots
-        plotter.gen_kl_plots(VICI_inverse_model,y_data_test,x_data_test,y_normscale,bounds,snrs_test)
+        plotter.gen_kl_plots(CVAE_model,y_data_test,x_data_test,y_normscale,bounds,snrs_test)
 
     # Make bilby pp plot
 #    plotter.plot_bilby_pp(VICI_inverse_model,y_data_test,x_data_test,0,y_normscale,x_data_test,bounds)
@@ -1090,7 +1091,7 @@ if args.test:
 
     if params['make_pp_plot'] == True:
         # Make pp plot
-        plotter.plot_pp(VICI_inverse_model,y_data_test,x_data_test,0,y_normscale,x_data_test,bounds)
+        plotter.plot_pp(CVAE_model,y_data_test,x_data_test,0,y_normscale,x_data_test,bounds)
 
     if params['make_loss_plot'] == True:
         plotter.plot_loss()

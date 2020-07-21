@@ -13,15 +13,14 @@ import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 import tensorflow_probability as tfp
 import corner
-import bilby_pe
+import gen_benchmark_pe
 import h5py
 
-from Neural_Networks import VICI_decoder
-from Neural_Networks import VICI_encoder
-from Neural_Networks import VICI_VAE_encoder
-from Neural_Networks import batch_manager
-from Models import VICI_inverse_model
-import plots
+from neural_networks import VI_decoder_r2
+from neural_networks import VI_encoder_r1
+from neural_networks import VI_encoder_q
+from neural_networks import batch_manager
+from models import CVAE_model
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -265,14 +264,14 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
         ramp = tf.placeholder(dtype=tf.float32)    # the ramp to slowly increase the KL contribution
 
         # LOAD VICI NEURAL NETWORKS
-        r1_zy = VICI_encoder.VariationalAutoencoder('VICI_encoder', n_input=params['ndata'], n_output=z_dimension, n_channels=num_det, n_weights=n_weights_r1,   # generates params for r1(z|y)
+        r1_zy = VI_encoder_r1.VariationalAutoencoder('VI_encoder_r1', n_input=params['ndata'], n_output=z_dimension, n_channels=num_det, n_weights=n_weights_r1,   # generates params for r1(z|y)
                                                     n_modes=n_modes, drate=drate, n_filters=n_filters_r1, 
                                                     filter_size=filter_size_r1, maxpool=maxpool_r1)
-        r2_xzy = VICI_decoder.VariationalAutoencoder('VICI_decoder', vonmise_mask, gauss_mask, m1_mask, m2_mask, sky_mask, n_input1=z_dimension, 
+        r2_xzy = VI_decoder_r2.VariationalAutoencoder('VI_decoder_r2', vonmise_mask, gauss_mask, m1_mask, m2_mask, sky_mask, n_input1=z_dimension, 
                                                      n_input2=params['ndata'], n_output=xsh[1], n_channels=num_det, n_weights=n_weights_r2, 
                                                      drate=drate, n_filters=n_filters_r2, 
                                                      filter_size=filter_size_r2, maxpool=maxpool_r2)
-        q_zxy = VICI_VAE_encoder.VariationalAutoencoder('VICI_VAE_encoder', n_input1=xsh[1], n_input2=params['ndata'], n_output=z_dimension, 
+        q_zxy = VI_encoder_q.VariationalAutoencoder('VI_encoder_q', n_input1=xsh[1], n_input2=params['ndata'], n_output=z_dimension, 
                                                      n_channels=num_det, n_weights=n_weights_q, drate=drate, 
                                                      n_filters=n_filters_q, filter_size=filter_size_q, maxpool=maxpool_q) 
         tf.set_random_seed(np.random.randint(0,10))
@@ -407,7 +406,7 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
         COST = cost_R + ramp*KL #+ L1_weight_reg)
 
         # VARIABLES LISTS
-        var_list_VICI = [var for var in tf.trainable_variables() if var.name.startswith("VICI")]
+        var_list_VICI = [var for var in tf.trainable_variables() if var.name.startswith("VI")]
         
         # DEFINE OPTIMISER (using ADAM here)
         optimizer = tf.train.AdamOptimizer(params['initial_training_rate']) 
@@ -426,14 +425,6 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
 
     load_chunk_it = 1
     for i in range(params['num_iterations']):
-
-        # Time training
-        if i == 500:
-            run_startt = time.time()
-        elif i == 1000:
-            run_endt = time.time()
-            print(run_endt-run_startt)
-            exit()
 
         next_indices = indices_generator.next_indices()
 
@@ -558,11 +549,11 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
 
                 # The trained inverse model weights can then be used to infer a probability density of solutions given new measurements
                 if params['reduce'] == True or params['n_filters_r1'] != None:
-                    XS, dt, _  = VICI_inverse_model.run(params, y_data_test[j].reshape([1,y_data_test.shape[1],y_data_test.shape[2]]), np.shape(x_data_test)[1],
+                    XS, dt, _  = CVAE_model.run(params, y_data_test[j].reshape([1,y_data_test.shape[1],y_data_test.shape[2]]), np.shape(x_data_test)[1],
                                                  y_normscale, 
                                                  "inverse_model_dir_%s/inverse_model.ckpt" % params['run_label'])
                 else:
-                    XS, dt, _  = VICI_inverse_model.run(params, y_data_test[j].reshape([1,-1]), np.shape(x_data_test)[1],
+                    XS, dt, _  = CVAE_model.run(params, y_data_test[j].reshape([1,-1]), np.shape(x_data_test)[1],
                                                  y_normscale, 
                                                  "inverse_model_dir_%s/inverse_model.ckpt" % params['run_label'])
                 print('Runtime to generate {} samples = {} sec'.format(params['n_samples'],dt))            
@@ -678,14 +669,14 @@ def run(params, y_data_test, siz_x_data, y_normscale, load_dir):
         y_ph = tf.placeholder(dtype=tf.float32, shape=[None, params['ndata'], num_det], name="y_ph")
 
         # LOAD VICI NEURAL NETWORKS
-        r2_xzy = VICI_decoder.VariationalAutoencoder('VICI_decoder', vonmise_mask, gauss_mask, m1_mask, m2_mask, sky_mask, n_input1=z_dimension, 
+        r2_xzy = VI_decoder_r2.VariationalAutoencoder('VI_decoder_r2', vonmise_mask, gauss_mask, m1_mask, m2_mask, sky_mask, n_input1=z_dimension, 
                                                      n_input2=params['ndata'], n_output=xsh1, n_channels=num_det, n_weights=n_weights_r2, 
                                                      drate=drate, n_filters=n_filters_r2, 
                                                      filter_size=filter_size_r2, maxpool=maxpool_r2)
-        r1_zy = VICI_encoder.VariationalAutoencoder('VICI_encoder', n_input=params['ndata'], n_output=z_dimension, n_channels=num_det, n_weights=n_weights_r1,   # generates params for r1(z|y)
+        r1_zy = VI_encoder_r1.VariationalAutoencoder('VI_encoder_r1', n_input=params['ndata'], n_output=z_dimension, n_channels=num_det, n_weights=n_weights_r1,   # generates params for r1(z|y)
                                                     n_modes=n_modes, drate=drate, n_filters=n_filters_r1, 
                                                     filter_size=filter_size_r1, maxpool=maxpool_r1)
-        q_zxy = VICI_VAE_encoder.VariationalAutoencoder('VICI_VAE_encoder', n_input1=xsh1, n_input2=params['ndata'], n_output=z_dimension, 
+        q_zxy = VI_encoder_q.VariationalAutoencoder('VI_encoder_q', n_input1=xsh1, n_input2=params['ndata'], n_output=z_dimension, 
                                                      n_channels=num_det, n_weights=n_weights_q, drate=drate, 
                                                      n_filters=n_filters_q, filter_size=filter_size_q, maxpool=maxpool_q)
 
@@ -772,7 +763,7 @@ def run(params, y_data_test, siz_x_data, y_normscale, load_dir):
         r2_xzy_samp = tf.gather(r2_xzy_samp,tf.constant(idx_mask),axis=1)
 
         # VARIABLES LISTS
-        var_list_VICI = [var for var in tf.trainable_variables() if var.name.startswith("VICI")]
+        var_list_VICI = [var for var in tf.trainable_variables() if var.name.startswith("VI")]
 
         # INITIALISE AND RUN SESSION
         init = tf.initialize_all_variables()

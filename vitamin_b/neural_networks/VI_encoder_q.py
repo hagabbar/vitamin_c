@@ -6,7 +6,7 @@ tf.disable_v2_behavior()
 import numpy as np
 import math as m
 
-from Neural_Networks import vae_utils
+from neural_networks import vae_utils
 
 # based on implementation here:
 # https://github.com/tensorflow/models/blob/master/autoencoder/autoencoder_models/VariationalAutoencoder.py
@@ -32,7 +32,7 @@ class VariationalAutoencoder(object):
         self.nonlinearity = tf.nn.relu
 
     def _calc_z_mean_and_sigma(self,x,y):
-        with tf.name_scope("VICI_VAE_encoder"):
+        with tf.name_scope("VI_encoder_q"):
 
             # Reshape input to a 3D tensor - single channel
             if self.n_conv is not None:
@@ -41,7 +41,7 @@ class VariationalAutoencoder(object):
                     weight_name = 'w_conv_' + str(i)
                     bias_name = 'b_conv_' + str(i)
                     bnorm_name = 'b_conv_' + str(i)
-                    conv_pre1 = tf.add(tf.nn.conv2d(conv_pool, self.weights['VICI_VAE_encoder'][weight_name + '1'],strides=1,padding='SAME'),self.weights['VICI_VAE_encoder'][bias_name + '1'])
+                    conv_pre1 = tf.add(tf.nn.conv2d(conv_pool, self.weights['VI_encoder_q'][weight_name + '1'],strides=1,padding='SAME'),self.weights['VI_encoder_q'][bias_name + '1'])
                     #conv_pre2 = tf.add(tf.nn.conv1d(conv_pool, self.weights['VICI_VAE_encoder'][weight_name + '2'],stride=1,padding='SAME'),self.weights['VICI_VAE_encoder'][bias_name + '2'])
                     #conv_pre3 = tf.add(tf.nn.conv1d(conv_pool, self.weights['VICI_VAE_encoder'][weight_name + '3'],stride=1,padding='SAME'),self.weights['VICI_VAE_encoder'][bias_name + '3'])
                     #conv_post = self.nonlinearity(tf.concat([conv_pre1,conv_pre2,conv_pre3],axis=2))
@@ -59,12 +59,12 @@ class VariationalAutoencoder(object):
             for i in range(self.n_hlayers):
                 weight_name = 'w_hidden_' + str(i)
                 bias_name = 'b_hidden' + str(i)
-                hidden_pre = tf.add(tf.matmul(hidden_dropout, self.weights['VICI_VAE_encoder'][weight_name]), self.weights['VICI_VAE_encoder'][bias_name])
+                hidden_pre = tf.add(tf.matmul(hidden_dropout, self.weights['VI_encoder_q'][weight_name]), self.weights['VI_encoder_q'][bias_name])
                 hidden_post = self.nonlinearity(hidden_pre)
                 hidden_batchnorm = tf.nn.batch_normalization(hidden_post,tf.Variable(tf.zeros([self.n_weights[i]], dtype=tf.float32)),tf.Variable(tf.ones([self.n_weights[i]], dtype=tf.float32)),None,None,1e-6,name=bnorm_name)
                 hidden_dropout = tf.layers.dropout(hidden_batchnorm,rate=self.drate)
-            loc = tf.add(tf.matmul(hidden_dropout, self.weights['VICI_VAE_encoder']['w_loc']), self.weights['VICI_VAE_encoder']['b_loc'])
-            scale = tf.add(tf.matmul(hidden_dropout, self.weights['VICI_VAE_encoder']['w_scale']), self.weights['VICI_VAE_encoder']['b_scale'])
+            loc = tf.add(tf.matmul(hidden_dropout, self.weights['VI_encoder_q']['w_loc']), self.weights['VI_encoder_q']['b_loc'])
+            scale = tf.add(tf.matmul(hidden_dropout, self.weights['VI_encoder_q']['w_scale']), self.weights['VI_encoder_q']['b_scale'])
 
             tf.summary.histogram('loc', loc)
             tf.summary.histogram('scale', scale)
@@ -79,23 +79,23 @@ class VariationalAutoencoder(object):
 
     def _create_weights(self):
         all_weights = collections.OrderedDict()
-        with tf.variable_scope("VICI_VAE_ENC"):
+        with tf.variable_scope("VI_ENC_q"):
             # Encoder
-            all_weights['VICI_VAE_encoder'] = collections.OrderedDict()
+            all_weights['VI_encoder_q'] = collections.OrderedDict()
             
             if self.n_conv is not None:
                 dummy = self.n_channels
                 for i in range(self.n_conv):
                     weight_name = 'w_conv_' + str(i)
                     bias_name = 'b_conv_' + str(i)
-                    all_weights['VICI_VAE_encoder'][weight_name + '1'] = tf.Variable(tf.reshape(vae_utils.xavier_init(self.filter_size[i], dummy*self.n_filters[i]),[self.filter_size[i], 1, dummy, self.n_filters[i]]), dtype=tf.float32)
-                    all_weights['VICI_VAE_encoder'][bias_name + '1'] = tf.Variable(tf.zeros([self.n_filters[i]], dtype=tf.float32))
+                    all_weights['VI_encoder_q'][weight_name + '1'] = tf.Variable(tf.reshape(vae_utils.xavier_init(self.filter_size[i], dummy*self.n_filters[i]),[self.filter_size[i], 1, dummy, self.n_filters[i]]), dtype=tf.float32)
+                    all_weights['VI_encoder_q'][bias_name + '1'] = tf.Variable(tf.zeros([self.n_filters[i]], dtype=tf.float32))
                     #all_weights['VICI_VAE_encoder'][weight_name + '2'] = tf.Variable(tf.reshape(vae_utils.xavier_init(self.filter_size*2, dummy*self.n_filters),[self.filter_size*2, dummy, self.n_filters]), dtype=tf.float32)
                     #all_weights['VICI_VAE_encoder'][bias_name + '2'] = tf.Variable(tf.zeros([self.n_filters], dtype=tf.float32))
                     #all_weights['VICI_VAE_encoder'][weight_name + '3'] = tf.Variable(tf.reshape(vae_utils.xavier_init(self.filter_size*4, dummy*self.n_filters),[self.filter_size*4, dummy, self.n_filters]), dtype=tf.float32)
                     #all_weights['VICI_VAE_encoder'][bias_name + '3'] = tf.Variable(tf.zeros([self.n_filters], dtype=tf.float32))
-                    tf.summary.histogram(weight_name + '1', all_weights['VICI_VAE_encoder'][weight_name + '1'])
-                    tf.summary.histogram(bias_name + '1', all_weights['VICI_VAE_encoder'][bias_name + '1'])
+                    tf.summary.histogram(weight_name + '1', all_weights['VI_encoder_q'][weight_name + '1'])
+                    tf.summary.histogram(bias_name + '1', all_weights['VI_encoder_q'][bias_name + '1'])
                     #tf.summary.histogram(weight_name + '2', all_weights['VICI_VAE_encoder'][weight_name + '2'])
                     #tf.summary.histogram(bias_name + '2', all_weights['VICI_VAE_encoder'][bias_name + '2'])
                     #tf.summary.histogram(weight_name + '3', all_weights['VICI_VAE_encoder'][weight_name + '3'])
@@ -109,19 +109,19 @@ class VariationalAutoencoder(object):
             for i in range(self.n_hlayers):
                 weight_name = 'w_hidden_' + str(i)
                 bias_name = 'b_hidden' + str(i)
-                all_weights['VICI_VAE_encoder'][weight_name] = tf.Variable(vae_utils.xavier_init(fc_input_size, self.n_weights[i]), dtype=tf.float32)
-                all_weights['VICI_VAE_encoder'][bias_name] = tf.Variable(tf.zeros([self.n_weights[i]], dtype=tf.float32))
-                tf.summary.histogram(weight_name, all_weights['VICI_VAE_encoder'][weight_name])
-                tf.summary.histogram(bias_name, all_weights['VICI_VAE_encoder'][bias_name])
+                all_weights['VI_encoder_q'][weight_name] = tf.Variable(vae_utils.xavier_init(fc_input_size, self.n_weights[i]), dtype=tf.float32)
+                all_weights['VI_encoder_q'][bias_name] = tf.Variable(tf.zeros([self.n_weights[i]], dtype=tf.float32))
+                tf.summary.histogram(weight_name, all_weights['VI_encoder_q'][weight_name])
+                tf.summary.histogram(bias_name, all_weights['VI_encoder_q'][bias_name])
                 fc_input_size = self.n_weights[i]
-            all_weights['VICI_VAE_encoder']['w_loc'] = tf.Variable(vae_utils.xavier_init(self.n_weights[-1], self.n_output),dtype=tf.float32)
-            all_weights['VICI_VAE_encoder']['b_loc'] = tf.Variable(tf.zeros([self.n_output], dtype=tf.float32), dtype=tf.float32)
-            tf.summary.histogram('w_loc', all_weights['VICI_VAE_encoder']['w_loc'])
-            tf.summary.histogram('b_loc', all_weights['VICI_VAE_encoder']['b_loc'])           
-            all_weights['VICI_VAE_encoder']['w_scale'] = tf.Variable(vae_utils.xavier_init(self.n_weights[-1], self.n_output),dtype=tf.float32)
-            all_weights['VICI_VAE_encoder']['b_scale'] = tf.Variable(tf.zeros([self.n_output], dtype=tf.float32), dtype=tf.float32)
-            tf.summary.histogram('w_scale', all_weights['VICI_VAE_encoder']['w_scale'])
-            tf.summary.histogram('b_scale', all_weights['VICI_VAE_encoder']['b_scale'])
+            all_weights['VI_encoder_q']['w_loc'] = tf.Variable(vae_utils.xavier_init(self.n_weights[-1], self.n_output),dtype=tf.float32)
+            all_weights['VI_encoder_q']['b_loc'] = tf.Variable(tf.zeros([self.n_output], dtype=tf.float32), dtype=tf.float32)
+            tf.summary.histogram('w_loc', all_weights['VI_encoder_q']['w_loc'])
+            tf.summary.histogram('b_loc', all_weights['VI_encoder_q']['b_loc'])           
+            all_weights['VI_encoder_q']['w_scale'] = tf.Variable(vae_utils.xavier_init(self.n_weights[-1], self.n_output),dtype=tf.float32)
+            all_weights['VI_encoder_q']['b_scale'] = tf.Variable(tf.zeros([self.n_output], dtype=tf.float32), dtype=tf.float32)
+            tf.summary.histogram('w_scale', all_weights['VI_encoder_q']['w_scale'])
+            tf.summary.histogram('b_scale', all_weights['VI_encoder_q']['b_scale'])
 
             all_weights['prior_param'] = collections.OrderedDict()
         
