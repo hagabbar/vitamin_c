@@ -545,7 +545,7 @@ def hyperparam_fitness(kernel_1, strides_1, pool_1,
 #######################
 # Make training samples
 #######################
-if args.gen_train:
+def gen_train():
     
     # Make training set directory
     os.system('mkdir -p %s' % params['train_set_dir'])
@@ -585,11 +585,12 @@ if args.gen_train:
         hf.create_dataset('rand_pars', data=np.string_(params['rand_pars']))
         hf.create_dataset('snrs', data=snrs)
         hf.close()
+    return
 
 ############################
 # Make test samples
 ############################
-if args.gen_test:
+def gen_test()
 
     # Make testing set directory
     os.system('mkdir -p %s' % params['test_set_dir'])
@@ -633,11 +634,12 @@ if args.gen_test:
         hf.create_dataset('rand_pars', data=np.string_(params['rand_pars']))
         hf.create_dataset('snrs', data=signal_test_snr)
         hf.close()
+    return
 
 ####################################
 # Train neural network
 ####################################
-if args.train:
+def train():
 
     # load the noisefree training data back in
     x_data_train, y_data_train, _, y_normscale, snrs_train = load_data(params['train_set_dir'],params['inf_pars'])
@@ -791,8 +793,10 @@ if args.train:
                                  x_data_test, bounds, fixed_vals,
                                  XS_all,snrs_test) 
 
+    return
+
 # if we are now testing the network
-if args.test:
+def test():
 
     
     y_normscale = params['y_normscale']
@@ -1095,4 +1099,14 @@ if args.test:
 
     if params['make_loss_plot'] == True:
         plotter.plot_loss()
+
+# If running module from command line
+if args.gen_train:
+    gen_train()
+if args.gen_test:
+    gen_test()
+if args.train():
+    train()
+if args.test():
+    test()
 
