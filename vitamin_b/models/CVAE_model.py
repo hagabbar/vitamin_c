@@ -13,14 +13,13 @@ import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 import tensorflow_probability as tfp
 import corner
-import gen_benchmark_pe
+from .. import gen_benchmark_pe
 import h5py
 
-from neural_networks import VI_decoder_r2
-from neural_networks import VI_encoder_r1
-from neural_networks import VI_encoder_q
-from neural_networks import batch_manager
-from models import CVAE_model
+from .neural_networks import VI_decoder_r2
+from .neural_networks import VI_encoder_r1
+from .neural_networks import VI_encoder_q
+from .neural_networks import batch_manager
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -189,6 +188,203 @@ def get_param_index(all_pars,pars):
             mask.append(False)
      
     return mask, idx, np.sum(mask)
+
+def run(params, y_data_test, siz_x_data, y_normscale, load_dir):
+
+    multi_modal = True
+
+    # USEFUL SIZES
+    xsh1 = siz_x_data
+    if params['by_channel'] == True:
+        ysh0 = np.shape(y_data_test)[0]
+        ysh1 = np.shape(y_data_test)[1]
+    else:
+        ysh0 = np.shape(y_data_test)[1]
+        ysh1 = np.shape(y_data_test)[2]
+    z_dimension = params['z_dimension']
+    n_weights_r1 = params['n_weights_r1']
+    n_weights_r2 = params['n_weights_r2']
+    n_weights_q = params['n_weights_q']
+    n_modes = params['n_modes']
+    n_hlayers_r1 = len(params['n_weights_r1'])
+    n_hlayers_r2 = len(params['n_weights_r2'])
+    n_hlayers_q = len(params['n_weights_q'])
+    n_conv_r1 = len(params['n_filters_r1'])
+    n_conv_r2 = len(params['n_filters_r2'])
+    n_conv_q = len(params['n_filters_q'])
+    n_filters_r1 = params['n_filters_r1']
+    n_filters_r2 = params['n_filters_r2']
+    n_filters_q = params['n_filters_q']
+    filter_size_r1 = params['filter_size_r1']
+    filter_size_r2 = params['filter_size_r2']
+    filter_size_q = params['filter_size_q']
+    n_convsteps = params['n_convsteps']
+    batch_norm = params['batch_norm']
+    red = params['reduce']
+    if n_convsteps != None:
+        ysh_conv_r1 = int(ysh1*n_filters_r1/2**n_convsteps) if red==True else int(ysh1/2**n_convsteps)
+        ysh_conv_r2 = int(ysh1*n_filters_r2/2**n_convsteps) if red==True else int(ysh1/2**n_convsteps)
+        ysh_conv_q = int(ysh1*n_filters_q/2**n_convsteps) if red==True else int(ysh1/2**n_convsteps)
+    else:
+        ysh_conv_r1 = int(ysh1)
+        ysh_conv_r2 = int(ysh1)
+        ysh_conv_q = int(ysh1)
+    drate = params['drate']
+    maxpool_r1 = params['maxpool_r1']
+    maxpool_r2 = params['maxpool_r2']
+    maxpool_q = params['maxpool_q']
+    conv_strides_r1 = params['conv_strides_r1']
+    conv_strides_r2 = params['conv_strides_r2']
+    conv_strides_q = params['conv_strides_q']
+    pool_strides_r1 = params['pool_strides_r1']
+    pool_strides_r2 = params['pool_strides_r2']
+    pool_strides_q = params['pool_strides_q']
+    if params['reduce'] == True or n_filters_r1 != None:
+        if params['by_channel'] == True:
+            num_det = np.shape(y_data_test)[2]
+        else:
+            num_det = ysh0
+    else:
+        num_det = None
+    # identify the indices of different sets of physical parameters
+    vonmise_mask, vonmise_idx_mask, vonmise_len = get_param_index(params['inf_pars'],params['vonmise_pars'])
+    gauss_mask, gauss_idx_mask, gauss_len = get_param_index(params['inf_pars'],params['gauss_pars'])
+    sky_mask, sky_idx_mask, sky_len = get_param_index(params['inf_pars'],params['sky_pars'])
+    ra_mask, ra_idx_mask, ra_len = get_param_index(params['inf_pars'],['ra'])
+    dec_mask, dec_idx_mask, dec_len = get_param_index(params['inf_pars'],['dec'])
+    m1_mask, m1_idx_mask, m1_len = get_param_index(params['inf_pars'],['mass_1'])
+    m2_mask, m2_idx_mask, m2_len = get_param_index(params['inf_pars'],['mass_2'])
+    idx_mask = np.argsort(gauss_idx_mask + vonmise_idx_mask + m1_idx_mask + m2_idx_mask + sky_idx_mask) # + dist_idx_mask)
+    masses_len = m1_len + m2_len
+
+   
+    graph = tf.Graph()
+    session = tf.Session(graph=graph)
+    with graph.as_default():
+        tf.set_random_seed(np.random.randint(0,10))
+        SMALL_CONSTANT = 1e-12
+
+        # PLACEHOLDERS
+        bs_ph = tf.placeholder(dtype=tf.int64, name="bs_ph")                       # batch size placeholder
+        y_ph = tf.placeholder(dtype=tf.float32, shape=[None, params['ndata'], num_det], name="y_ph")
+
+        # LOAD VICI NEURAL NETWORKS
+        r2_xzy = VI_decoder_r2.VariationalAutoencoder('VI_decoder_r2', vonmise_mask, gauss_mask, m1_mask, m2_mask, sky_mask, n_input1=z_dimension, 
+                                                     n_input2=params['ndata'], n_output=xsh1, n_channels=num_det, n_weights=n_weights_r2, 
+                                                     drate=drate, n_filters=n_filters_r2, 
+                                                     filter_size=filter_size_r2, maxpool=maxpool_r2)
+        r1_zy = VI_encoder_r1.VariationalAutoencoder('VI_encoder_r1', n_input=params['ndata'], n_output=z_dimension, n_channels=num_det, n_weights=n_weights_r1,   # generates params for r1(z|y)
+                                                    n_modes=n_modes, drate=drate, n_filters=n_filters_r1, 
+                                                    filter_size=filter_size_r1, maxpool=maxpool_r1)
+        q_zxy = VI_encoder_q.VariationalAutoencoder('VI_encoder_q', n_input1=xsh1, n_input2=params['ndata'], n_output=z_dimension, 
+                                                     n_channels=num_det, n_weights=n_weights_q, drate=drate, 
+                                                     n_filters=n_filters_q, filter_size=filter_size_q, maxpool=maxpool_q)
+
+        # reduce the y data size
+        y_conv = y_ph
+
+        # GET r1(z|y)
+        r1_loc, r1_scale, r1_weight = r1_zy._calc_z_mean_and_sigma(y_conv)
+        temp_var_r1 = SMALL_CONSTANT + tf.exp(r1_scale)
+
+
+        # define the r1(z|y) mixture model
+        bimix_gauss = tfd.MixtureSameFamily(
+                          mixture_distribution=tfd.Categorical(logits=r1_weight),
+                          components_distribution=tfd.MultivariateNormalDiag(
+                          loc=r1_loc,
+                          scale_diag=tf.sqrt(temp_var_r1)))
+
+
+        # DRAW FROM r1(z|y)
+        r1_zy_samp = bimix_gauss.sample()
+
+
+        # GET r2(x|z,y) from r1(z|y) samples
+        reconstruction_xzy = r2_xzy.calc_reconstruction(r1_zy_samp,y_ph)
+
+        # ugly but needed for now
+        # extract the means and variances of the physical parameter distributions
+        r2_xzy_mean_gauss = reconstruction_xzy[0]
+        r2_xzy_log_sig_sq_gauss = reconstruction_xzy[1]
+        r2_xzy_mean_vonmise = reconstruction_xzy[2]
+        r2_xzy_log_sig_sq_vonmise = reconstruction_xzy[3]
+        r2_xzy_mean_m1 = reconstruction_xzy[4]
+        r2_xzy_log_sig_sq_m1 = reconstruction_xzy[5]
+        r2_xzy_mean_m2 = reconstruction_xzy[6]
+        r2_xzy_log_sig_sq_m2 = reconstruction_xzy[7]
+        r2_xzy_mean_sky = reconstruction_xzy[8]
+        r2_xzy_log_sig_sq_sky = reconstruction_xzy[9]
+
+        # draw from r2(x|z,y) - the masses
+        temp_var_r2_m1 = SMALL_CONSTANT + tf.exp(r2_xzy_log_sig_sq_m1)     # the m1 variance
+        temp_var_r2_m2 = SMALL_CONSTANT + tf.exp(r2_xzy_log_sig_sq_m2)     # the m2 variance
+        joint = tfd.JointDistributionSequential([
+                       tfd.Independent(tfd.TruncatedNormal(r2_xzy_mean_m1,tf.sqrt(temp_var_r2_m1),0,1,validate_args=True,allow_nan_stats=True),reinterpreted_batch_ndims=0),  # m1
+            lambda b0: tfd.Independent(tfd.TruncatedNormal(r2_xzy_mean_m2,tf.sqrt(temp_var_r2_m2),0,b0,validate_args=True,allow_nan_stats=True),reinterpreted_batch_ndims=0)],    # m2
+            validate_args=True)
+        r2_xzy_samp_masses = tf.transpose(tf.reshape(joint.sample(),[2,-1]))  # sample from the m1.m2 space
+
+        # draw from r2(x|z,y) - the truncated gaussian 
+        temp_var_r2_gauss = SMALL_CONSTANT + tf.exp(r2_xzy_log_sig_sq_gauss)
+        @tf.function    # make this s a tensorflow function
+        def truncnorm(idx,output):    # we set up a function that adds the log-likelihoods and also increments the counter
+            loc = tf.slice(r2_xzy_mean_gauss,[0,idx],[-1,1])            # take each specific parameter mean using slice
+            std = tf.sqrt(tf.slice(temp_var_r2_gauss,[0,idx],[-1,1]))   # take each specific parameter std using slice
+            tn = tfd.TruncatedNormal(loc,std,0.0,1.0)                   # define the truncated Gaussian distribution
+            return [idx+1, tf.concat([output,tf.reshape(tn.sample(),[bs_ph,1])],axis=1)] # return the updated index and new samples concattenated to the input 
+        # we do the loop until we've hit all the truncated gaussian parameters - i starts at 0 and the samples starts with a set of zeros that we cut out later
+        idx = tf.constant(0)              # initialise counter
+        nsamp = params['n_samples']       # define the number of samples (MUST be a normal int NOT tensor so can't use bs_ph)
+        output = tf.zeros([nsamp,1],dtype=tf.float32)    # initialise the output (we cut this first set of zeros out later
+        condition = lambda i,output: i<gauss_len         # define the while loop stopping condition
+        _,r2_xzy_samp_gauss = tf.while_loop(condition, truncnorm, loop_vars=[idx,output],shape_invariants=[idx.get_shape(), tf.TensorShape([nsamp,None])])
+        r2_xzy_samp_gauss = tf.slice(tf.reshape(r2_xzy_samp_gauss,[-1,gauss_len+1]),[0,1],[-1,-1])   # cut out the actual samples - delete the initial vector of zeros
+
+        # draw from r2(x|z,y) - the vonmises part
+        temp_var_r2_vonmise = SMALL_CONSTANT + tf.exp(r2_xzy_log_sig_sq_vonmise)
+        con = tf.reshape(tf.math.reciprocal(temp_var_r2_vonmise),[-1,vonmise_len])   # modelling wrapped scale output as log variance
+        von_mises = tfp.distributions.VonMises(loc=2.0*np.pi*(r2_xzy_mean_vonmise-0.5), concentration=con)
+        r2_xzy_samp_vonmise = tf.reshape(von_mises.sample()/(2.0*np.pi) + 0.5,[-1,vonmise_len])   # sample from the von mises distribution and shift and scale from -pi-pi to 0-1
+        
+        # draw from r2(x|z,y) - the von mises Fisher 
+        temp_var_r2_sky = SMALL_CONSTANT + tf.exp(r2_xzy_log_sig_sq_sky)
+        con = tf.reshape(tf.math.reciprocal(temp_var_r2_sky),[bs_ph])   # modelling wrapped scale output as log variance - only 1 concentration parameter for all sky
+        von_mises_fisher = tfp.distributions.VonMisesFisher(
+                          mean_direction=tf.math.l2_normalize(tf.reshape(r2_xzy_mean_sky,[bs_ph,3]),axis=1),
+                          concentration=con)   # define p_vm(2*pi*mu,con=1/sig^2)
+        xyz = tf.reshape(von_mises_fisher.sample(),[bs_ph,3])          # sample the distribution
+        samp_ra = tf.math.floormod(tf.atan2(tf.slice(xyz,[0,1],[-1,1]),tf.slice(xyz,[0,0],[-1,1])),2.0*np.pi)/(2.0*np.pi)   # convert to the rescaled 0->1 RA from the unit vector
+        samp_dec = (tf.asin(tf.slice(xyz,[0,2],[-1,1])) + 0.5*np.pi)/np.pi                       # convert to the rescaled 0->1 dec from the unit vector
+        r2_xzy_samp_sky = tf.reshape(tf.concat([samp_ra,samp_dec],axis=1),[bs_ph,2])             # group the sky samples
+
+        # combine the samples
+        r2_xzy_samp = tf.concat([r2_xzy_samp_gauss,r2_xzy_samp_vonmise,r2_xzy_samp_masses,r2_xzy_samp_sky],axis=1)
+        r2_xzy_samp = tf.gather(r2_xzy_samp,tf.constant(idx_mask),axis=1)
+
+        # VARIABLES LISTS
+        var_list_VICI = [var for var in tf.trainable_variables() if var.name.startswith("VI")]
+
+        # INITIALISE AND RUN SESSION
+        init = tf.initialize_all_variables()
+        session.run(init)
+        saver_VICI = tf.train.Saver(var_list_VICI)
+        saver_VICI.restore(session,load_dir)
+
+    # ESTIMATE TEST SET RECONSTRUCTION PER-PIXEL APPROXIMATE MARGINAL LIKELIHOOD and draw from q(x|y)
+    ns = params['n_samples'] # number of samples to save per reconstruction 
+
+    y_data_test_exp = np.tile(y_data_test,(ns,1))/y_normscale
+    y_data_test_exp = y_data_test_exp.reshape(-1,params['ndata'],num_det)
+    run_startt = time.time()
+    xs, mode_weights = session.run([r2_xzy_samp,r1_weight],feed_dict={bs_ph:ns,y_ph:y_data_test_exp})
+    run_endt = time.time()
+
+#    run_startt = time.time()
+#    xs, mode_weights = session.run([r2_xzy_samp,r1_weight],feed_dict={bs_ph:ns,y_ph:y_data_test_exp})
+#    run_endt = time.time()
+
+    return xs, (run_endt - run_startt), mode_weights
 
 def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefree, y_normscale, save_dir, truth_test, bounds, fixed_vals, posterior_truth_test,snrs_test=None):    
 
@@ -549,11 +745,11 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
 
                 # The trained inverse model weights can then be used to infer a probability density of solutions given new measurements
                 if params['reduce'] == True or params['n_filters_r1'] != None:
-                    XS, dt, _  = CVAE_model.run(params, y_data_test[j].reshape([1,y_data_test.shape[1],y_data_test.shape[2]]), np.shape(x_data_test)[1],
+                    XS, dt, _  = run(params, y_data_test[j].reshape([1,y_data_test.shape[1],y_data_test.shape[2]]), np.shape(x_data_test)[1],
                                                  y_normscale, 
                                                  "inverse_model_dir_%s/inverse_model.ckpt" % params['run_label'])
                 else:
-                    XS, dt, _  = CVAE_model.run(params, y_data_test[j].reshape([1,-1]), np.shape(x_data_test)[1],
+                    XS, dt, _  = run(params, y_data_test[j].reshape([1,-1]), np.shape(x_data_test)[1],
                                                  y_normscale, 
                                                  "inverse_model_dir_%s/inverse_model.ckpt" % params['run_label'])
                 print('Runtime to generate {} samples = {} sec'.format(params['n_samples'],dt))            
@@ -588,201 +784,4 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
                 print('Made corner plot %d' % j)
 
     return            
-
-def run(params, y_data_test, siz_x_data, y_normscale, load_dir):
-
-    multi_modal = True
-
-    # USEFUL SIZES
-    xsh1 = siz_x_data
-    if params['by_channel'] == True:
-        ysh0 = np.shape(y_data_test)[0]
-        ysh1 = np.shape(y_data_test)[1]
-    else:
-        ysh0 = np.shape(y_data_test)[1]
-        ysh1 = np.shape(y_data_test)[2]
-    z_dimension = params['z_dimension']
-    n_weights_r1 = params['n_weights_r1']
-    n_weights_r2 = params['n_weights_r2']
-    n_weights_q = params['n_weights_q']
-    n_modes = params['n_modes']
-    n_hlayers_r1 = len(params['n_weights_r1'])
-    n_hlayers_r2 = len(params['n_weights_r2'])
-    n_hlayers_q = len(params['n_weights_q'])
-    n_conv_r1 = len(params['n_filters_r1'])
-    n_conv_r2 = len(params['n_filters_r2'])
-    n_conv_q = len(params['n_filters_q'])
-    n_filters_r1 = params['n_filters_r1']
-    n_filters_r2 = params['n_filters_r2']
-    n_filters_q = params['n_filters_q']
-    filter_size_r1 = params['filter_size_r1']
-    filter_size_r2 = params['filter_size_r2']
-    filter_size_q = params['filter_size_q']
-    n_convsteps = params['n_convsteps']
-    batch_norm = params['batch_norm']
-    red = params['reduce']
-    if n_convsteps != None:
-        ysh_conv_r1 = int(ysh1*n_filters_r1/2**n_convsteps) if red==True else int(ysh1/2**n_convsteps)
-        ysh_conv_r2 = int(ysh1*n_filters_r2/2**n_convsteps) if red==True else int(ysh1/2**n_convsteps)
-        ysh_conv_q = int(ysh1*n_filters_q/2**n_convsteps) if red==True else int(ysh1/2**n_convsteps)
-    else:
-        ysh_conv_r1 = int(ysh1)
-        ysh_conv_r2 = int(ysh1)
-        ysh_conv_q = int(ysh1)
-    drate = params['drate']
-    maxpool_r1 = params['maxpool_r1']
-    maxpool_r2 = params['maxpool_r2']
-    maxpool_q = params['maxpool_q']
-    conv_strides_r1 = params['conv_strides_r1']
-    conv_strides_r2 = params['conv_strides_r2']
-    conv_strides_q = params['conv_strides_q']
-    pool_strides_r1 = params['pool_strides_r1']
-    pool_strides_r2 = params['pool_strides_r2']
-    pool_strides_q = params['pool_strides_q']
-    if params['reduce'] == True or n_filters_r1 != None:
-        if params['by_channel'] == True:
-            num_det = np.shape(y_data_test)[2]
-        else:
-            num_det = ysh0
-    else:
-        num_det = None
-    # identify the indices of different sets of physical parameters
-    vonmise_mask, vonmise_idx_mask, vonmise_len = get_param_index(params['inf_pars'],params['vonmise_pars'])
-    gauss_mask, gauss_idx_mask, gauss_len = get_param_index(params['inf_pars'],params['gauss_pars'])
-    sky_mask, sky_idx_mask, sky_len = get_param_index(params['inf_pars'],params['sky_pars'])
-    ra_mask, ra_idx_mask, ra_len = get_param_index(params['inf_pars'],['ra'])
-    dec_mask, dec_idx_mask, dec_len = get_param_index(params['inf_pars'],['dec'])
-    m1_mask, m1_idx_mask, m1_len = get_param_index(params['inf_pars'],['mass_1'])
-    m2_mask, m2_idx_mask, m2_len = get_param_index(params['inf_pars'],['mass_2'])
-    idx_mask = np.argsort(gauss_idx_mask + vonmise_idx_mask + m1_idx_mask + m2_idx_mask + sky_idx_mask) # + dist_idx_mask)
-    masses_len = m1_len + m2_len
-
-   
-    graph = tf.Graph()
-    session = tf.Session(graph=graph)
-    with graph.as_default():
-        tf.set_random_seed(np.random.randint(0,10))
-        SMALL_CONSTANT = 1e-12
-
-        # PLACEHOLDERS
-        bs_ph = tf.placeholder(dtype=tf.int64, name="bs_ph")                       # batch size placeholder
-        y_ph = tf.placeholder(dtype=tf.float32, shape=[None, params['ndata'], num_det], name="y_ph")
-
-        # LOAD VICI NEURAL NETWORKS
-        r2_xzy = VI_decoder_r2.VariationalAutoencoder('VI_decoder_r2', vonmise_mask, gauss_mask, m1_mask, m2_mask, sky_mask, n_input1=z_dimension, 
-                                                     n_input2=params['ndata'], n_output=xsh1, n_channels=num_det, n_weights=n_weights_r2, 
-                                                     drate=drate, n_filters=n_filters_r2, 
-                                                     filter_size=filter_size_r2, maxpool=maxpool_r2)
-        r1_zy = VI_encoder_r1.VariationalAutoencoder('VI_encoder_r1', n_input=params['ndata'], n_output=z_dimension, n_channels=num_det, n_weights=n_weights_r1,   # generates params for r1(z|y)
-                                                    n_modes=n_modes, drate=drate, n_filters=n_filters_r1, 
-                                                    filter_size=filter_size_r1, maxpool=maxpool_r1)
-        q_zxy = VI_encoder_q.VariationalAutoencoder('VI_encoder_q', n_input1=xsh1, n_input2=params['ndata'], n_output=z_dimension, 
-                                                     n_channels=num_det, n_weights=n_weights_q, drate=drate, 
-                                                     n_filters=n_filters_q, filter_size=filter_size_q, maxpool=maxpool_q)
-
-        # reduce the y data size
-        y_conv = y_ph
-
-        # GET r1(z|y)
-        r1_loc, r1_scale, r1_weight = r1_zy._calc_z_mean_and_sigma(y_conv)
-        temp_var_r1 = SMALL_CONSTANT + tf.exp(r1_scale)
-
-
-        # define the r1(z|y) mixture model
-        bimix_gauss = tfd.MixtureSameFamily(
-                          mixture_distribution=tfd.Categorical(logits=r1_weight),
-                          components_distribution=tfd.MultivariateNormalDiag(
-                          loc=r1_loc,
-                          scale_diag=tf.sqrt(temp_var_r1)))
-
-
-        # DRAW FROM r1(z|y)
-        r1_zy_samp = bimix_gauss.sample()
-
-
-        # GET r2(x|z,y) from r1(z|y) samples
-        reconstruction_xzy = r2_xzy.calc_reconstruction(r1_zy_samp,y_ph)
-
-        # ugly but needed for now
-        # extract the means and variances of the physical parameter distributions
-        r2_xzy_mean_gauss = reconstruction_xzy[0]
-        r2_xzy_log_sig_sq_gauss = reconstruction_xzy[1]
-        r2_xzy_mean_vonmise = reconstruction_xzy[2]
-        r2_xzy_log_sig_sq_vonmise = reconstruction_xzy[3]
-        r2_xzy_mean_m1 = reconstruction_xzy[4]
-        r2_xzy_log_sig_sq_m1 = reconstruction_xzy[5]
-        r2_xzy_mean_m2 = reconstruction_xzy[6]
-        r2_xzy_log_sig_sq_m2 = reconstruction_xzy[7]
-        r2_xzy_mean_sky = reconstruction_xzy[8]
-        r2_xzy_log_sig_sq_sky = reconstruction_xzy[9]
-
-        # draw from r2(x|z,y) - the masses
-        temp_var_r2_m1 = SMALL_CONSTANT + tf.exp(r2_xzy_log_sig_sq_m1)     # the m1 variance
-        temp_var_r2_m2 = SMALL_CONSTANT + tf.exp(r2_xzy_log_sig_sq_m2)     # the m2 variance
-        joint = tfd.JointDistributionSequential([
-                       tfd.Independent(tfd.TruncatedNormal(r2_xzy_mean_m1,tf.sqrt(temp_var_r2_m1),0,1,validate_args=True,allow_nan_stats=True),reinterpreted_batch_ndims=0),  # m1
-            lambda b0: tfd.Independent(tfd.TruncatedNormal(r2_xzy_mean_m2,tf.sqrt(temp_var_r2_m2),0,b0,validate_args=True,allow_nan_stats=True),reinterpreted_batch_ndims=0)],    # m2
-            validate_args=True)
-        r2_xzy_samp_masses = tf.transpose(tf.reshape(joint.sample(),[2,-1]))  # sample from the m1.m2 space
-
-        # draw from r2(x|z,y) - the truncated gaussian 
-        temp_var_r2_gauss = SMALL_CONSTANT + tf.exp(r2_xzy_log_sig_sq_gauss)
-        @tf.function    # make this s a tensorflow function
-        def truncnorm(idx,output):    # we set up a function that adds the log-likelihoods and also increments the counter
-            loc = tf.slice(r2_xzy_mean_gauss,[0,idx],[-1,1])            # take each specific parameter mean using slice
-            std = tf.sqrt(tf.slice(temp_var_r2_gauss,[0,idx],[-1,1]))   # take each specific parameter std using slice
-            tn = tfd.TruncatedNormal(loc,std,0.0,1.0)                   # define the truncated Gaussian distribution
-            return [idx+1, tf.concat([output,tf.reshape(tn.sample(),[bs_ph,1])],axis=1)] # return the updated index and new samples concattenated to the input 
-        # we do the loop until we've hit all the truncated gaussian parameters - i starts at 0 and the samples starts with a set of zeros that we cut out later
-        idx = tf.constant(0)              # initialise counter
-        nsamp = params['n_samples']       # define the number of samples (MUST be a normal int NOT tensor so can't use bs_ph)
-        output = tf.zeros([nsamp,1],dtype=tf.float32)    # initialise the output (we cut this first set of zeros out later
-        condition = lambda i,output: i<gauss_len         # define the while loop stopping condition
-        _,r2_xzy_samp_gauss = tf.while_loop(condition, truncnorm, loop_vars=[idx,output],shape_invariants=[idx.get_shape(), tf.TensorShape([nsamp,None])])
-        r2_xzy_samp_gauss = tf.slice(tf.reshape(r2_xzy_samp_gauss,[-1,gauss_len+1]),[0,1],[-1,-1])   # cut out the actual samples - delete the initial vector of zeros
-
-        # draw from r2(x|z,y) - the vonmises part
-        temp_var_r2_vonmise = SMALL_CONSTANT + tf.exp(r2_xzy_log_sig_sq_vonmise)
-        con = tf.reshape(tf.math.reciprocal(temp_var_r2_vonmise),[-1,vonmise_len])   # modelling wrapped scale output as log variance
-        von_mises = tfp.distributions.VonMises(loc=2.0*np.pi*(r2_xzy_mean_vonmise-0.5), concentration=con)
-        r2_xzy_samp_vonmise = tf.reshape(von_mises.sample()/(2.0*np.pi) + 0.5,[-1,vonmise_len])   # sample from the von mises distribution and shift and scale from -pi-pi to 0-1
-        
-        # draw from r2(x|z,y) - the von mises Fisher 
-        temp_var_r2_sky = SMALL_CONSTANT + tf.exp(r2_xzy_log_sig_sq_sky)
-        con = tf.reshape(tf.math.reciprocal(temp_var_r2_sky),[bs_ph])   # modelling wrapped scale output as log variance - only 1 concentration parameter for all sky
-        von_mises_fisher = tfp.distributions.VonMisesFisher(
-                          mean_direction=tf.math.l2_normalize(tf.reshape(r2_xzy_mean_sky,[bs_ph,3]),axis=1),
-                          concentration=con)   # define p_vm(2*pi*mu,con=1/sig^2)
-        xyz = tf.reshape(von_mises_fisher.sample(),[bs_ph,3])          # sample the distribution
-        samp_ra = tf.math.floormod(tf.atan2(tf.slice(xyz,[0,1],[-1,1]),tf.slice(xyz,[0,0],[-1,1])),2.0*np.pi)/(2.0*np.pi)   # convert to the rescaled 0->1 RA from the unit vector
-        samp_dec = (tf.asin(tf.slice(xyz,[0,2],[-1,1])) + 0.5*np.pi)/np.pi                       # convert to the rescaled 0->1 dec from the unit vector
-        r2_xzy_samp_sky = tf.reshape(tf.concat([samp_ra,samp_dec],axis=1),[bs_ph,2])             # group the sky samples
-
-        # combine the samples
-        r2_xzy_samp = tf.concat([r2_xzy_samp_gauss,r2_xzy_samp_vonmise,r2_xzy_samp_masses,r2_xzy_samp_sky],axis=1)
-        r2_xzy_samp = tf.gather(r2_xzy_samp,tf.constant(idx_mask),axis=1)
-
-        # VARIABLES LISTS
-        var_list_VICI = [var for var in tf.trainable_variables() if var.name.startswith("VI")]
-
-        # INITIALISE AND RUN SESSION
-        init = tf.initialize_all_variables()
-        session.run(init)
-        saver_VICI = tf.train.Saver(var_list_VICI)
-        saver_VICI.restore(session,load_dir)
-
-    # ESTIMATE TEST SET RECONSTRUCTION PER-PIXEL APPROXIMATE MARGINAL LIKELIHOOD and draw from q(x|y)
-    ns = params['n_samples'] # number of samples to save per reconstruction 
-
-    y_data_test_exp = np.tile(y_data_test,(ns,1))/y_normscale
-    y_data_test_exp = y_data_test_exp.reshape(-1,params['ndata'],num_det)
-    run_startt = time.time()
-    xs, mode_weights = session.run([r2_xzy_samp,r1_weight],feed_dict={bs_ph:ns,y_ph:y_data_test_exp})
-    run_endt = time.time()
-
-#    run_startt = time.time()
-#    xs, mode_weights = session.run([r2_xzy_samp,r1_weight],feed_dict={bs_ph:ns,y_ph:y_data_test_exp})
-#    run_endt = time.time()
-
-    return xs, (run_endt - run_startt), mode_weights
 

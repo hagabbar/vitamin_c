@@ -14,14 +14,16 @@ For installation instructions see
 "need to add link here".
 
 """
-
+from __future__ import absolute_import
 import sys
 
-from . import models, neural_networks
+from . import models
+from . import gen_benchmark_pe, plotting, skyplotting
 
 from .models import CVAE_model
-from .neural_networks import batch_manager, vae_utils, VI_decoder_r2, VI_encoder_q, VI_encoder_r1 
+from .models.neural_networks import batch_manager, vae_utils, VI_decoder_r2, VI_encoder_q, VI_encoder_r1 
 
+from . import run_vitamin
 
 __version__ = "1.0.0"
 __author__ = 'Hunter Gabbard'

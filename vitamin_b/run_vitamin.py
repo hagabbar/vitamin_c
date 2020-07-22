@@ -24,12 +24,11 @@ import glob
 from matplotlib.lines import Line2D
 import pandas as pd
 
-from models import CVAE_model
-from gen_benchmark_pe import run
-from neural_networks import batch_manager
-import plotting
-from plotting import prune_samples
-from skyplotting import plot_sky
+from .models import CVAE_model
+from .gen_benchmark_pe import run
+from . import plotting
+from .plotting import prune_samples
+from .skyplotting import plot_sky
 
 import skopt
 from skopt import gp_minimize, forest_minimize
@@ -590,7 +589,7 @@ def gen_train():
 ############################
 # Make test samples
 ############################
-def gen_test()
+def gen_test():
 
     # Make testing set directory
     os.system('mkdir -p %s' % params['test_set_dir'])
@@ -1105,8 +1104,8 @@ if args.gen_train:
     gen_train()
 if args.gen_test:
     gen_test()
-if args.train():
+if args.train:
     train()
-if args.test():
+if args.test:
     test()
 

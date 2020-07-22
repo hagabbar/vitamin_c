@@ -6,7 +6,7 @@ tf.disable_v2_behavior()
 import numpy as np
 import math as m
 
-from neural_networks import vae_utils
+from . import vae_utils
 
 # based on implementation here:
 # https://github.com/tensorflow/models/blob/master/autoencoder/autoencoder_models/VariationalAutoencoder.py
