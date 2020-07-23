@@ -12,6 +12,8 @@ Note: This repository is a work in progress. No official release of code just ye
 
 ## Requirements
 
+Make sure to install basemap prior to installing all other packages.
+
 For model:
 
 - tensorflow
