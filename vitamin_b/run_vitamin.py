@@ -37,55 +37,24 @@ from skopt.plots import plot_convergence
 from skopt.plots import plot_objective, plot_evaluations
 from skopt.utils import use_named_args
 
-""" Script has 4 functions:
+""" Script has 4 main functions:
 1.) Generate training data
 2.) Generate testing data
 3.) Train model
 4.) Test model
 """
-parser = argparse.ArgumentParser(description='A tutorial of argparse!')
+
+parser = argparse.ArgumentParser(description='VItamin: A user friendly Bayesian inference machine learning library.')
 parser.add_argument("--gen_train", default=False, help="generate the training data")
 parser.add_argument("--gen_test", default=False, help="generate the testing data")
 parser.add_argument("--train", default=False, help="train the network")
+parser.add_argument("--resume_training", default=False, help="resume training of network")
 parser.add_argument("--test", default=False, help="test the network")
+parser.add_argument("--params_file", default=None, type=str, help="dictionary containing parameters of run")
+parser.add_argument("--params_file_bounds", default=None, type=str, help="dictionary containing source parameter bounds")
+parser.add_argument("--params_file_fixed_vals", default=None, type=str, help="dictionary containing source parameter values when fixed")
+parser.add_argument("--pretrained_loc", default=None, type=str, help="location of a pretrained network")
 args = parser.parse_args()
-
-# Source parameter values to use if chosen to be fixed
-fixed_vals = {'mass_1':50.0,
-        'mass_2':50.0,
-        'mc':None,
-        'geocent_time':0.0,
-        'phase':0.0,
-        'ra':1.375,
-        'dec':-1.2108,
-        'psi':0.0,
-        'theta_jn':0.0,
-        'luminosity_distance':2000.0,
-        'a_1':0.0,
-        'a_2':0.0,
-	'tilt_1':0.0,
-	'tilt_2':0.0,
-        'phi_12':0.0,
-        'phi_jl':0.0,
-        'det':['H1','L1','V1']}                              # feel free to edit this if more or less detectors wanted
-
-# Prior bounds on source parameters
-bounds = {'mass_1_min':35.0, 'mass_1_max':80.0,
-        'mass_2_min':35.0, 'mass_2_max':80.0,
-        'M_min':70.0, 'M_max':160.0,
-        'geocent_time_min':0.15,'geocent_time_max':0.35,
-        'phase_min':0.0, 'phase_max':2.0*np.pi,
-        'ra_min':0.0, 'ra_max':2.0*np.pi,
-        'dec_min':-0.5*np.pi, 'dec_max':0.5*np.pi,
-        'psi_min':0.0, 'psi_max':np.pi,
-        'theta_jn_min':0.0, 'theta_jn_max':np.pi,
-        'a_1_min':0.0, 'a_1_max':0.0,
-        'a_2_min':0.0, 'a_2_max':0.0,
-        'tilt_1_min':0.0, 'tilt_1_max':0.0,
-        'tilt_2_min':0.0, 'tilt_2_max':0.0,
-        'phi_12_min':0.0, 'phi_12_max':0.0,
-        'phi_jl_min':0.0, 'phi_jl_max':0.0,
-        'luminosity_distance_min':1000.0, 'luminosity_distance_max':3000.0}
 
 # define which gpu to use during training
 gpu_num = str(0)                                            # first GPU used by default
@@ -96,127 +65,30 @@ config = tf.compat.v1.ConfigProto()
 config.gpu_options.allow_growth = True
 session = tf.compat.v1.Session(config=config)
 
-# Number of neurons in fully-connected layers
-n_fc = 2048
+global params; global bounds; global fixed_vals
 
-# Defining the list of parameter that need to be fed into the models
-def get_params():
+# Define default location of the parameters files
+params='./params.txt'
+bounds='./bounds.txt'
+fixed_vals='./fixed_vals.txt'
 
-    ndata = 256                    # length of input to NN == fs * num_detectors
-    rand_pars = ['mass_1','mass_2','luminosity_distance','geocent_time','phase',
-                 'theta_jn','psi','ra','dec'] # parameters to randomize
-    run_label = 'multi-modal_%ddet_%dpar_%dHz_run1' % (len(fixed_vals['det']),len(rand_pars),ndata) # label of run
-    bilby_results_label = 'all_4_samplers' #'one_khz_sampling' #'all_4_samplers' # label given to bilby results directory
-    r = 2                                  # number (to the power of 2) of test samples to use for testing
-    pe_test_num = 256                      # total number of test samples available to use in directory
-    tot_dataset_size = int(1e3)            # total number of training samples available to use
-
-    tset_split = int(1e3)                  # number of training samples in each training data file
-    save_interval = int(1e3)             # number of iterations to save model and plot validation results corner plots
-    ref_geocent_time=1126259642.5          # reference gps time (not advised to change this)
-    load_chunk_size = 1e3                  # Number of training samples to load in at a time.
-    batch_size = 64                       # Number training samples shown to neural network per iteration
-    params = dict(
-        make_corner_plots = False,        # if True, make corner plots
-        make_kl_plot = False,           # If True, go through kl plotting function
-        make_indi_kl=False,             # If True, generate individual KL plots
-        make_pp_plot = False,            # If True, go through pp plotting function
-        make_loss_plot = False,          # If True, generate loss plot from previous plot data
-        Make_sky_plot=False,             # If True, generate sky plots on corner plots
-        gpu_num=gpu_num,                # gpu number run is running on
-        resume_training=False,          # if True, resume training of a model from saved checkpoint
-        ndata = ndata,                  # sampling frequency * duration
-        run_label=run_label,            # label for run
-        bilby_results_label=bilby_results_label, # label given to results for bilby posteriors
-        tot_dataset_size = tot_dataset_size, # total number of training samples available to use
-        tset_split = tset_split,             # number of training samples in each training data file (should be in label of filename)
-        plot_dir="/home/hunter.gabbard/public_html/CBC/vitamin_b/gw_results/%s" % run_label,  # directory to save results plots
-        hyperparam_optim = False,          # optimize hyperparameters for model during training using gaussian process minimization
-        hyperparam_optim_stop = int(1.5e6), # stopping iteration of hyperparameter optimizer per call (ideally 1.5 million) 
-        hyperparam_n_call = 30,           # number of hyperparameter optimization calls (ideally 30)
-        load_by_chunks = True,            # if True, load training samples by a predefined chunk size rather than all at once
-        load_chunk_size = load_chunk_size, # Number of training samples to load in at a time.
-        load_iteration = int((load_chunk_size * 25)/batch_size), # How often to load another chunk of training samples
-        weight_init = 'xavier',#[xavier,VarianceScaling,Orthogonal] # Network model weight initialization
-        ramp = True,                  # if true, apply linear ramp to KL loss
-        KL_coef = 1e0,                # coefficient to place in front of KL loss (ideal is 1)
-        gen_indi_KLs=False,
-
-        print_values=True,            # optionally print loss values every report interval
-        n_samples = 1000,             # number of posterior samples to save per reconstruction upon inference (default 3000) 
-        num_iterations=int(1e7)+1,    # total number of iterations before ending training of model
-        initial_training_rate=1e-4,   # initial training rate for ADAM optimiser inference model (inverse reconstruction)
-        batch_size=batch_size,        # Number training samples shown to neural network per iteration
-        batch_norm=True,              # if true, do batch normalization in all layers of neural network
-        l1_loss = False,              # apply l1 regularization on mode weights in Gaussian mixture model part of neural network
-        report_interval=500,          # interval at which to save objective function values and optionally print info during training
-        n_modes=16,#9,#7,                    # number of modes in Gaussian mixture model (ideal 7, but may go higher)
-        n_convsteps = 0,              # Set to zero if not wanted. the number of convolutional steps used to prepare the y data (size changes by factor of  n_filter/(2**n_redsteps) )
-        reduce = False,               # If true, apply data size reduction network (not advised to use)
-        by_channel = True,            # if True, do convolutions as seperate 1-D channels, if False, stack training samples as 2-D images (n_detectors,(duration*sampling_frequency))
-        
-        # FYI, each item in lists below correspond to each layer in networks (i.e. first item first layer)
-        # pool size and pool stride should be same number in each layer
-        n_filters_r1 = [33, 33, 33, 33,33], # number of convolutional filters to use in r1 network
-        n_filters_r2 = [33, 33, 33],  # number of convolutional filters to use in r2 network
-        n_filters_q = [33, 33, 33],   # number of convolutional filters to use in q network
-        filter_size_r1 = [5, 8, 11, 10, 10],#[5, 8, 11, 10],#[3,3,3,3],      # size of convolutional fitlers in r1 network
-        filter_size_r2 = [5, 8, 11],#[5, 8, 11, 10],#[3,3,3,3],      # size of convolutional filters in r2 network
-        filter_size_q =  [5, 8, 11],#[5, 8, 11, 10],#[3,3,3,3],       # size of convolutional filters in q network
-        drate = 0.2,                     # dropout rate to use in fully-connected layers
-        maxpool_r1 = [1, 2, 1, 2, 1],#[1, 2, 1, 2],#[1,2,1,1],          # size of maxpooling to use in r1 network
-        conv_strides_r1 = [1,1,1,1,1],      # size of convolutional stride to use in r1 network
-        pool_strides_r1 = [1, 2, 1, 2, 1],#[1, 2, 1, 2],#[1,2,1,1],      # size of max pool stride to use in r1 network
-        maxpool_r2 = [1, 2, 1],#[1, 2, 1, 2],#[1,2,1,1],          # size of max pooling to use in r2 network
-        conv_strides_r2 = [1,1,1],     # size of convolutional stride in r2 network
-        pool_strides_r2 = [1, 2, 1],#[1, 2, 1, 2],#[1,2,1,1],     # size of max pool stride in r2 network
-        maxpool_q = [1, 2, 1],#[1, 2, 1, 2],#[1,2,1,1],           # size of max pooling to use in q network
-        conv_strides_q = [1,1,1],      # size of convolutional stride to use in q network
-        pool_strides_q = [1, 2, 1],#[1, 2, 1, 2],#[1,2,1,1],      # size of max pool stride to use in q network
-        ramp_start = 1e4,                # starting iteration of KL divergence ramp (if using)
-        ramp_end = 1e5,                  # ending iteration of KL divergence ramp (if using)
-        save_interval=save_interval,           # interval at which to save inference model weights
-        plot_interval=save_interval,           # interval over which validation results plotting is done
-        z_dimension=10,#100,#57,                    # number of latent space dimensions of model 
-        n_weights_r1 = [n_fc,n_fc,n_fc],             # number of dimensions of the intermediate layers of encoders and decoders in the r1 model (inverse reconstruction)
-        n_weights_r2 = [n_fc,n_fc],             # number of dimensions of the intermediate layers of encoders and decoders in the r2 model (inverse reconstruction)
-        n_weights_q = [n_fc,n_fc],              # number of dimensions of the intermediate layers of encoders and decoders in the q model (inverse reconstruction)
-        duration = 1.0,                             # length of training/validation/test sample time series in seconds (haven't tried using at any other value than 1s)
-        r = r,                                      # the grid dimension for the output tests (i.e. r**2 == total number of testing samples used)
-        rand_pars=rand_pars,              # which source parameters to randomize
-        corner_parnames = ['m_{1}\,(\mathrm{M}_{\odot})','m_{2}\,(\mathrm{M}_{\odot})','d_{\mathrm{L}}\,(\mathrm{Mpc})','t_{0}\,(\mathrm{seconds})','{\phi}','\Theta_{jn}\,(\mathrm{rad})','{\psi}',r'{\alpha}\,(\mathrm{rad})','{\delta}\,(\mathrm{rad})'], # latex source parameter labels for plotting
-        cornercorner_parnames = ['$m_{1}\,(\mathrm{M}_{\odot})$','$m_{2}\,(\mathrm{M}_{\odot})$','$d_{\mathrm{L}}\,(\mathrm{Mpc})$','$t_{0}\,(\mathrm{seconds})$','${\phi}$','$\Theta_{jn}\,(\mathrm{rad})$','${\psi}$',r'${\alpha}\,(\mathrm{rad})$','${\delta}\,(\mathrm{rad})$'], # latex source parameter labels for plotting
-        ref_geocent_time=ref_geocent_time,            # reference gps time
-        training_data_seed=43,                        # tensorflow training random seed number
-        testing_data_seed=44,                         # tensorflow testing random seed number
-        boost_pars=['ra','dec'],
-        gauss_pars=['luminosity_distance','geocent_time','theta_jn'],        # parameters that require a truncated gaussian 
-        vonmise_pars=['phase','psi'],                                        # parameters that get wrapped on the 1D parameter 
-        sky_pars=['ra','dec'],                                               # sky parameters
-        weighted_pars=None,#['ra','dec','geocent_time'],                     # set to None if not using, parameters to weight during training
-        weighted_pars_factor=1,                       # Factor by which to weight parameters if `weighted_pars` is not None.
-        inf_pars=['mass_1','mass_2','luminosity_distance','geocent_time','theta_jn','ra','dec'], # psi phase before ra and dec
-        train_set_dir='./training_sets_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(fixed_vals['det']),len(rand_pars),ndata,tot_dataset_size,tset_split), #location of training set
-        test_set_dir='./test_samples/%s/test_waveforms' % bilby_results_label, # lovation of test set directory waveforms
-        pe_dir='./test_samples/%s/test' % bilby_results_label, # location of test set directory Bayesian PE samples
-        # attempt_to_fix_astropy_bug is default directory
-        KL_cycles = 1,                                                         # number of cycles to repeat for the KL approximation
-        load_plot_data=False,                                                  # Plotting data which has already been generated
-        samplers=['vitamin','dynesty'],#,'ptemcee','cpnest','emcee'],          # samplers to use when plotting (vitamin is ML approach) dynesty,ptemcee,cpnest,emcee
-        figure_sampler_names = ['VItamin','Dynesty'],#,'ptemcee','CPNest','emcee'],
-
-        doPE = True,                          # if True then do bilby PE when generating new testing samples (not advised to change this)
-        y_normscale = 36.43879218007172,
-    )
-    return params
-
-
-# Save training/test parameters of run
-params=get_params()
-if args.train:
-    f = open("params_%s.txt" % params['run_label'],"w")
-    f.write( str(params) )
+# Load parameters files
+if args.params_file != None:
+    f = open(args.params_file,'r')
+    data=f.read()
     f.close()
+    params = eval(data)
+if args.params_file_bounds != None:
+    f = open(args.params_file_bounds,'r')
+    data=f.read()
+    f.close()
+    bounds = eval(data)
+if args.params_file_fixed_vals != None:
+    f = open(args.params_file_fixed_vals,'r')
+    data=f.read()
+    f.close()
+    fixed_vals = eval(data)
+
 
 # Ranges over which hyperparameter optimization parameters are allowed to vary
 kernel_1 = Integer(low=3, high=12, name='kernel_1')
@@ -238,7 +110,7 @@ n_filters_1 = Integer(low=32, high=33, name='n_filters_1')
 n_filters_2 = Integer(low=32, high=33, name='n_filters_2')
 n_filters_3 = Integer(low=32, high=33, name='n_filters_3')
 n_filters_4 = Integer(low=32, high=33, name='n_filters_4')
-batch_size = Integer(low=params['batch_size']-1, high=params['batch_size'], name='batch_size')
+batch_size = Integer(low=511, high=512, name='batch_size')
 n_weights_fc_1 = Integer(low=2047, high=2048, name='n_weights_fc_1')
 n_weights_fc_2 = Integer(low=2047, high=2048, name='n_weights_fc_2')
 n_weights_fc_3 = Integer(low=2047, high=2048, name='n_weights_fc_3')
@@ -295,9 +167,9 @@ default_hyperparams = [params['filter_size_r1'][0],
 """
 
 # dummy value for initial hyperparameter best KL (to be minimized). Doesn't need to be changed.
-best_loss = 1000
+best_loss = int(1e6)
 
-def load_data(input_dir,inf_pars,load_condor=False):
+def load_data(params,bounds,fixed_vals,input_dir,inf_pars,load_condor=False):
     """ Function to load either training or testing data.
 
     PARAMETERS:
@@ -544,8 +416,27 @@ def hyperparam_fitness(kernel_1, strides_1, pool_1,
 #######################
 # Make training samples
 #######################
-def gen_train():
-    
+def gen_train(params=params,bounds=bounds,fixed_vals=fixed_vals):
+
+    # Check for requried parameters files
+    if params == None or bounds == None or fixed_vals == None:
+        print('Missing either params file, bounds file or fixed vals file')
+        exit()
+
+    # Load parameters files
+    f = open(params,'r')
+    data=f.read()
+    f.close()
+    params = eval(data)
+    f = open(bounds,'r')
+    data=f.read()
+    f.close()
+    bounds = eval(data)
+    f = open(fixed_vals,'r')
+    data=f.read()
+    f.close()
+    fixed_vals = eval(data)
+
     # Make training set directory
     os.system('mkdir -p %s' % params['train_set_dir'])
 
@@ -589,7 +480,26 @@ def gen_train():
 ############################
 # Make test samples
 ############################
-def gen_test():
+def gen_test(params,bounds,fixed_vals):
+
+    # Check for requried parameters files
+    if params == None or bounds == None or fixed_vals == None:
+        print('Missing either params file, bounds file or fixed vals file')
+        exit()
+
+    # Load parameters files
+    f = open(params,'r')
+    data=f.read()
+    f.close()
+    params = eval(data)
+    f = open(bounds,'r')
+    data=f.read()
+    f.close()
+    bounds = eval(data)
+    f = open(fixed_vals,'r')
+    data=f.read()
+    f.close()
+    fixed_vals = eval(data)
 
     # Make testing set directory
     os.system('mkdir -p %s' % params['test_set_dir'])
@@ -638,13 +548,37 @@ def gen_test():
 ####################################
 # Train neural network
 ####################################
-def train():
+def train(params,bounds,fixed_vals,resume_training=False):
+
+    # Check for requried parameters files
+    if params == None or bounds == None or fixed_vals == None:
+        print('Missing either params file, bounds file or fixed vals file')
+        exit()
+
+    # Load parameters files
+    f = open(params,'r')
+    data=f.read()
+    f.close()
+    params = eval(data)
+    f = open(bounds,'r')
+    data=f.read()
+    f.close()
+    bounds = eval(data)
+    f = open(fixed_vals,'r')
+    data=f.read()
+    f.close()
+    fixed_vals = eval(data)
+
+    # If resuming training, set KL ramp off
+    if resume_training:
+        params['resume_training'] = True
+        params['ramp'] = False
 
     # load the noisefree training data back in
-    x_data_train, y_data_train, _, y_normscale, snrs_train = load_data(params['train_set_dir'],params['inf_pars'])
+    x_data_train, y_data_train, _, y_normscale, snrs_train = load_data(params,bounds,fixed_vals,params['train_set_dir'],params['inf_pars'])
 
     # load the noisy testing data back in
-    x_data_test, y_data_test_noisefree, y_data_test,_,snrs_test = load_data(params['test_set_dir'],params['inf_pars'],load_condor=True)
+    x_data_test, y_data_test_noisefree, y_data_test,_,snrs_test = load_data(params,bounds,fixed_vals,params['test_set_dir'],params['inf_pars'],load_condor=True)
 
     # reshape time series arrays for single channel ( N_samples,fs*duration,n_detectors -> (N_samples,fs*duration*n_detectors) )
     y_data_train = y_data_train.reshape(y_data_train.shape[0]*y_data_train.shape[1],y_data_train.shape[2]*y_data_train.shape[3])
@@ -746,7 +680,7 @@ def train():
     x_data_test = x_data_test[i_idx_use,:]
 
     # reshape y data into channels last format for convolutional approach (if requested)
-    if params['reduce'] == True or params['n_filters_r1'] != None:
+    if params['n_filters_r1'] != None:
         y_data_test_copy = np.zeros((y_data_test.shape[0],params['ndata'],len(fixed_vals['det'])))
         y_data_test_noisefree_copy = np.zeros((y_data_test_noisefree.shape[0],params['ndata'],len(fixed_vals['det'])))
         y_data_train_copy = np.zeros((y_data_train.shape[0],params['ndata'],len(fixed_vals['det'])))
@@ -795,13 +729,31 @@ def train():
     return
 
 # if we are now testing the network
-def test():
+def test(params,bounds,fixed_vals):
 
+    # Check for requried parameters files
+    if params == None or bounds == None or fixed_vals == None:
+        print('Missing either params file, bounds file or fixed vals file')
+        exit()
+
+    # Load parameters files
+    f = open(params,'r')
+    data=f.read()
+    f.close()
+    params = eval(data)
+    f = open(bounds,'r')
+    data=f.read()
+    f.close()
+    bounds = eval(data)
+    f = open(fixed_vals,'r')
+    data=f.read()
+    f.close()
+    fixed_vals = eval(data)
     
     y_normscale = params['y_normscale']
 
     # load the testing data time series and source parameter truths
-    x_data_test, y_data_test_noisefree, y_data_test,_,snrs_test = load_data(params['test_set_dir'],params['inf_pars'],load_condor=True)
+    x_data_test, y_data_test_noisefree, y_data_test,_,snrs_test = load_data(params,bounds,fixed_vals,params['test_set_dir'],params['inf_pars'],load_condor=True)
 
     # Make directory to store plots
     os.system('mkdir -p %s/latest_%s' % (params['plot_dir'],params['run_label']))
@@ -931,7 +883,7 @@ def test():
 
     # reshape y data into channels last format for convolutional approach
     y_data_test_copy = np.zeros((y_data_test.shape[0],params['ndata'],len(fixed_vals['det'])))
-    if params['reduce'] == True or params['n_filters_r1'] != None:
+    if params['n_filters_r1'] != None:
         for i in range(y_data_test.shape[0]):
             for j in range(len(fixed_vals['det'])):
                 idx_range = np.linspace(int(j*params['ndata']),int((j+1)*params['ndata'])-1,num=params['ndata'],dtype=int)
@@ -962,7 +914,7 @@ def test():
 
         
         # Generate ML posteriors using pre-trained model
-        if params['reduce'] == True or params['n_filters_r1'] != None: # for convolutional approach
+        if params['n_filters_r1'] != None: # for convolutional approach
              VI_pred, dt, _  = CVAE_model.run(params, np.expand_dims(y_data_test[i],axis=0), np.shape(x_data_test)[1],
                                                          y_normscale,
                                                          "inverse_model_dir_%s/inverse_model.ckpt" % params['run_label'])
@@ -1052,7 +1004,7 @@ def test():
         # plot waveform in upper-right hand corner
         ax2.plot(np.linspace(0,1,params['ndata']),y_data_test_noisefree[i,:params['ndata']],color='cyan',zorder=50)
         snr = round(snrs_test[i,0],2)
-        if params['reduce'] == True or params['n_filters_r1'] != None:
+        if params['n_filters_r1'] != None:
             if params['by_channel'] == False:
                  ax2.plot(np.linspace(0,1,params['ndata']),y_data_test[i,0,:params['ndata']],color='darkblue')#,label='SNR: '+str(snr))
             else:
@@ -1101,11 +1053,11 @@ def test():
 
 # If running module from command line
 if args.gen_train:
-    gen_train()
+    gen_train(params,bounds,fixed_vals)
 if args.gen_test:
-    gen_test()
+    gen_test(params,bounds,fixed_vals)
 if args.train:
-    train()
+    train(params,bounds,fixed_vals)
 if args.test:
-    test()
+    test(params,bounds,fixed_vals)
 

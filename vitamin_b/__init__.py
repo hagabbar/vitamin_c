@@ -19,6 +19,7 @@ import sys
 
 from . import models
 from . import gen_benchmark_pe, plotting, skyplotting
+from . import params_files
 
 from .models import CVAE_model
 from .models.neural_networks import batch_manager, vae_utils, VI_decoder_r2, VI_encoder_q, VI_encoder_r1 

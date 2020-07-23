@@ -77,8 +77,12 @@ setup(
     author='Hunter Gabbard, Chris Messenger, Ik Siong Heng, Francesco Tonolini, Roderick Murray-Smith',
     author_email='h.gabbard.1@research.gla.ac.uk',
     license='GNU General Public License v3.0',
-    packages=['vitamin_b','vitamin_b.models','vitamin_b.models.neural_networks'],
+    packages=['vitamin_b','vitamin_b.models','vitamin_b.models.neural_networks',
+              'vitamin_b.params_files'],
     package_dir={'vitamin_b': 'vitamin_b'},
+    package_data={'vitamin_b': ['params_files/*.txt'],
+                    'vitamin_b': [version_file]},
+
     python_requires='>=3.0', 
     install_requires=['universal-divergence==0.2.0',
                       'absl-py==0.9.0',

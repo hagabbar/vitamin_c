@@ -672,7 +672,7 @@ class make_plots:
             for cnt in range(Npp):
 
                 # generate Vitamin samples
-                if self.params['reduce'] == True or self.params['n_filters_r1'] != None:
+                if self.params['n_filters_r1'] != None:
                     y = sig_test[cnt,:].reshape(1,sig_test.shape[1],sig_test.shape[2])
                 else:
                     y = sig_test[cnt,:].reshape(1,sig_test.shape[1])

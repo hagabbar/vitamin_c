@@ -154,7 +154,7 @@ def load_chunk(input_dir,inf_pars,params,bounds,fixed_vals,load_condor=False):
     y_data_train = y_data_train.reshape(y_data_train.shape[0]*y_data_train.shape[1],y_data_train.shape[2]*y_data_train.shape[3])
 
     # reshape y data into channels last format for convolutional approach
-    if params['reduce'] == True or params['n_filters_r1'] != None:
+    if params['n_filters_r1'] != None:
         y_data_train_copy = np.zeros((y_data_train.shape[0],params['ndata'],len(fixed_vals['det'])))
 
         for i in range(y_data_train.shape[0]):
@@ -209,26 +209,19 @@ def run(params, y_data_test, siz_x_data, y_normscale, load_dir):
     n_hlayers_r1 = len(params['n_weights_r1'])
     n_hlayers_r2 = len(params['n_weights_r2'])
     n_hlayers_q = len(params['n_weights_q'])
-    n_conv_r1 = len(params['n_filters_r1'])
-    n_conv_r2 = len(params['n_filters_r2'])
-    n_conv_q = len(params['n_filters_q'])
+    n_conv_r1 = len(params['n_filters_r1']) if params['n_filters_r1'] != None else None
+    n_conv_r2 = len(params['n_filters_r2']) if params['n_filters_r2'] != None else None
+    n_conv_q = len(params['n_filters_q'])   if params['n_filters_q'] != None else None
     n_filters_r1 = params['n_filters_r1']
     n_filters_r2 = params['n_filters_r2']
     n_filters_q = params['n_filters_q']
     filter_size_r1 = params['filter_size_r1']
     filter_size_r2 = params['filter_size_r2']
     filter_size_q = params['filter_size_q']
-    n_convsteps = params['n_convsteps']
     batch_norm = params['batch_norm']
-    red = params['reduce']
-    if n_convsteps != None:
-        ysh_conv_r1 = int(ysh1*n_filters_r1/2**n_convsteps) if red==True else int(ysh1/2**n_convsteps)
-        ysh_conv_r2 = int(ysh1*n_filters_r2/2**n_convsteps) if red==True else int(ysh1/2**n_convsteps)
-        ysh_conv_q = int(ysh1*n_filters_q/2**n_convsteps) if red==True else int(ysh1/2**n_convsteps)
-    else:
-        ysh_conv_r1 = int(ysh1)
-        ysh_conv_r2 = int(ysh1)
-        ysh_conv_q = int(ysh1)
+    ysh_conv_r1 = ysh1
+    ysh_conv_r2 = ysh1
+    ysh_conv_q = ysh1
     drate = params['drate']
     maxpool_r1 = params['maxpool_r1']
     maxpool_r2 = params['maxpool_r2']
@@ -239,13 +232,14 @@ def run(params, y_data_test, siz_x_data, y_normscale, load_dir):
     pool_strides_r1 = params['pool_strides_r1']
     pool_strides_r2 = params['pool_strides_r2']
     pool_strides_q = params['pool_strides_q']
-    if params['reduce'] == True or n_filters_r1 != None:
+    if n_filters_r1 != None:
         if params['by_channel'] == True:
             num_det = np.shape(y_data_test)[2]
         else:
             num_det = ysh0
     else:
         num_det = None
+
     # identify the indices of different sets of physical parameters
     vonmise_mask, vonmise_idx_mask, vonmise_len = get_param_index(params['inf_pars'],params['vonmise_pars'])
     gauss_mask, gauss_idx_mask, gauss_len = get_param_index(params['inf_pars'],params['gauss_pars'])
@@ -393,9 +387,7 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
 
     # USEFUL SIZES
     xsh = np.shape(x_data)
-   
     ysh = np.shape(y_data)[1]
-    n_convsteps = params['n_convsteps']
     z_dimension = params['z_dimension']
     bs = params['batch_size']
     n_weights_r1 = params['n_weights_r1']
@@ -405,9 +397,9 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
     n_hlayers_r1 = len(params['n_weights_r1'])
     n_hlayers_r2 = len(params['n_weights_r2'])
     n_hlayers_q = len(params['n_weights_q'])
-    n_conv_r1 = len(params['n_filters_r1'])
-    n_conv_r2 = len(params['n_filters_r2'])
-    n_conv_q = len(params['n_filters_q'])
+    n_conv_r1 = len(params['n_filters_r1']) if params['n_filters_r1'] != None else None
+    n_conv_r2 = len(params['n_filters_r2']) if params['n_filters_r2'] != None else None
+    n_conv_q = len(params['n_filters_q'])   if params['n_filters_q'] != None else None
     n_filters_r1 = params['n_filters_r1']
     n_filters_r2 = params['n_filters_r2']
     n_filters_q = params['n_filters_q']
@@ -424,20 +416,13 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
     pool_strides_r2 = params['pool_strides_r2']
     pool_strides_q = params['pool_strides_q']
     batch_norm = params['batch_norm']
-    red = params['reduce']
-    if n_convsteps != None:
-        ysh_conv_r1 = int(ysh*n_filters_r1/2**n_convsteps) if red==True else int(ysh/2**n_convsteps)
-        ysh_conv_r2 = int(ysh*n_filters_r2/2**n_convsteps) if red==True else int(ysh/2**n_convsteps)
-        ysh_conv_q = int(ysh*n_filters_q/2**n_convsteps) if red==True else int(ysh/2**n_convsteps)
-    else:
-        ysh_conv_r1 = int(ysh_r1)
-        ysh_conv_r2 = int(ysh_r2)
-        ysh_conv_q = int(ysh_q)
+    ysh_conv_r1 = int(ysh)
+    ysh_conv_r2 = int(ysh)
+    ysh_conv_q = int(ysh)
     drate = params['drate']
     ramp_start = params['ramp_start']
     ramp_end = params['ramp_end']
     num_det = len(fixed_vals['det'])
-
 
     # identify the indices of different sets of physical parameters
     vonmise_mask, vonmise_idx_mask, vonmise_len = get_param_index(params['inf_pars'],params['vonmise_pars'])
@@ -631,7 +616,7 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
 
         # Make noise realizations and add to training data
         next_x_data = x_data[next_indices,:]
-        if params['reduce'] == True or n_conv_r1 != None:
+        if n_conv_r1 != None:
             next_y_data = y_data[next_indices,:] + np.random.normal(0,1,size=(params['batch_size'],int(params['ndata']),len(fixed_vals['det'])))
         else:
             next_y_data = y_data[next_indices,:] + np.random.normal(0,1,size=(params['batch_size'],int(params['ndata']*len(fixed_vals['det']))))
@@ -744,7 +729,7 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
             for j in range(params['r']*params['r']):
 
                 # The trained inverse model weights can then be used to infer a probability density of solutions given new measurements
-                if params['reduce'] == True or params['n_filters_r1'] != None:
+                if params['n_filters_r1'] != None:
                     XS, dt, _  = run(params, y_data_test[j].reshape([1,y_data_test.shape[1],y_data_test.shape[2]]), np.shape(x_data_test)[1],
                                                  y_normscale, 
                                                  "inverse_model_dir_%s/inverse_model.ckpt" % params['run_label'])
