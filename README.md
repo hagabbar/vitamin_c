@@ -1,4 +1,4 @@
-# [VItamin_B: A machine learning library for fast gravitational wave posterior generation](https://arxiv.org/abs/1909.06296)
+# [VItamin_B: A Machine Learning Library for Fast Gravitational Wave Posterior Generation](https://arxiv.org/abs/1909.06296)
 
 Welcome to VItamin_B, a python toolkit for producing fast gravitational wave posterior samples.
 
