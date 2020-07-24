@@ -1,6 +1,6 @@
-=======
-Example
-=======
+==========
+Quickstart
+==========
 
 1. Start an ipython notebook (or Google Colab)
 
@@ -65,8 +65,7 @@ to get the most use out of thse plots, it is recommended to produce test samples
 than one sampler. However, by default vitamin will only use the Dynesty sampler. 
 
 The VItamin test() function will by default make corner plots (without sky map), 
-KL divergence plots between posteriors produced by other samplers and VItamin, PP plots 
-and loss plots.
+KL divergence plots between posteriors produced by other samplers and VItamin and PP plots.
 
 .. code-block:: console
 

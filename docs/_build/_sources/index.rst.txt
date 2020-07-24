@@ -12,6 +12,7 @@ Welcome to vitamin_b's documentation!
 
    installation
    quickstart
+   parameters_files
 
 
 Indices and tables
