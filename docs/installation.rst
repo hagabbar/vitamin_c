@@ -4,7 +4,7 @@ Installation
 
 Clone vitamin repository
 
-.. clode-block:: console
+.. code-block:: console
 
    $ git clone https://github.com/hagabbar/vitamin_b
 
