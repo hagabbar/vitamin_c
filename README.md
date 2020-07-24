@@ -31,7 +31,7 @@ For model:
 - numpy
 - bilby
 - basemap
-- And other packages automatically installed via setup.py
+- And other packages automatically installed via pip install .
 
 For installing basemap:
 - Install geos-3.3.3 from source
