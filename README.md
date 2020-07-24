@@ -14,6 +14,8 @@ This [repository](https://github.com/hagabbar/vitamin_b) is the official impleme
 
 Hunter Gabbard, Chris Messenger, Ik Siong Heng, Francesco Tonlini, Roderick Murray-Smith
 
+Official Documentation can be found at [https://hagabbar.github.io/vitamin_b](https://hagabbar.github.io/vitamin_b).
+
 Check out our Blog (to be made), [Paper](https://arxiv.org/abs/1909.06296) and [Interactive Demo](https://colab.research.google.com/github/hagabbar/OzGrav_demo/blob/master/OzGrav_VItamin_demo.ipynb).
 
 Note: This repository is a work in progress. No official release of code just yet.
