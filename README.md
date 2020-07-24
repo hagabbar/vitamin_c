@@ -1,10 +1,20 @@
+![Downloads tags](https://img.shields.io/github/downloads-pre/hagabbar/vitamin_b/0.0.1/total)
+![Commits](https://img.shields.io/github/commit-activity/m/hagabbar/vitamin_b)
+![License](https://img.shields.io/github/license/hagabbar/vitamin_b)
+![GitHub Stars](https://img.shields.io/github/stars/hagabbar/vitamin_b?style=social)
+![Twitter](https://img.shields.io/twitter/follow/gw_hunter?style=social)
+[![Build Status](https://travis-ci.org/hagabbar/vitamin_b.svg?branch=master)](https://travis-ci.org/hagabbar/vitamin_b)
+
 # [VItamin_B: A Machine Learning Library for Fast Gravitational Wave Posterior Generation](https://arxiv.org/abs/1909.06296)
+:star: Star us on GitHub — it helps!
 
 Welcome to VItamin_B, a python toolkit for producing fast gravitational wave posterior samples.
 
 This [repository](https://github.com/hagabbar/vitamin_b) is the official implementation of [Bayesian Parameter Estimation using Conditional Variational Autoencoders for Gravitational Wave Astronomy](https://arxiv.org/abs/1909.06296).
 
 Hunter Gabbard, Chris Messenger, Ik Siong Heng, Francesco Tonlini, Roderick Murray-Smith
+
+Official Documentation can be found at [https://hagabbar.github.io/vitamin_b](https://hagabbar.github.io/vitamin_b).
 
 Check out our Blog (to be made), [Paper](https://arxiv.org/abs/1909.06296) and [Interactive Demo](https://colab.research.google.com/github/hagabbar/OzGrav_demo/blob/master/OzGrav_VItamin_demo.ipynb).
 
@@ -21,7 +31,7 @@ For model:
 - numpy
 - bilby
 - basemap
-- And other packages automatically installed via setup.py
+- And other packages automatically installed via `pip install .`.
 
 For installing basemap:
 - Install geos-3.3.3 from source
