@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Examples &#8212; vitamin_b 1.0.0 documentation</title>
+    <title>Example &#8212; vitamin_b 1.0.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -32,48 +32,70 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="examples">
-<h1>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="example">
+<h1>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h1>
 <ol class="arabic simple">
-<li><p><a class="reference external" href="https://git.ligo.org/lscsoft/bilby/tree/master/examples/core_examples">General inference examples</a>:</p></li>
+<li><p>Start an ipython notebook (or Google Colab)</p></li>
 </ol>
-<blockquote>
-<div><ul class="simple">
-<li><p><a class="reference external" href="https://git.ligo.org/lscsoft/bilby/blob/master/examples/core_examples/gaussian_example.py">A simple Gaussian likelihood</a>: a good example to see how to write your own likelihood.</p></li>
-<li><p><a class="reference external" href="https://git.ligo.org/lscsoft/bilby/blob/master/examples/core_examples/linear_regression_unknown_noise.py">Linear regression for unknown noise</a>: fitting to general time-domain data.</p></li>
-</ul>
-</div></blockquote>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> ipython3
+</pre></div>
+</div>
 <ol class="arabic simple" start="2">
-<li><p><a class="reference external" href="https://git.ligo.org/lscsoft/bilby/tree/master/examples/gw_examples/injection_examples">Examples of injecting and recovering data</a>:</p></li>
+<li><p>import vitamin_b and run_vitamin module</p></li>
 </ol>
-<blockquote>
-<div><ul class="simple">
-<li><p><a class="reference external" href="https://git.ligo.org/lscsoft/bilby/blob/master/examples/gw_examples/injection_examples/fast_tutorial.py">4-parameter CBC tutorial</a></p></li>
-<li><p><a class="reference external" href="https://git.ligo.org/lscsoft/bilby/blob/master/examples/gw_examples/injection_examples/standard_15d_cbc_tutorial.py">15-parameter CBC tutorial</a></p></li>
-<li><p><a class="reference external" href="https://git.ligo.org/lscsoft/bilby/blob/master/examples/gw_examples/injection_examples/create_your_own_source_model.py">Create your own source model</a></p></li>
-<li><p><a class="reference external" href="https://git.ligo.org/lscsoft/bilby/blob/master/examples/gw_examples/injection_examples/create_your_own_time_domain_source_model.py">Create your own time-domain source model</a></p></li>
-<li><p><a class="reference external" href="https://git.ligo.org/lscsoft/bilby/blob/master/examples/gw_examples/injection_examples/how_to_specify_the_prior.py">How to specify the prior</a></p></li>
-<li><p><a class="reference external" href="https://git.ligo.org/lscsoft/bilby/blob/master/examples/gw_examples/injection_examples/marginalized_likelihood.py">Using a partially marginalized likelihood</a></p></li>
-<li><p><a class="reference external" href="https://git.ligo.org/lscsoft/bilby/blob/master/examples/gw_examples/injection_examples/bns_eos_example.py">Injecting and recovering a neutron-star equation of state</a></p></li>
-</ul>
-</div></blockquote>
-<ol class="arabic simple" start="3">
-<li><p><a class="reference external" href="https://git.ligo.org/lscsoft/bilby/tree/master/examples/gw_examples/data_examples">Examples using open data</a>:</p></li>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> import vitamin_b
+<span class="gp">$</span> from vitamin_b import run_vitamin
+</pre></div>
+</div>
+<ol class="arabic" start="3">
+<li><p>You will notice that three text files have now appeared in your repository.
+These are the default parameter files which vitamin will use to run. Feel
+free to edit these files as you wish. More documentation on customizing your
+run can be found here. (need to provide link to parameters documentation).</p>
+<p>We will now generate some training data using the default hyperparameters.
+The code will generate 1000 samples by default, but it is recommended to use
+at least 1 million for ideal convergence.</p>
+</li>
 </ol>
-<blockquote>
-<div><ul class="simple">
-<li><p><a class="reference external" href="https://git.ligo.org/lscsoft/bilby/blob/master/examples/gw_examples/data_examples/GW150914.py">Analysing the first Binary Black hole detection, GW150914</a></p></li>
-</ul>
-</div></blockquote>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> run_vitamin.gen_train<span class="o">()</span>
+</pre></div>
+</div>
+<p>You may use your own customized parameter files by inserting full paths
+to the text files in any of the run_vitamin function like so:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> run_vitamin.gen_train<span class="o">(</span><span class="s1">&#39;params.txt&#39;</span>,<span class="s1">&#39;bounds.txt&#39;</span>,<span class="s1">&#39;fixed_vals.txt&#39;</span><span class="o">)</span>
+</pre></div>
+</div>
 <ol class="arabic simple" start="4">
-<li><p><a class="reference external" href="https://git.ligo.org/lscsoft/bilby/tree/master/examples/tutorials">Notebook-style tutorials</a>:</p></li>
+<li><p>Now generate test samples with corresponding posteriors. By default vitamin
+will generate 4 test samples using the dynesty sampler.</p></li>
 </ol>
-<blockquote>
-<div><ul class="simple">
-<li><p><a class="reference external" href="https://git.ligo.org/lscsoft/bilby/blob/master/examples/tutorials/compare_samplers.ipynb">Comparing different samplers</a></p></li>
-<li><p><a class="reference external" href="https://git.ligo.org/lscsoft/bilby/blob/master/examples/tutorials/visualising_the_results.ipynb">Visualising the output</a></p></li>
-</ul>
-</div></blockquote>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> run_vitamin.gen_test<span class="o">()</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="5">
+<li><p>We are ready to start training our network. To do so, simply run the command
+below.</p></li>
+</ol>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> run_vitamin.train<span class="o">()</span>
+</pre></div>
+</div>
+<p>By default, the code will only run for 5000 iterations (saving the model and making plots
+every 1000 iterations). It is recommended to have the code run for at least a few 100 thousand
+iterations (depending on you batch size).</p>
+<p>6. To resume training from the last saved checkpoint, simply set the resume_training
+option in train() to True.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> run_vitamin.train<span class="o">(</span><span class="nv">resume_training</span><span class="o">=</span>True<span class="o">)</span>
+</pre></div>
+</div>
+<p>7. Once your model has been fully trained, we can now produce final results plots. In order
+to get the most use out of thse plots, it is recommended to produce test samples using more
+than one sampler. However, by default vitamin will only use the Dynesty sampler.</p>
+<p>The VItamin test() function will by default make corner plots (without sky map),
+KL divergence plots between posteriors produced by other samplers and VItamin, PP plots
+and loss plots.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> run_vitamin.test<span class="o">()</span>
+</pre></div>
+</div>
 </div>
 
 
@@ -96,7 +118,7 @@
 <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Examples</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Example</a></li>
 </ul>
 
 <div class="relations">

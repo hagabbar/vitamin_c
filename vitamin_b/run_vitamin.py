@@ -480,7 +480,7 @@ def gen_train(params=params,bounds=bounds,fixed_vals=fixed_vals):
 ############################
 # Make test samples
 ############################
-def gen_test(params,bounds,fixed_vals):
+def gen_test(params=params,bounds=bounds,fixed_vals=fixed_vals):
 
     # Check for requried parameters files
     if params == None or bounds == None or fixed_vals == None:
@@ -548,7 +548,7 @@ def gen_test(params,bounds,fixed_vals):
 ####################################
 # Train neural network
 ####################################
-def train(params,bounds,fixed_vals,resume_training=False):
+def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=False):
 
     # Check for requried parameters files
     if params == None or bounds == None or fixed_vals == None:
@@ -729,7 +729,7 @@ def train(params,bounds,fixed_vals,resume_training=False):
     return
 
 # if we are now testing the network
-def test(params,bounds,fixed_vals):
+def test(params=params,bounds=bounds,fixed_vals=fixed_vals):
 
     # Check for requried parameters files
     if params == None or bounds == None or fixed_vals == None:

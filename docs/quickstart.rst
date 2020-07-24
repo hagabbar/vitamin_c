@@ -1,28 +1,74 @@
-========
-Examples
-========
+=======
+Example
+=======
 
-1. `General inference examples <https://git.ligo.org/lscsoft/bilby/tree/master/examples/core_examples>`_:
+1. Start an ipython notebook (or Google Colab)
 
-  * `A simple Gaussian likelihood <https://git.ligo.org/lscsoft/bilby/blob/master/examples/core_examples/gaussian_example.py>`_: a good example to see how to write your own likelihood.
-  * `Linear regression for unknown noise <https://git.ligo.org/lscsoft/bilby/blob/master/examples/core_examples/linear_regression_unknown_noise.py>`_: fitting to general time-domain data.
+.. code-block:: console
 
-2. `Examples of injecting and recovering data <https://git.ligo.org/lscsoft/bilby/tree/master/examples/gw_examples/injection_examples>`__:
+   $ ipython3
 
-  * `4-parameter CBC tutorial <https://git.ligo.org/lscsoft/bilby/blob/master/examples/gw_examples/injection_examples/fast_tutorial.py>`__
-  *  `15-parameter CBC tutorial <https://git.ligo.org/lscsoft/bilby/blob/master/examples/gw_examples/injection_examples/standard_15d_cbc_tutorial.py>`__
-  *  `Create your own source model <https://git.ligo.org/lscsoft/bilby/blob/master/examples/gw_examples/injection_examples/create_your_own_source_model.py>`__
-  *  `Create your own time-domain source model <https://git.ligo.org/lscsoft/bilby/blob/master/examples/gw_examples/injection_examples/create_your_own_time_domain_source_model.py>`__
-  *  `How to specify the prior <https://git.ligo.org/lscsoft/bilby/blob/master/examples/gw_examples/injection_examples/how_to_specify_the_prior.py>`__
-  *  `Using a partially marginalized likelihood <https://git.ligo.org/lscsoft/bilby/blob/master/examples/gw_examples/injection_examples/marginalized_likelihood.py>`__
-  *  `Injecting and recovering a neutron-star equation of state <https://git.ligo.org/lscsoft/bilby/blob/master/examples/gw_examples/injection_examples/bns_eos_example.py>`__
+2. import vitamin_b and run_vitamin module
 
-3. `Examples using open data <https://git.ligo.org/lscsoft/bilby/tree/master/examples/gw_examples/data_examples>`__:
+.. code-block:: console
 
-  * `Analysing the first Binary Black hole detection, GW150914 <https://git.ligo.org/lscsoft/bilby/blob/master/examples/gw_examples/data_examples/GW150914.py>`__
+   $ import vitamin_b
+   $ from vitamin_b import run_vitamin
 
-4. `Notebook-style tutorials <https://git.ligo.org/lscsoft/bilby/tree/master/examples/tutorials>`__:
+3. You will notice that three text files have now appeared in your repository.
+   These are the default parameter files which vitamin will use to run. Feel 
+   free to edit these files as you wish. More documentation on customizing your 
+   run can be found here. (need to provide link to parameters documentation).
 
-  * `Comparing different samplers <https://git.ligo.org/lscsoft/bilby/blob/master/examples/tutorials/compare_samplers.ipynb>`__
-  * `Visualising the output <https://git.ligo.org/lscsoft/bilby/blob/master/examples/tutorials/visualising_the_results.ipynb>`__
+   We will now generate some training data using the default hyperparameters. 
+   The code will generate 1000 samples by default, but it is recommended to use 
+   at least 1 million for ideal convergence.
+
+.. code-block:: console
+
+   $ run_vitamin.gen_train()
+
+You may use your own customized parameter files by inserting full paths 
+to the text files in any of the run_vitamin function like so:
+
+.. code-block:: console
+
+   $ run_vitamin.gen_train('params.txt','bounds.txt','fixed_vals.txt')
+
+4. Now generate test samples with corresponding posteriors. By default vitamin 
+   will generate 4 test samples using the dynesty sampler.
+
+.. code-block:: console
+
+   $ run_vitamin.gen_test()
+
+5. We are ready to start training our network. To do so, simply run the command 
+   below.
+
+.. code-block:: console
+
+   $ run_vitamin.train()
+   
+By default, the code will only run for 5000 iterations (saving the model and making plots 
+every 1000 iterations). It is recommended to have the code run for at least a few 100 thousand 
+iterations (depending on you batch size).
+
+6. To resume training from the last saved checkpoint, simply set the resume_training 
+option in train() to True.
+
+.. code-block:: console
+
+   $ run_vitamin.train(resume_training=True)
+   
+7. Once your model has been fully trained, we can now produce final results plots. In order 
+to get the most use out of thse plots, it is recommended to produce test samples using more 
+than one sampler. However, by default vitamin will only use the Dynesty sampler. 
+
+The VItamin test() function will by default make corner plots (without sky map), 
+KL divergence plots between posteriors produced by other samplers and VItamin, PP plots 
+and loss plots.
+
+.. code-block:: console
+
+   $ run_vitamin.test()
 
