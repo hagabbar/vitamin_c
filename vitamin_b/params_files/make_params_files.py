@@ -109,10 +109,10 @@ def get_params():
         make_corner_plots = True,                                               # if True, make corner plots
         make_kl_plot = True,                                                    # If True, go through kl plotting function
         make_pp_plot = True,                                                    # If True, go through pp plotting function
-        make_loss_plot = True,                                                 # If True, generate loss plot from previous plot data
+        make_loss_plot = False,                                                 # If True, generate loss plot from previous plot data
         Make_sky_plot=False,                                                    # If True, generate sky plots on corner plots
         hyperparam_optim = False,                                               # optimize hyperparameters for model during training using gaussian process minimization
-        resume_training=True,                                                  # if True, resume training of a model from saved checkpoint
+        resume_training=False,                                                  # if True, resume training of a model from saved checkpoint
         load_by_chunks = True,                                                  # if True, load training samples by a predefined chunk size rather than all at once
         ramp = True,                                                            # if true, apply linear ramp to KL loss
         print_values=True,                                                      # optionally print loss values every report interval
