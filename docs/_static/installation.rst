@@ -39,6 +39,7 @@ Install basemap, vitamin_b and other required pacakges
 
    $ cd ../../..
    $ pip install git+https://github.com/matplotlib/basemap.git
-   $ pip install .
+   $ pip install -r requirements.txt
+   $ pip install vitamin-b
 
 

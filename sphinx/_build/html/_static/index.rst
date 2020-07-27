@@ -3,8 +3,14 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to vitamin_b's documentation!
-=====================================
+VItamin_B
+=========
+
+Welcome to VItamin_B's documentation! VItamin_B is a user-friendly machine 
+learning package for estimating Bayesian posteriors given Gravitational Wave 
+Events. Get started with Installation and then get an overview with the 
+Quickstart. There is a more detailed tutorial with reduced scope, but good 
+introduction to the use of VItamin. 
 
 .. toctree::
    :maxdepth: 2
