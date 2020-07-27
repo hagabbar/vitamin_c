@@ -83,7 +83,7 @@ setup(
     package_data={'vitamin_b': ['params_files/*.txt'],
                     'vitamin_b': [version_file]},
 
-    python_requires='>=3.0', 
+    python_requires='==3.6', 
     install_requires=['universal-divergence==0.2.0',
                       'absl-py==0.9.0',
                       'asn1crypto==0.24.0',
