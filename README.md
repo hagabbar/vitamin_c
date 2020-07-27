@@ -1,4 +1,4 @@
-![PyPI version](https://badge.fury.io/py/vitamin-b.svg)](https://badge.fury.io/py/vitamin-b)
+[![PyPI version](https://badge.fury.io/py/vitamin-b.svg)](https://badge.fury.io/py/vitamin-b)
 ![Commits](https://img.shields.io/github/commit-activity/m/hagabbar/vitamin_b)
 ![License](https://img.shields.io/github/license/hagabbar/vitamin_b)
 ![GitHub Stars](https://img.shields.io/github/stars/hagabbar/vitamin_b?style=social)
