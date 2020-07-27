@@ -10,14 +10,15 @@ Welcome to VItamin_B's documentation! VItamin_B is a user-friendly machine
 learning package for estimating Bayesian posteriors given Gravitational Wave 
 Events. Get started with Installation and then get an overview with the 
 Quickstart. There is a more detailed tutorial with reduced scope, but good 
-introduction to the use of VItamin. 
+introduction to the use of VItamin at the following Google Colab notebook.  
 
 .. image:: images/corner_testcase0.png
-   :width: 200px
-   :height: 100px
-   :scale: 50 %
+   :width: 716px
+   :height: 716px
    :alt: alternate text
-   :align: right
+   :align: center
+
+.. note:: If there are any bugs/requests, please email Hunter Gabbard at h.gabbard.1@research.gla.ac.uk.
 
 .. toctree::
    :maxdepth: 2
