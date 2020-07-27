@@ -12,6 +12,13 @@ Events. Get started with Installation and then get an overview with the
 Quickstart. There is a more detailed tutorial with reduced scope, but good 
 introduction to the use of VItamin. 
 
+.. image:: images/corner_testcase0.png
+   :width: 200px
+   :height: 100px
+   :scale: 50 %
+   :alt: alternate text
+   :align: right
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:

@@ -142,9 +142,8 @@ The run parameters file:
    ref_geocent_time=1126259642.5                                           # reference gps time
    training_data_seed=43,                                                  # tensorflow training random seed number
    testing_data_seed=44,                                                   # tensorflow testing random seed number
-   inf_pars=['mass_1','mass_2','luminosity_distance','geocent_time','theta_jn','ra','dec'] # psi phase before ra and dec
-                                                                           # parameters to infer
-   train_set_dir='./training_sets_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(fixed_vals['det']),len(rand_pars),ndata,tot_dataset_size,tset_split)                                                        # location of training set
+   inf_pars=['mass_1','mass_2','luminosity_distance','geocent_time','theta_jn','ra','dec']  # parameters to infer
+   train_set_dir='./training_sets_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(fixed_vals['det']),len(rand_pars),ndata,tot_dataset_size,tset_split)  # location of training set
    test_set_dir='./test_sets/%s/test_waveforms' % bilby_results_label      # location of test set directory waveforms
    pe_dir='./test_sets/%s/test' % bilby_results_label                      # location of test set directory Bayesian PE samples
    KL_cycles = 1,

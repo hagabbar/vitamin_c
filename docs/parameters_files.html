@@ -243,9 +243,8 @@ text editor of choice (e.g. vim).</p>
 <span class="go">ref_geocent_time=1126259642.5                                           # reference gps time</span>
 <span class="go">training_data_seed=43,                                                  # tensorflow training random seed number</span>
 <span class="go">testing_data_seed=44,                                                   # tensorflow testing random seed number</span>
-<span class="go">inf_pars=[&#39;mass_1&#39;,&#39;mass_2&#39;,&#39;luminosity_distance&#39;,&#39;geocent_time&#39;,&#39;theta_jn&#39;,&#39;ra&#39;,&#39;dec&#39;] # psi phase before ra and dec</span>
-<span class="gp">                                                                        #</span> parameters to infer
-<span class="go">train_set_dir=&#39;./training_sets_%ddet_%dpar_%dHz/tset_tot-%d_split-%d&#39; % (len(fixed_vals[&#39;det&#39;]),len(rand_pars),ndata,tot_dataset_size,tset_split)                                                        # location of training set</span>
+<span class="go">inf_pars=[&#39;mass_1&#39;,&#39;mass_2&#39;,&#39;luminosity_distance&#39;,&#39;geocent_time&#39;,&#39;theta_jn&#39;,&#39;ra&#39;,&#39;dec&#39;]  # parameters to infer</span>
+<span class="go">train_set_dir=&#39;./training_sets_%ddet_%dpar_%dHz/tset_tot-%d_split-%d&#39; % (len(fixed_vals[&#39;det&#39;]),len(rand_pars),ndata,tot_dataset_size,tset_split)  # location of training set</span>
 <span class="go">test_set_dir=&#39;./test_sets/%s/test_waveforms&#39; % bilby_results_label      # location of test set directory waveforms</span>
 <span class="go">pe_dir=&#39;./test_sets/%s/test&#39; % bilby_results_label                      # location of test set directory Bayesian PE samples</span>
 <span class="go">KL_cycles = 1,</span>
