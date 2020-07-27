@@ -1,9 +1,7 @@
-![Downloads tags](https://img.shields.io/github/downloads-pre/hagabbar/vitamin_b/0.1.0/total)
-![Commits](https://img.shields.io/github/commit-activity/m/hagabbar/vitamin_b)
+[![PyPI version](https://badge.fury.io/py/vitamin-b.svg)](https://badge.fury.io/py/vitamin-b)
 ![License](https://img.shields.io/github/license/hagabbar/vitamin_b)
 ![GitHub Stars](https://img.shields.io/github/stars/hagabbar/vitamin_b?style=social)
 ![Twitter](https://img.shields.io/twitter/follow/gw_hunter?style=social)
-[![Build Status](https://travis-ci.org/hagabbar/vitamin_b.svg?branch=master)](https://travis-ci.org/hagabbar/vitamin_b)
 
 # [VItamin_B: A Machine Learning Library for Fast Gravitational Wave Posterior Generation](https://arxiv.org/abs/1909.06296)
 :star: Star us on GitHub — it helps!
