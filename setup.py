@@ -64,19 +64,19 @@ def readfile(filename):
     return filecontents
 
 
-VERSION = '1.0.0'
+VERSION = '1.0.4'
 version_file = write_version_file(VERSION)
 long_description = get_long_description()
 
 
 setup(
     name='vitamin_b',
-    version='1.0.0',    
+    version='1.0.4',    
     description='A user-friendly machine learning Bayesian inference library',
     url='https://github.com/hagabbar/vitamin_b',
     author='Hunter Gabbard, Chris Messenger, Ik Siong Heng, Francesco Tonolini, Roderick Murray-Smith',
     author_email='h.gabbard.1@research.gla.ac.uk',
-    license='GNU General Public License v3.0',
+    license='GNU General Public License v3 (GPLv3)',
     packages=['vitamin_b','vitamin_b.models','vitamin_b.models.neural_networks',
               'vitamin_b.params_files'],
     package_dir={'vitamin_b': 'vitamin_b'},
@@ -189,13 +189,9 @@ setup(
     classifiers=[
         'Development Status :: 1 - Planning',
         'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: GNU License',  
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',  
         'Operating System :: POSIX :: Linux',        
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
     ],
 )
 
