@@ -24,18 +24,25 @@ import glob
 from matplotlib.lines import Line2D
 import pandas as pd
 
-from .models import CVAE_model
-from .gen_benchmark_pe import run
-from . import plotting
-from .plotting import prune_samples
-from .skyplotting import plot_sky
-
 import skopt
 from skopt import gp_minimize, forest_minimize
 from skopt.space import Real, Categorical, Integer
 from skopt.plots import plot_convergence
 from skopt.plots import plot_objective, plot_evaluations
 from skopt.utils import use_named_args
+
+try:
+    from .models import CVAE_model
+    from .gen_benchmark_pe import run
+    from . import plotting
+    from .plotting import prune_samples
+    from .skyplotting import plot_sky
+except ModuleNotFoundError:
+    from models import CVAE_model
+    from gen_benchmark_pe import run
+    import plotting
+    from plotting import prune_samples
+    from skyplotting import plot_sky
 
 """ Script has 4 main functions:
 1.) Generate training data
@@ -51,8 +58,8 @@ parser.add_argument("--train", default=False, help="train the network")
 parser.add_argument("--resume_training", default=False, help="resume training of network")
 parser.add_argument("--test", default=False, help="test the network")
 parser.add_argument("--params_file", default=None, type=str, help="dictionary containing parameters of run")
-parser.add_argument("--params_file_bounds", default=None, type=str, help="dictionary containing source parameter bounds")
-parser.add_argument("--params_file_fixed_vals", default=None, type=str, help="dictionary containing source parameter values when fixed")
+parser.add_argument("--bounds_file", default=None, type=str, help="dictionary containing source parameter bounds")
+parser.add_argument("--fixed_vals_file", default=None, type=str, help="dictionary containing source parameter values when fixed")
 parser.add_argument("--pretrained_loc", default=None, type=str, help="location of a pretrained network")
 args = parser.parse_args()
 
@@ -74,21 +81,11 @@ fixed_vals='./fixed_vals.txt'
 
 # Load parameters files
 if args.params_file != None:
-    f = open(args.params_file,'r')
-    data=f.read()
-    f.close()
-    params = eval(data)
-if args.params_file_bounds != None:
-    f = open(args.params_file_bounds,'r')
-    data=f.read()
-    f.close()
-    bounds = eval(data)
-if args.params_file_fixed_vals != None:
-    f = open(args.params_file_fixed_vals,'r')
-    data=f.read()
-    f.close()
-    fixed_vals = eval(data)
-
+    params = args.params_file
+if args.bounds_file != None:
+    bounds = args.bounds_file
+if args.fixed_vals_file != None:
+    fixed_vals = args.fixed_vals_file
 
 # Ranges over which hyperparameter optimization parameters are allowed to vary
 kernel_1 = Integer(low=3, high=12, name='kernel_1')

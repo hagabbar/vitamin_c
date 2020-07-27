@@ -13,13 +13,16 @@ import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 import tensorflow_probability as tfp
 import corner
-from .. import gen_benchmark_pe
 import h5py
 
 from .neural_networks import VI_decoder_r2
 from .neural_networks import VI_encoder_r1
 from .neural_networks import VI_encoder_q
 from .neural_networks import batch_manager
+try:
+    from .. import gen_benchmark_pe
+except:
+    import gen_benchmark_pe
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt

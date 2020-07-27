@@ -116,6 +116,62 @@
       
   <div class="section" id="customizing-your-parameters-file">
 <h1>Customizing Your Parameters File<a class="headerlink" href="#customizing-your-parameters-file" title="Permalink to this headline">¶</a></h1>
+<p>VItamin allows the user to tailor their run to a reasonable degree.
+Some work still needs to be done to improve the customizability.</p>
+<p>First, import vitamin to produce the default parameters files</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> import vitamin
+</pre></div>
+</div>
+<p>You will now see that there are three text files in your current directory
+(params.txt,bounds.txt,fixed_vals.txt). The params.txt file concerns
+the run parameters which make your run unique (batch size, parameters to infer
+etc.). The bounds.txt file concerns the allowed numerical bounds for the
+source parameters to be infered. The fixed_vals.txt file dictates the
+value at which source parameters are fixed if they are chosen to be
+fixed by the user.</p>
+<p>To change the default values for each of these values, use your
+text editor of choice (e.g. vim).</p>
+<p>Details about the customizable values for each file are listed below.</p>
+<p>The bounds file:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">#</span> Prior bounds on <span class="nb">source</span> parameters
+<span class="go">&#39;mass_1_min&#39;:35.0, &#39;mass_1_max&#39;:80.0,                               # m1 range</span>
+<span class="go">&#39;mass_2_min&#39;:35.0, &#39;mass_2_max&#39;:80.0,                               # m2 range</span>
+<span class="go">&#39;M_min&#39;:70.0, &#39;M_max&#39;:160.0,                                        # total mass range</span>
+<span class="go">&#39;geocent_time_min&#39;:0.15,&#39;geocent_time_max&#39;:0.35,                    # time of coalescence range</span>
+<span class="go">&#39;phase_min&#39;:0.0, &#39;phase_max&#39;:2.0*np.pi,                             # phase range</span>
+<span class="go">&#39;ra_min&#39;:0.0, &#39;ra_max&#39;:2.0*np.pi,                                   # right ascension range</span>
+<span class="go">&#39;dec_min&#39;:-0.5*np.pi, &#39;dec_max&#39;:0.5*np.pi,                          # declintation range</span>
+<span class="go">&#39;psi_min&#39;:0.0, &#39;psi_max&#39;:np.pi,                                     # psi range</span>
+<span class="go">&#39;theta_jn_min&#39;:0.0, &#39;theta_jn_max&#39;:np.pi,                           # inclination angle range</span>
+<span class="go">&#39;a_1_min&#39;:0.0, &#39;a_1_max&#39;:0.0,                                       # a1 range</span>
+<span class="go">&#39;a_2_min&#39;:0.0, &#39;a_2_max&#39;:0.0,                                       # a2 range</span>
+<span class="go">&#39;tilt_1_min&#39;:0.0, &#39;tilt_1_max&#39;:0.0,                                 # tilt1 range</span>
+<span class="go">&#39;tilt_2_min&#39;:0.0, &#39;tilt_2_max&#39;:0.0,                                 # tilt2 range</span>
+<span class="go">&#39;phi_12_min&#39;:0.0, &#39;phi_12_max&#39;:0.0,                                 # phi_l2  range</span>
+<span class="go">&#39;phi_jl_min&#39;:0.0, &#39;phi_jl_max&#39;:0.0,                                 # phi_jl range</span>
+<span class="go">&#39;luminosity_distance_min&#39;:1000.0, &#39;luminosity_distance_max&#39;:3000.0  # luminosity distance range</span>
+</pre></div>
+</div>
+<p>The fixed values file:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">&#39;mass_1&#39;:50.0,                                                      # m1 default fixed value</span>
+<span class="go">&#39;mass_2&#39;:50.0,                                                      # m2 default fixed value</span>
+<span class="go">&#39;mc&#39;:None,                                                          # chirp mass default fixed value</span>
+<span class="go">&#39;geocent_time&#39;:0.0,                                                 # time of coalescence default fixed value</span>
+<span class="go">&#39;phase&#39;:0.0,                                                        # phase default fixed value</span>
+<span class="go">&#39;ra&#39;:1.375,                                                         # right ascension default fixed value</span>
+<span class="go">&#39;dec&#39;:-1.2108,                                                      # declination default fixed value</span>
+<span class="go">&#39;psi&#39;:0.0,                                                          # psi default fixed value</span>
+<span class="go">&#39;theta_jn&#39;:0.0,                                                     # inclination angle default fixed value</span>
+<span class="go">&#39;luminosity_distance&#39;:2000.0,                                       # luminosity distance default fixed value</span>
+<span class="go">&#39;a_1&#39;:0.0,                                                          # a1 default fixed value</span>
+<span class="go">&#39;a_2&#39;:0.0,                                                          # a2 default fixed value</span>
+<span class="go">&#39;tilt_1&#39;:0.0,                                                       # tilt1 default fixed value</span>
+<span class="go">&#39;tilt_2&#39;:0.0,                                                       # tilt2 default fixed value</span>
+<span class="go">&#39;phi_12&#39;:0.0,                                                       # phi_l2 default fixed value</span>
+<span class="go">&#39;phi_jl&#39;:0.0,                                                       # phi_jl default fixed value</span>
+<span class="go">&#39;det&#39;:[&#39;H1&#39;,&#39;L1&#39;,&#39;V1&#39;]                                              # Edit this if more or less detectors wanted</span>
+</pre></div>
+</div>
 </div>
 
 
