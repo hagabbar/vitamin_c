@@ -52,7 +52,7 @@ def write_version_file(version):
 def get_long_description():
     """ Finds the README and reads in the description """
     here = os.path.abspath(os.path.dirname(__file__))
-    with open(os.path.join(here, 'README.md')) as f:
+    with open(os.path.join(here, 'README_pypi.md')) as f:
         long_description = f.read()
     return long_description
 
@@ -64,15 +64,17 @@ def readfile(filename):
     return filecontents
 
 
-VERSION = '0.1.0'
+VERSION = '0.2.3'
 version_file = write_version_file(VERSION)
 long_description = get_long_description()
 
 
 setup(
     name='vitamin_b',
-    version='0.1.0',    
+    version='0.2.3',    
     description='A user-friendly machine learning Bayesian inference library',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     url='https://github.com/hagabbar/vitamin_b',
     author='Hunter Gabbard, Chris Messenger, Ik Siong Heng, Francesco Tonolini, Roderick Murray-Smith',
     author_email='h.gabbard.1@research.gla.ac.uk',
@@ -83,7 +85,7 @@ setup(
     package_data={'vitamin_b': ['params_files/*.txt'],
                     'vitamin_b': [version_file]},
 
-    python_requires='==3.6', 
+    python_requires='>=3.5', 
     install_requires=['universal-divergence==0.2.0',
                       'absl-py==0.9.0',
                       'asn1crypto==0.24.0',
