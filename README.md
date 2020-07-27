@@ -22,8 +22,13 @@ Note: This repository is a work in progress. No official release of code just ye
 
 ## Requirements
 
-VItamin requires python3.6
+VItamin requires python3.6. You may use python3.6 by initializing a virtual environment.
 
+`
+virtualenv -p python3.6 myenv
+source myenv/bin/activate
+pip install --upgrade pip
+`
 Make sure to install basemap prior to installing all other packages.
 
 For installing basemap:
