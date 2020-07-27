@@ -1,4 +1,4 @@
-![Downloads tags](https://img.shields.io/github/downloads-pre/hagabbar/vitamin_b/0.1.0/total)
+[![PyPI download total](https://img.shields.io/pypi/dt/ansicolortags.svg)](https://pypi.org/project/vitamin-b/)
 ![Commits](https://img.shields.io/github/commit-activity/m/hagabbar/vitamin_b)
 ![License](https://img.shields.io/github/license/hagabbar/vitamin_b)
 ![GitHub Stars](https://img.shields.io/github/stars/hagabbar/vitamin_b?style=social)
