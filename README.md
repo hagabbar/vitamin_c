@@ -1,5 +1,4 @@
 [![PyPI version](https://badge.fury.io/py/vitamin-b.svg)](https://badge.fury.io/py/vitamin-b)
-![PyPI - Downloads](https://img.shields.io/pypi/dm/vitamin-b)
 ![License](https://img.shields.io/github/license/hagabbar/vitamin_b)
 ![GitHub Stars](https://img.shields.io/github/stars/hagabbar/vitamin_b?style=social)
 ![Twitter](https://img.shields.io/twitter/follow/gw_hunter?style=social)
