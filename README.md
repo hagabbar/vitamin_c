@@ -1,4 +1,4 @@
-![Downloads tags](https://img.shields.io/github/downloads-pre/hagabbar/vitamin_b/0.0.1/total)
+![Downloads tags](https://img.shields.io/github/downloads-pre/hagabbar/vitamin_b/0.1.0/total)
 ![Commits](https://img.shields.io/github/commit-activity/m/hagabbar/vitamin_b)
 ![License](https://img.shields.io/github/license/hagabbar/vitamin_b)
 ![GitHub Stars](https://img.shields.io/github/stars/hagabbar/vitamin_b?style=social)
