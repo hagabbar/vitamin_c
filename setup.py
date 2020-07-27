@@ -64,14 +64,14 @@ def readfile(filename):
     return filecontents
 
 
-VERSION = '1.0.4'
+VERSION = '0.1.0'
 version_file = write_version_file(VERSION)
 long_description = get_long_description()
 
 
 setup(
     name='vitamin_b',
-    version='1.0.4',    
+    version='0.1.0',    
     description='A user-friendly machine learning Bayesian inference library',
     url='https://github.com/hagabbar/vitamin_b',
     author='Hunter Gabbard, Chris Messenger, Ik Siong Heng, Francesco Tonolini, Roderick Murray-Smith',
