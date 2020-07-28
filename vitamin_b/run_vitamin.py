@@ -1048,6 +1048,21 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals):
     if params['make_loss_plot'] == True:
         plotter.plot_loss()
 
+def gen_samples(model_loc=params['model_loc'],test_set=params['test_set'],num_samples=10000):
+   """ Function to generate VItamin samples given a trained model
+   """
+
+   # Load test sample timeseries
+   
+
+   samples = np.zeros((num_timeseries,num_samples))
+   for i in range(num_timeseries):
+       samples[i,:], _, _  = CVAE_model.run(params, np.expand_dims(y_data_test[i],axis=0), 7,
+                                                              params['y_normscale'],
+                                                              model_loc)
+
+   return samples
+
 # If running module from command line
 if args.gen_train:
     gen_train(params,bounds,fixed_vals)
