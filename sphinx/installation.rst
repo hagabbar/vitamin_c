@@ -7,6 +7,7 @@ Clone vitamin repository
 .. code-block:: console
 
    $ git clone https://github.com/hagabbar/vitamin_b
+   $ cd vitamin_b
 
 Make a virtual environment
 

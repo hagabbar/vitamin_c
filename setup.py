@@ -52,7 +52,7 @@ def write_version_file(version):
 def get_long_description():
     """ Finds the README and reads in the description """
     here = os.path.abspath(os.path.dirname(__file__))
-    with open(os.path.join(here, 'README_pypi.md')) as f:
+    with open(os.path.join(here, 'README.md')) as f:
         long_description = f.read()
     return long_description
 
@@ -64,14 +64,14 @@ def readfile(filename):
     return filecontents
 
 
-VERSION = '0.2.3'
+VERSION = '0.2.5'
 version_file = write_version_file(VERSION)
 long_description = get_long_description()
 
 
 setup(
     name='vitamin_b',
-    version='0.2.3',    
+    version='0.2.5',    
     description='A user-friendly machine learning Bayesian inference library',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -82,8 +82,8 @@ setup(
     packages=['vitamin_b','vitamin_b.models','vitamin_b.models.neural_networks',
               'vitamin_b.params_files'],
     package_dir={'vitamin_b': 'vitamin_b'},
-    package_data={'vitamin_b': ['params_files/*.txt'],
-                    'vitamin_b': [version_file]},
+    package_data={'vitamin_b': ['params_files/*.par'],
+                  'vitamin_b': [version_file]},
 
     python_requires='>=3.5', 
     install_requires=['universal-divergence==0.2.0',

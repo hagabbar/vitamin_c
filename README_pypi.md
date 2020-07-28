@@ -1,10 +1,4 @@
-[![PyPI version](https://badge.fury.io/py/vitamin-b.svg)](https://badge.fury.io/py/vitamin-b)
-![License](https://img.shields.io/github/license/hagabbar/vitamin_b)
-![GitHub Stars](https://img.shields.io/github/stars/hagabbar/vitamin_b?style=social)
-![Twitter](https://img.shields.io/twitter/follow/gw_hunter?style=social)
-
 # [VItamin_B: A Machine Learning Library for Fast Gravitational Wave Posterior Generation](https://arxiv.org/abs/1909.06296)
-:star: Star us on GitHub  it helps!
 
 Welcome to VItamin_B, a python toolkit for producing fast gravitational wave posterior samples.
 
@@ -44,27 +38,3 @@ Install VItamin using pip:
 pip install vitamin-b
 ```
 
-## Training
-
-To train an example model from the paper, try out the [demo](https://colab.research.google.com/github/hagabbar/OzGrav_demo/blob/master/OzGrav_VItamin_demo.ipynb).
-
-Full model definitions are given in `models` directory. Data is generated from `gen_benchmark_pe.py`.
-
-## Results
-
-We train using a network derived from first principals:
-![](images/network_setup.png)
-
-We track the performance of the model during training via loss curves:
-![](images/inv_losses_log.png)
-
-Finally, we produce posteriors after training and other diagnostic tests comparing our approach with 4 other independent methods:
-
-Posterior example:
-![](images/corner_testcase0.png)
-
-KL-Divergence between posteriors:
-![](images/hist-kl.png)
-
-PP Tests:
-![](images/latest_pp_plot.png)
