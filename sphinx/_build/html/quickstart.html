@@ -122,11 +122,6 @@
       
   <div class="section" id="quickstart">
 <h1>Quickstart<a class="headerlink" href="#quickstart" title="Permalink to this headline">¶</a></h1>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>This page is currently being worked on and is NOT an operational part of the
-code just yet.</p>
-</div>
 <p>This section will detail how you can produce samples from a gravitational wave (GW) postrior within
 minutes of downloading VItamin given your own GW time series binary black hole data. You may also
 optionally use the pregenerated sets of waveforms provided here</p>
@@ -159,7 +154,7 @@ number of source parameters to be infered&gt;). ‘y_data’ should be a numpy a
 &lt;sample rate X duration&gt;)</p>
 </div>
 <ul class="simple">
-<li><p>To produce test samples, simply point vitamin to the directory containing your test waveforms (examples provided <a class="reference external" href="https://drive.google.com/file/d/15LCJC6UJR34dqXO9BgLK-NsYlsWADpvc/view?usp=sharing">here</a>), the pre-trained model (<a class="reference external" href="https://drive.google.com/file/d/1O_EwAcrsHNjwumLLX7jmjSVcA0tIVMX_/view?usp=sharing">model</a>) and specify the number of samples per posterior requested.</p></li>
+<li><p>To produce test sample posteriors using VItamin, simply point vitamin to the directory containing your test waveforms (examples provided <a class="reference external" href="https://drive.google.com/file/d/15LCJC6UJR34dqXO9BgLK-NsYlsWADpvc/view?usp=sharing">here</a>), the pre-trained model (to be made) and specify the number of samples per posterior requested.</p></li>
 </ul>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> samples,_,x_data <span class="o">=</span> run_vitamin.gen_samples<span class="o">(</span><span class="nv">model_loc</span><span class="o">=</span><span class="s1">&#39;inverse_model_dir_demo_3det_9par_256Hz_run1/inverse_model.ckpt&#39;</span>,
 <span class="go">                                             test_set=&#39;test_sets/all_4_samplers/test_waveforms/&#39;,num_samples=10000,</span>

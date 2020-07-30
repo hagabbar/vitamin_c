@@ -54,22 +54,22 @@ batch_norm=True                                                                #
 
 # FYI, each item in lists below correspond to each layer in networks (i.e. first item first layer)
 # pool size and pool stride should be same number in each layer
-n_filters_r1 = [33, 33]                                                        # number of convolutional filters to use in r1 network (must be divisible by 3)
-n_filters_r2 = [33, 33]                                                        # number of convolutional filters to use in r2 network (must be divisible by 3)
-n_filters_q = [33, 33]                                                         # number of convolutional filters to use in q network  (must be divisible by 3)
-filter_size_r1 = [7,7]                                                         # size of convolutional fitlers in r1 network
-filter_size_r2 = [7,7]                                                         # size of convolutional filters in r2 network
-filter_size_q = [7,7]                                                          # size of convolutional filters in q network
+n_filters_r1 = [33, 33, 33, 33, 33]                                                        # number of convolutional filters to use in r1 network (must be divisible by 3)
+n_filters_r2 = [33, 33, 33]                                                        # number of convolutional filters to use in r2 network (must be divisible by 3)
+n_filters_q = [33, 33, 33]                                                         # number of convolutional filters to use in q network  (must be divisible by 3)
+filter_size_r1 = [5,8,11,10,10]                                                         # size of convolutional fitlers in r1 network
+filter_size_r2 = [5,8,11]                                                         # size of convolutional filters in r2 network
+filter_size_q = [5,8,11]                                                          # size of convolutional filters in q network
 drate = 0.5                                                                    # dropout rate to use in fully-connected layers
-maxpool_r1 = [1,2]                                                             # size of maxpooling to use in r1 network
-conv_strides_r1 = [1,1]                                                        # size of convolutional stride to use in r1 network
-pool_strides_r1 = [1,2]                                                        # size of max pool stride to use in r1 network
-maxpool_r2 = [1,2]                                                             # size of max pooling to use in r2 network
-conv_strides_r2 = [1,1]                                                        # size of convolutional stride in r2 network
-pool_strides_r2 = [1,2]                                                        # size of max pool stride in r2 network
-maxpool_q = [1,2]                                                              # size of max pooling to use in q network
-conv_strides_q = [1,1]                                                         # size of convolutional stride to use in q network
-pool_strides_q = [1,2]                                                         # size of max pool stride to use in q network
+maxpool_r1 = [1,2,1,2,1]                                                             # size of maxpooling to use in r1 network
+conv_strides_r1 = [1,1,1,1,1]                                                        # size of convolutional stride to use in r1 network
+pool_strides_r1 = [1,2,1,2,1]                                                        # size of max pool stride to use in r1 network
+maxpool_r2 = [1,2,1]                                                             # size of max pooling to use in r2 network
+conv_strides_r2 = [1,1,1]                                                        # size of convolutional stride in r2 network
+pool_strides_r2 = [1,2,1]                                                        # size of max pool stride in r2 network
+maxpool_q = [1,2,1]                                                              # size of max pooling to use in q network
+conv_strides_q = [1,1,1]                                                         # size of convolutional stride to use in q network
+pool_strides_q = [1,2,1]                                                         # size of max pool stride to use in q network
 n_fc = 2048                                                                      # Number of neurons in fully-connected layers
 z_dimension=10                                                                 # number of latent space dimensions of model 
 n_weights_r1 = [n_fc,n_fc,n_fc]                                                     # number fully-connected layers of encoders and decoders in the r1 model (inverse reconstruction)
@@ -91,7 +91,7 @@ tset_split = int(1e3)                                                           
 save_interval = int(5e4)                                                        # number of iterations to save model and plot validation results corner plots
 num_iterations=int(1e6)+1                                                       # total number of iterations before ending training of model
 ref_geocent_time=1126259642.5                                                   # reference gps time (not advised to change this)
-load_chunk_size = 1e3                                                           # Number of training samples to load in at a time.
+load_chunk_size = 1e4                                                           # Number of training samples to load in at a time.
 samplers=['vitamin','dynesty']                                                  # Bayesian samplers to use when comparing ML results (vitamin is ML approach) dynesty,ptemcee,cpnest,emcee
 
 # Directory variables
@@ -134,7 +134,7 @@ def get_params():
         load_chunk_size = load_chunk_size,                                      
         load_iteration = int((load_chunk_size * 25)/batch_size),                # How often to load another chunk of training samples
         weight_init = weight_init,                                           
-        n_samples = 100,                                                       # number of posterior samples to save per reconstruction upon inference (default 3000) 
+        n_samples = 10000,                                                       # number of posterior samples to save per reconstruction upon inference (default 3000) 
         num_iterations=num_iterations,                                              # total number of iterations before ending training of model
         initial_training_rate=initial_training_rate,                         
         batch_size=batch_size,                                                  

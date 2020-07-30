@@ -87,68 +87,68 @@ The run parameters file:
    doPE = True,                                                            # if True then do bilby PE when generating new testing samples (not advised to change this)
    gpu_num=0,                                                              # gpu number run is running on
    ndata = 256,                                                            # sampling frequency
-   run_label = 'demo_%ddet_%dpar_%dHz_run1' % (len(fixed_vals['det']),len(rand_pars),ndata) # label of run
-   bilby_results_label = 'all_4_samplers'                                  # label given to bilby results directory
-   tot_dataset_size = int(1e3)                                             # total number of training samples available to use
-   tset_split = int(1e3)                                                   # number of training samples in each training data file
-   plot_dir="./results/%s" % run_label  # output directory to save results plots
+   run_label = 'demo_%ddet_%dpar_%dHz_run1' % (len(fixed_vals['det']),len(rand_pars),ndata), # label of run
+   bilby_results_label = 'all_4_samplers',                                  # label given to bilby results directory
+   tot_dataset_size = int(1e3),                                             # total number of training samples available to use
+   tset_split = int(1e3),                                                   # number of training samples in each training data file
+   plot_dir="./results/%s" % run_label,  # output directory to save results plots
 
    # Gaussian Process automated hyperparameter tunning variables
    hyperparam_optim_stop = int(1.5e6),                                     # stopping iteration of hyperparameter optimizer per call (ideally 1.5 million) 
    hyperparam_n_call = 30,                                                 # number of hyperparameter optimization calls (ideally 30)
 
-   load_chunk_size = 1e3                                                   # Number of training samples to load in at a time.
+   load_chunk_size = 1e3,                                                   # Number of training samples to load in at a time.
    load_iteration = int((load_chunk_size * 25)/batch_size),                # How often to load another chunk of training samples
-   weight_init = 'xavier'                                                  #[xavier,VarianceScaling,Orthogonal] # Network model weight initialization
+   weight_init = 'xavier',                                                  #[xavier,VarianceScaling,Orthogonal] # Network model weight initialization
    n_samples = 100,                                                        # number of posterior samples to save per reconstruction upon inference (default 3000) 
    num_iterations=int(5e3)+1,                                              # total number of iterations before ending training of model
-   initial_training_rate=1e-4                                              # initial training rate for ADAM optimiser inference model (inverse reconstruction)
-   batch_size = 64                                                         # Number training samples shown to neural network per iteration
-   batch_norm=True                                                         # if true, do batch normalization in all layers of neural network
+   initial_training_rate=1e-4,                                              # initial training rate for ADAM optimiser inference model (inverse reconstruction)
+   batch_size = 64,                                                         # Number training samples shown to neural network per iteration
+   batch_norm=True,                                                         # if true, do batch normalization in all layers of neural network
    report_interval=500,                                                    # interval at which to save objective function values and optionally print info during training
-   n_modes=7                                                               # number of modes in Gaussian mixture model (ideal 7, but may go higher/lower)
+   n_modes=7,                                                               # number of modes in Gaussian mixture model (ideal 7, but may go higher/lower)
 
    # Each item in lists below correspond to each layer in networks (i.e. first item first layer)
    # pool size and pool stride should be same number in each layer
-   n_filters_r1 = [33, 33]                                                 # number of convolutional filters to use in r1 network
-   n_filters_r2 = [33, 33]                                                 # number of convolutional filters to use in r2 network
-   n_filters_q = [33, 33]                                                  # number of convolutional filters to use in q network
-   filter_size_r1 = [7,7]                                                  # size of convolutional fitlers in r1 network
-   filter_size_r2 = [7,7]                                                  # size of convolutional filters in r2 network
-   filter_size_q = [7,7]                                                   # size of convolutional filters in q network
-   drate = 0.5                                                             # dropout rate to use in fully-connected layers
-   maxpool_r1 = [1,2]                                                      # size of maxpooling to use in r1 network
-   conv_strides_r1 = [1,1]                                                 # size of convolutional stride to use in r1 network
-   pool_strides_r1 = [1,2]                                                 # size of max pool stride to use in r1 network
-   maxpool_r2 = [1,2]                                                      # size of max pooling to use in r2 network
-   conv_strides_r2 = [1,1]                                                 # size of convolutional stride in r2 network
-   pool_strides_r2 = [1,2]                                                 # size of max pool stride in r2 network
-   maxpool_q = [1,2]                                                       # size of max pooling to use in q network
-   conv_strides_q = [1,1]                                                  # size of convolutional stride to use in q network
-   pool_strides_q = [1,2]                                                  # size of max pool stride to use in q network
+   n_filters_r1 = [33, 33],                                                 # number of convolutional filters to use in r1 network
+   n_filters_r2 = [33, 33],                                                 # number of convolutional filters to use in r2 network
+   n_filters_q = [33, 33],                                                  # number of convolutional filters to use in q network
+   filter_size_r1 = [7,7],                                                  # size of convolutional fitlers in r1 network
+   filter_size_r2 = [7,7],                                                  # size of convolutional filters in r2 network
+   filter_size_q = [7,7],                                                   # size of convolutional filters in q network
+   drate = 0.5,                                                             # dropout rate to use in fully-connected layers
+   maxpool_r1 = [1,2],                                                      # size of maxpooling to use in r1 network
+   conv_strides_r1 = [1,1],                                                 # size of convolutional stride to use in r1 network
+   pool_strides_r1 = [1,2],                                                 # size of max pool stride to use in r1 network
+   maxpool_r2 = [1,2],                                                      # size of max pooling to use in r2 network
+   conv_strides_r2 = [1,1],                                                 # size of convolutional stride in r2 network
+   pool_strides_r2 = [1,2],                                                 # size of max pool stride in r2 network
+   maxpool_q = [1,2],                                                       # size of max pooling to use in q network
+   conv_strides_q = [1,1],                                                  # size of convolutional stride to use in q network
+   pool_strides_q = [1,2],                                                  # size of max pool stride to use in q network
    ramp_end = 1e5,                                                         # ending iteration of KL divergence ramp (if using)
-   save_interval = int(1e3)                                                # number of iterations to save model and plot validation results corner plots
+   save_interval = int(1e3),                                                # number of iterations to save model and plot validation results corner plots
    plot_interval=int(1e3),                                                 # interval over which to generate plots during training
-   z_dimension=10                                                          # number of latent space dimensions of model
-   n_weights_r1 = [2048,2048,2048]                                         # number fully-connected layers of encoders and decoders in the r1 model (inverse reconstruction)
-   n_weights_r2 = [2048,2048,2048]                                         # number fully-connected layers of encoders and decoders in the r2 model (inverse reconstruction)
-   n_weights_q = [2048,2048,2048]                                          # number fully-connected layers of encoders and decoders q model
+   z_dimension=10,                                                          # number of latent space dimensions of model
+   n_weights_r1 = [2048,2048,2048],                                         # number fully-connected layers of encoders and decoders in the r1 model (inverse reconstruction)
+   n_weights_r2 = [2048,2048,2048],                                         # number fully-connected layers of encoders and decoders in the r2 model (inverse reconstruction)
+   n_weights_q = [2048,2048,2048],                                          # number fully-connected layers of encoders and decoders q model
    duration = 1.0,                                                         # length of training/validation/test sample time series in seconds (haven't tried using at any other value than 1s)
-   r = 2                                                                   # number (to the power of 2) of test samples to use for testing. r = 2 means you want to use 2^2 (i.e 4) test samples
+   r = 2,                                                                   # number (to the power of 2) of test samples to use for testing. r = 2 means you want to use 2^2 (i.e 4) test samples
    rand_pars = ['mass_1','mass_2','luminosity_distance','geocent_time','phase',
-                 'theta_jn','psi','ra','dec']                              # parameters to randomize (those not listed here  are fixed otherwise)
+                 'theta_jn','psi','ra','dec'],                              # parameters to randomize (those not listed here  are fixed otherwise)
    corner_parnames = ['m_{1}\,(\mathrm{M}_{\odot})','m_{2}\,(\mathrm{M}_{\odot})','d_{\mathrm{L}}\,(\mathrm{Mpc})','t_{0}\,(\mathrm{seconds})','{\phi}','\Theta_{jn}\,(\mathrm{rad})','{\psi}',r'{\alpha}\,(\mathrm{rad})','{\delta}\,(\mathrm{rad})'], # latex source parameter labels for plotting
    cornercorner_parnames = ['$m_{1}\,(\mathrm{M}_{\odot})$','$m_{2}\,(\mathrm{M}_{\odot})$','$d_{\mathrm{L}}\,(\mathrm{Mpc})$','$t_{0}\,(\mathrm{seconds})$','${\phi}$','$\Theta_{jn}\,(\mathrm{rad})$','${\psi}$',r'${\alpha}\,(\mathrm{rad})$','${\delta}\,(\mathrm{rad})$'], # latex source parameter labels for plotting
-   ref_geocent_time=1126259642.5                                           # reference gps time
+   ref_geocent_time=1126259642.5,                                           # reference gps time
    training_data_seed=43,                                                  # tensorflow training random seed number
    testing_data_seed=44,                                                   # tensorflow testing random seed number
-   inf_pars=['mass_1','mass_2','luminosity_distance','geocent_time','theta_jn','ra','dec']  # parameters to infer
-   train_set_dir='./training_sets_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(fixed_vals['det']),len(rand_pars),ndata,tot_dataset_size,tset_split)  # location of training set
-   test_set_dir='./test_sets/%s/test_waveforms' % bilby_results_label      # location of test set directory waveforms
-   pe_dir='./test_sets/%s/test' % bilby_results_label                      # location of test set directory Bayesian PE samples
+   inf_pars=['mass_1','mass_2','luminosity_distance','geocent_time','theta_jn','ra','dec'],  # parameters to infer
+   train_set_dir='./training_sets_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(fixed_vals['det']),len(rand_pars),ndata,tot_dataset_size,tset_split),  # location of training set
+   test_set_dir='./test_sets/%s/test_waveforms' % bilby_results_label,      # location of test set directory waveforms
+   pe_dir='./test_sets/%s/test' % bilby_results_label,                      # location of test set directory Bayesian PE samples
    KL_cycles = 1,
 
-   samplers=['vitamin','dynesty']                                          # Bayesian samplers to use when comparing ML results (vitamin is ML approach) dynesty,ptemcee,cpnest,emcee
+   samplers=['vitamin','dynesty'],                                          # Bayesian samplers to use when comparing ML results (vitamin is ML approach) dynesty,ptemcee,cpnest,emcee
    figure_sampler_names = ['VItamin','Dynesty'],                           # Labels for samplers in figures 
    y_normscale = 36.43879218007172,                                        # arbitrary scaling value for waveforms (make sure it is safe b/w testing and training of model)
    boost_pars=['ra','dec'],                                                # Parameters to provide extra boosting scaler factor to loss during training.
