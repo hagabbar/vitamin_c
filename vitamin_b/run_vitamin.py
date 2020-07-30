@@ -49,6 +49,7 @@ except ModuleNotFoundError:
 2.) Generate testing data
 3.) Train model
 4.) Test model
+5.) Generate samples only given model and timeseries
 """
 
 parser = argparse.ArgumentParser(description='VItamin: A user friendly Bayesian inference machine learning library.')
@@ -60,17 +61,11 @@ parser.add_argument("--test", default=False, help="test the network")
 parser.add_argument("--params_file", default=None, type=str, help="dictionary containing parameters of run")
 parser.add_argument("--bounds_file", default=None, type=str, help="dictionary containing source parameter bounds")
 parser.add_argument("--fixed_vals_file", default=None, type=str, help="dictionary containing source parameter values when fixed")
-parser.add_argument("--pretrained_loc", default=None, type=str, help="location of a pretrained network")
+parser.add_argument("--pretrained_loc", default=None, type=str, help="location of a pretrained network (i.e. .ckpt file)")
+parser.add_argument("--test_set_loc", default=None, type=str, help="directory containing test set waveforms")
+parser.add_argument("--gen_samples", default=False, help="If True, generate samples only (no plotting)")
+parser.add_argument("--num_samples", type=int, default=None, help="number of posterior samples to generate")
 args = parser.parse_args()
-
-# define which gpu to use during training
-gpu_num = str(0)                                            # first GPU used by default
-os.environ["CUDA_VISIBLE_DEVICES"]=gpu_num
-
-# Let GPU consumption grow as needed
-config = tf.compat.v1.ConfigProto()
-config.gpu_options.allow_growth = True
-session = tf.compat.v1.Session(config=config)
 
 global params; global bounds; global fixed_vals
 
@@ -231,11 +226,11 @@ def load_data(params,bounds,fixed_vals,input_dir,inf_pars,load_condor=False):
                   'y_data_noisefree': h5py.File(dataLocations[0]+'/'+filename, 'r')['y_data_noisefree'][:],
                   'y_data_noisy': h5py.File(dataLocations[0]+'/'+filename, 'r')['y_data_noisy'][:],
                   'rand_pars': h5py.File(dataLocations[0]+'/'+filename, 'r')['rand_pars'][:]}
-            data['x_data'].append(data_temp['x_data'])
             data['y_data_noisefree'].append(np.expand_dims(data_temp['y_data_noisefree'], axis=0))
+            snrs.append(h5py.File(dataLocations[0]+'/'+filename, 'r')['snrs'][:])
+            data['x_data'].append(data_temp['x_data'])
             data['y_data_noisy'].append(np.expand_dims(data_temp['y_data_noisy'], axis=0))
             data['rand_pars'] = data_temp['rand_pars']
-            snrs.append(h5py.File(dataLocations[0]+'/'+filename, 'r')['snrs'][:])
         except OSError:
             print('Could not load requested file')
             continue
@@ -243,7 +238,8 @@ def load_data(params,bounds,fixed_vals,input_dir,inf_pars,load_condor=False):
 
     # Extract the prior bounds from training/testing files
     data['x_data'] = np.concatenate(np.array(data['x_data']), axis=0).squeeze()
-    data['y_data_noisefree'] = np.concatenate(np.array(data['y_data_noisefree']), axis=0)
+    if load_condor==False:
+        data['y_data_noisefree'] = np.concatenate(np.array(data['y_data_noisefree']), axis=0)
     data['y_data_noisy'] = np.concatenate(np.array(data['y_data_noisy']), axis=0)
     
 
@@ -255,7 +251,10 @@ def load_data(params,bounds,fixed_vals,input_dir,inf_pars,load_condor=False):
             data['x_data'][:,i]=np.remainder(data['x_data'][:,i],np.pi)
         data['x_data'][:,i]=(data['x_data'][:,i] - bounds[par_min]) / (bounds[par_max] - bounds[par_min])
     x_data = data['x_data']
-    y_data = data['y_data_noisefree']
+    if load_condor==False:
+        y_data = data['y_data_noisefree']
+    else:
+        y_data=None
     y_data_noisy = data['y_data_noisy']
 
     # Define time series normalization factor to use on test samples. We consistantly use the same normscale value if loading by chunks
@@ -547,6 +546,15 @@ def gen_test(params=params,bounds=bounds,fixed_vals=fixed_vals):
 ####################################
 def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=False):
 
+    # define which gpu to use during training
+    gpu_num = str(0)                                            # first GPU used by default
+    os.environ["CUDA_VISIBLE_DEVICES"]=gpu_num
+
+    # Let GPU consumption grow as needed
+    config = tf.compat.v1.ConfigProto()
+    config.gpu_options.allow_growth = True
+    session = tf.compat.v1.Session(config=config)
+
     # Check for requried parameters files
     if params == None or bounds == None or fixed_vals == None:
         print('Missing either params file, bounds file or fixed vals file')
@@ -728,6 +736,18 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
 # if we are now testing the network
 def test(params=params,bounds=bounds,fixed_vals=fixed_vals):
 
+    if tf.test.gpu_device_name():
+        print('GPU found')
+        os.environ["CUDA_VISIBLE_DEVICES"]=str(0)
+        config = tf.compat.v1.ConfigProto()
+        config.gpu_options.allow_growth = True  # Let GPU consumption grow as needed
+    else:
+        print("No GPU found")
+        os.environ["CUDA_VISIBLE_DEVICES"]=''
+        config = tf.compat.v1.ConfigProto()
+
+    session = tf.compat.v1.Session(config=config)
+
     # Check for requried parameters files
     if params == None or bounds == None or fixed_vals == None:
         print('Missing either params file, bounds file or fixed vals file')
@@ -908,7 +928,6 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals):
         # If True, continue through and make corner plots
         if params['make_corner_plots'] == False:
             break
-
         
         # Generate ML posteriors using pre-trained model
         if params['n_filters_r1'] != None: # for convolutional approach
@@ -1048,20 +1067,133 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals):
     if params['make_loss_plot'] == True:
         plotter.plot_loss()
 
-def gen_samples(model_loc=params['model_loc'],test_set=params['test_set'],num_samples=10000):
-   """ Function to generate VItamin samples given a trained model
-   """
+    return
 
-   # Load test sample timeseries
+def gen_samples(params='params.txt',bounds='bounds.txt',fixed_vals='fixed_vals.txt',model_loc='model-ex/model.ckpt',test_set='test-ex/',num_samples=None,plot_corner=True):
+    """ Function to generate VItamin samples given a trained model
+    """
+
+    if tf.test.gpu_device_name():
+        print('GPU found')
+        os.environ["CUDA_VISIBLE_DEVICES"]=str(0)
+        config = tf.compat.v1.ConfigProto()
+        config.gpu_options.allow_growth = True  # Let GPU consumption grow as needed
+    else:
+        print("No GPU found")
+        os.environ["CUDA_VISIBLE_DEVICES"]=''
+        config = tf.compat.v1.ConfigProto() 
+
+    session = tf.compat.v1.Session(config=config)
+
+    # Check for requried parameters files
+    if params == None or bounds == None or fixed_vals == None:
+        print('Missing either params file, bounds file or fixed vals file')
+        exit()
+
+    # Load parameters files
+    f = open(params,'r')
+    data=f.read()
+    f.close()
+    params = eval(data)
+    f = open(bounds,'r')
+    data=f.read()
+    f.close()
+    bounds = eval(data)
+    f = open(fixed_vals,'r')
+    data=f.read()
+    f.close()
+    fixed_vals = eval(data)
+
+    if num_samples != None:
+        params['n_samples'] = num_samples
+
+    ########################
+    # load generated samples
+    ########################
+    files = []
    
+    # Get list of all training/testing files and define dictionary to store values in files
+    if type("%s" % test_set) is str:
+        dataLocations = ["%s" % test_set]
+        data={'x_data': [], 'y_data_noisy': []}
+    # Sort files from first generated to last generated
+    filenames = sorted(os.listdir(dataLocations[0]), key=lambda x: int(x.split('.')[0].split('_')[-1]))
 
-   samples = np.zeros((num_timeseries,num_samples))
-   for i in range(num_timeseries):
-       samples[i,:], _, _  = CVAE_model.run(params, np.expand_dims(y_data_test[i],axis=0), 7,
+    # Append training/testing filenames to list. Ignore those that can't be loaded
+    for filename in filenames:
+        try:
+            files.append(filename)
+        except OSError:
+            print('Could not load requested file')
+            continue
+
+    # Iterate over all training/testing files and store source parameters, time series and SNR info in dictionary
+    for filename in files:
+        try:
+            data_temp={'x_data': h5py.File(dataLocations[0]+'/'+filename, 'r')['x_data'][:],
+                  'y_data_noisy': h5py.File(dataLocations[0]+'/'+filename, 'r')['y_data_noisy'][:]}
+            data['x_data'].append(data_temp['x_data'])
+            data['y_data_noisy'].append(np.expand_dims(data_temp['y_data_noisy'], axis=0))
+        except OSError:
+            print('Could not load requested file')
+            continue
+
+    # Extract the prior bounds from training/testing files
+    data['x_data'] = np.concatenate(np.array(data['x_data']), axis=0).squeeze()
+    data['y_data_noisy'] = np.concatenate(np.array(data['y_data_noisy']), axis=0)
+    
+
+    x_data = data['x_data']
+    y_data_test = data['y_data_noisy']
+
+    # Define time series normalization factor to use on test samples. We consistantly use the same normscale value if loading by chunks
+    y_normscale = params['y_normscale']   
+ 
+    # extract inference parameters from all source parameters loaded earlier if more than 
+    # TODO: this is an issue which will need to be resolved soon.
+    if x_data.shape[1] > len(params['inf_pars']):
+        idx = []
+        for k in params['inf_pars']:
+            print(k)
+            for i,m in enumerate(params['rand_pars']):
+                if k==m:
+                    idx.append(i)
+        x_data = x_data[:,idx]
+
+    y_data_test = y_data_test.reshape(y_data_test.shape[0],y_data_test.shape[1]*y_data_test.shape[2])
+    # reshape y data into channels last format for convolutional approach
+    y_data_test_copy = np.zeros((y_data_test.shape[0],params['ndata'],len(fixed_vals['det'])))
+    if params['n_filters_r1'] != None:
+        for i in range(y_data_test.shape[0]):
+            for j in range(len(fixed_vals['det'])):
+                idx_range = np.linspace(int(j*params['ndata']),int((j+1)*params['ndata'])-1,num=params['ndata'],dtype=int)       
+                y_data_test_copy[i,:,j] = y_data_test[i,idx_range]
+        y_data_test = y_data_test_copy
+    num_timeseries=y_data_test.shape[0]
+    samples = np.zeros((num_timeseries,num_samples,len(params['inf_pars'])))
+    for i in range(num_timeseries):
+        samples[i,:], dt, _  = CVAE_model.run(params, np.expand_dims(y_data_test[i],axis=0), len(params['inf_pars']),
                                                               params['y_normscale'],
                                                               model_loc)
+        print(dt)
+    # unnormalize predictions
+    for q_idx,q in enumerate(params['inf_pars']):
+        par_min = q + '_min'
+        par_max = q + '_max'
+        samples[:,:,q_idx] = (samples[:,:,q_idx] * (bounds[par_max] - bounds[par_min])) + bounds[par_min]
 
-   return samples
+    # plot results
+    if plot_corner==True:
+        # Get infered parameter latex labels for corner plot
+        parnames=[]
+        for k_idx,k in enumerate(params['rand_pars']):
+            if np.isin(k, params['inf_pars']):
+                parnames.append(params['cornercorner_parnames'][k_idx])
+        figure = corner.corner(samples[0,:,:],truths=x_data[0,:],labels=parnames)
+        plt.savefig('./vitamin_example_corner.png')
+        plt.close()
+
+    return samples, y_data_test, x_data
 
 # If running module from command line
 if args.gen_train:
@@ -1072,4 +1204,7 @@ if args.train:
     train(params,bounds,fixed_vals)
 if args.test:
     test(params,bounds,fixed_vals)
+if args.gen_samples:
+    gen_samples(params,bounds,fixed_vals,model_loc=args.pretrained_loc,
+                test_set=args.test_set_loc,num_samples=args.num_samples)
 

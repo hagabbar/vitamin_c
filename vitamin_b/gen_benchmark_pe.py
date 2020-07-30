@@ -574,7 +574,7 @@ def run(sampling_frequency=256.0,
             # Run sampler dynesty 1 sampler
             result = bilby.run_sampler(#conversion_function=bilby.gw.conversion.generate_all_bbh_parameters,
                 likelihood=likelihood, priors=priors, sampler='dynesty', npoints=100,
-                injection_parameters=injection_parameters, outdir=out_dir+'_dynesty1', label=label, dlogz=0.1,
+                injection_parameters=injection_parameters, outdir=out_dir+'_dynesty1', label=label, dlogz=50,
                 save='hdf5', plot=True)
             run_endt = time.time()
 
