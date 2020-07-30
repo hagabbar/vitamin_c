@@ -2,6 +2,11 @@
 Installation
 ============
 
+This page will tell you how to install VItamin from scratch. VItamin 
+currently requires the installation of basemap (though this will become 
+an optional installation procedure in the future). VItamin also requires 
+that you use Python3.6. 
+
 Clone vitamin repository
 
 .. code-block:: console

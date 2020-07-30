@@ -1,4 +1,5 @@
 import numpy as np
+import os
 
 # Source parameter values to use if chosen to be fixed
 fixed_vals = {'mass_1':50.0,
@@ -85,10 +86,10 @@ run_label = 'demo_%ddet_%dpar_%dHz_run1' % (len(fixed_vals['det']),len(rand_pars
 bilby_results_label = 'all_4_samplers'                                             # label given to bilby results directory
 r = 2                                                                           # number (to the power of 2) of test samples to use for testing. r = 2 means you want to use 2^2 (i.e 4) test samples
 pe_test_num = 256                                                               # total number of test samples available to use in directory
-tot_dataset_size = int(1e3)                                                     # total number of training samples available to use
+tot_dataset_size = int(1e5)                                                     # total number of training samples available to use
 tset_split = int(1e3)                                                           # number of training samples in each training data file
-save_interval = int(1e3)                                                        # number of iterations to save model and plot validation results corner plots
-num_iterations=int(5e3)+1                                                       # total number of iterations before ending training of model
+save_interval = int(5e4)                                                        # number of iterations to save model and plot validation results corner plots
+num_iterations=int(1e6)+1                                                       # total number of iterations before ending training of model
 ref_geocent_time=1126259642.5                                                   # reference gps time (not advised to change this)
 load_chunk_size = 1e3                                                           # Number of training samples to load in at a time.
 samplers=['vitamin','dynesty']                                                  # Bayesian samplers to use when comparing ML results (vitamin is ML approach) dynesty,ptemcee,cpnest,emcee
@@ -193,14 +194,17 @@ def get_params():
     return params
 
 
-# Save training/test parameters of run
+# Save training/test parameters of run if files do not already exist
 params=get_params()
-f = open("params.txt","w")
-f.write( str(params) )
-f.close()
-f = open("bounds.txt","w")
-f.write( str(bounds) )
-f.close()
-f = open("fixed_vals.txt","w")
-f.write( str(fixed_vals) )
-f.close()
+if not os.path.isfile('./params.txt'):
+    f = open("params.txt","w")
+    f.write( str(params) )
+    f.close()
+if not os.path.isfile('./bounds.txt'):
+    f = open("bounds.txt","w")
+    f.write( str(bounds) )
+    f.close()
+if not os.path.isfile('./fixed_vals.txt'):
+    f = open("fixed_vals.txt","w")
+    f.write( str(fixed_vals) )
+    f.close()

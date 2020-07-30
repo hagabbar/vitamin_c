@@ -2,72 +2,53 @@
 Quickstart
 ==========
 
-1. Start an ipython notebook (or Google Colab)
+.. note:: This page is currently being worked on and is NOT an operational part of the 
+   code just yet.
+
+This section will detail how you can produce samples from a gravitational wave (GW) postrior within 
+minutes of downloading VItamin given your own GW time series binary black hole data. You may also 
+optionally use the pregenerated sets of waveforms provided here
+
+Some things to note about the provided black box:
+* We currently set all priors to be uniformly distributed and produce posteriors 
+on 7 parameters (m1,m2,luminosity distance,time of coalescence,inclination angle,
+right ascension and declination). Both phase and psi are internally marginalized out.
+
+* Sampling rate is locked at 256 Hz and duration is locked at 1s (more boxes with other values will become available in future).
+
+* Only works on binary black hole signals (more boxes trained on other signals to be released in the future).
+
+* Does not require a GPU to generate samples, but will be ~1s slower to generate all samples per time series.  
+
+* Start an ipython notebook (or Google Colab)
 
 .. code-block:: console
 
    $ ipython3
 
-2. import vitamin_b and run_vitamin module
+* import vitamin_b and run_vitamin module
 
 .. code-block:: console
 
    $ import vitamin_b
    $ from vitamin_b import run_vitamin
 
-3. You will notice that three text files have now appeared in your repository.
-   These are the default parameter files which vitamin will use to run. Feel 
-   free to edit these files as you wish. More documentation on customizing your 
-   run can be found here. (need to provide link to parameters documentation).
+.. note:: Test samples should be of the format 'data_<test sample number>.h5py'. Where the h5py file 
+   should have a directory containing the source parameter scalar values to be infered of the timeseries labeled 'x_data', 
+   and a directory containing the noisy time series labeled 'y_data_noisy'. 'x_data' should be a numpy array of shape (1,<
+   number of source parameters to be infered>). 'y_data' should be a numpy array of shape (<number of detectors>,
+   <sample rate X duration>) 
 
-   We will now generate some training data using the default hyperparameters. 
-   The code will generate 1000 samples by default, but it is recommended to use 
-   at least 1 million for ideal convergence.
-
-.. code-block:: console
-
-   $ run_vitamin.gen_train()
-
-You may use your own customized parameter files by inserting full paths 
-to the text files in any of the run_vitamin function like so:
+* To produce test samples, simply point vitamin to the directory containing your test waveforms (examples provided `here <https://drive.google.com/file/d/15LCJC6UJR34dqXO9BgLK-NsYlsWADpvc/view?usp=sharing>`_), the pre-trained model (example provided `here <https://drive.google.com/file/d/1O_EwAcrsHNjwumLLX7jmjSVcA0tIVMX_/view?usp=sharing>`_) and specify the number of samples per posterior requested.
 
 .. code-block:: console
 
-   $ run_vitamin.gen_train('params.txt','bounds.txt','fixed_vals.txt')
+   $ samples,_,x_data = run_vitamin.gen_samples(model_loc='inverse_model_dir_demo_3det_9par_256Hz_run1/inverse_model.ckpt',
+                                                test_set='test_sets/all_4_samplers/test_waveforms/',num_samples=10000,
+                                                plot_corner=True)
 
-4. Now generate test samples with corresponding posteriors. By default vitamin 
-   will generate 4 test samples using the dynesty sampler.
 
-.. code-block:: console
+* The function will now return a set of samples from the posterior per timeseries(default is 10000) and the true source parameter values for each timeseries. 
 
-   $ run_vitamin.gen_test()
-
-5. We are ready to start training our network. To do so, simply run the command 
-   below.
-
-.. code-block:: console
-
-   $ run_vitamin.train()
-   
-By default, the code will only run for 5000 iterations (saving the model and making plots 
-every 1000 iterations). It is recommended to have the code run for at least a few 100 thousand 
-iterations (depending on you batch size).
-
-6. To resume training from the last saved checkpoint, simply set the resume_training 
-option in train() to True.
-
-.. code-block:: console
-
-   $ run_vitamin.train(resume_training=True)
-   
-7. Once your model has been fully trained, we can now produce final results plots. In order 
-to get the most use out of thse plots, it is recommended to produce test samples using more 
-than one sampler. However, by default vitamin will only use the Dynesty sampler. 
-
-The VItamin test() function will by default make corner plots (without sky map), 
-KL divergence plots between posteriors produced by other samplers and VItamin and PP plots.
-
-.. code-block:: console
-
-   $ run_vitamin.test()
+* Since we set the option plot_corner=True, you will also find a corner plot in the same directory as we ran the code under the title 'vitamin_example_corner.png'.
 
