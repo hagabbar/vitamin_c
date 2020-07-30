@@ -39,7 +39,7 @@ right ascension and declination). Both phase and psi are internally marginalized
    number of source parameters to be infered>). 'y_data' should be a numpy array of shape (<number of detectors>,
    <sample rate X duration>) 
 
-* To produce test samples, simply point vitamin to the directory containing your test waveforms (examples provided `here <https://drive.google.com/file/d/15LCJC6UJR34dqXO9BgLK-NsYlsWADpvc/view?usp=sharing>`_), the pre-trained model (example provided `here <https://drive.google.com/file/d/1O_EwAcrsHNjwumLLX7jmjSVcA0tIVMX_/view?usp=sharing>`_) and specify the number of samples per posterior requested.
+* To produce test samples, simply point vitamin to the directory containing your test waveforms (examples provided `here <https://drive.google.com/file/d/15LCJC6UJR34dqXO9BgLK-NsYlsWADpvc/view?usp=sharing>`_), the pre-trained model (`model <https://drive.google.com/file/d/1O_EwAcrsHNjwumLLX7jmjSVcA0tIVMX_/view?usp=sharing>`_) and specify the number of samples per posterior requested.
 
 .. code-block:: console
 
