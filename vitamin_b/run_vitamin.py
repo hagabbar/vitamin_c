@@ -238,8 +238,7 @@ def load_data(params,bounds,fixed_vals,input_dir,inf_pars,load_condor=False):
 
     # Extract the prior bounds from training/testing files
     data['x_data'] = np.concatenate(np.array(data['x_data']), axis=0).squeeze()
-    if load_condor==False:
-        data['y_data_noisefree'] = np.concatenate(np.array(data['y_data_noisefree']), axis=0)
+    data['y_data_noisefree'] = np.concatenate(np.array(data['y_data_noisefree']), axis=0)
     data['y_data_noisy'] = np.concatenate(np.array(data['y_data_noisy']), axis=0)
     
 
@@ -251,10 +250,7 @@ def load_data(params,bounds,fixed_vals,input_dir,inf_pars,load_condor=False):
             data['x_data'][:,i]=np.remainder(data['x_data'][:,i],np.pi)
         data['x_data'][:,i]=(data['x_data'][:,i] - bounds[par_min]) / (bounds[par_max] - bounds[par_min])
     x_data = data['x_data']
-    if load_condor==False:
-        y_data = data['y_data_noisefree']
-    else:
-        y_data=None
+    y_data = data['y_data_noisefree']
     y_data_noisy = data['y_data_noisy']
 
     # Define time series normalization factor to use on test samples. We consistantly use the same normscale value if loading by chunks

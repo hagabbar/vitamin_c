@@ -39,7 +39,7 @@ right ascension and declination). Both phase and psi are internally marginalized
    number of source parameters to be infered>). 'y_data' should be a numpy array of shape (<number of detectors>,
    <sample rate X duration>) 
 
-* To produce test samples, simply point vitamin to the directory containing your test waveforms, the pre-trained model (provided here) and specify the number of samples per posterior requested.
+* To produce test samples, simply point vitamin to the directory containing your test waveforms (examples provided `here <https://drive.google.com/file/d/15LCJC6UJR34dqXO9BgLK-NsYlsWADpvc/view?usp=sharing>`_), the pre-trained model (example provided `here <https://drive.google.com/file/d/1O_EwAcrsHNjwumLLX7jmjSVcA0tIVMX_/view?usp=sharing>`_) and specify the number of samples per posterior requested.
 
 .. code-block:: console
 
@@ -48,7 +48,7 @@ right ascension and declination). Both phase and psi are internally marginalized
                                                 plot_corner=True)
 
 
-* The function will now return a set of samples (by default it will return 10000 per timeseries) and the true source parameter values for each timeseries. 
+* The function will now return a set of samples from the posterior per timeseries(default is 10000) and the true source parameter values for each timeseries. 
 
 * Since we set the option plot_corner=True, you will also find a corner plot in the same directory as we ran the code under the title 'vitamin_example_corner.png'.
 

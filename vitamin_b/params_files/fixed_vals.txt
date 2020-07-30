@@ -1,0 +1,1 @@
+{'mass_1': 50.0, 'mass_2': 50.0, 'mc': None, 'geocent_time': 0.0, 'phase': 0.0, 'ra': 1.375, 'dec': -1.2108, 'psi': 0.0, 'theta_jn': 0.0, 'luminosity_distance': 2000.0, 'a_1': 0.0, 'a_2': 0.0, 'tilt_1': 0.0, 'tilt_2': 0.0, 'phi_12': 0.0, 'phi_jl': 0.0, 'det': ['H1', 'L1', 'V1']}
