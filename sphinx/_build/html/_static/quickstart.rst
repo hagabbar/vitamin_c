@@ -2,9 +2,6 @@
 Quickstart
 ==========
 
-.. note:: This page is currently being worked on and is NOT an operational part of the 
-   code just yet.
-
 This section will detail how you can produce samples from a gravitational wave (GW) postrior within 
 minutes of downloading VItamin given your own GW time series binary black hole data. You may also 
 optionally use the pregenerated sets of waveforms provided here
@@ -39,7 +36,7 @@ right ascension and declination). Both phase and psi are internally marginalized
    number of source parameters to be infered>). 'y_data' should be a numpy array of shape (<number of detectors>,
    <sample rate X duration>) 
 
-* To produce test samples, simply point vitamin to the directory containing your test waveforms (examples provided `here <https://drive.google.com/file/d/15LCJC6UJR34dqXO9BgLK-NsYlsWADpvc/view?usp=sharing>`_), the pre-trained model (`model <https://drive.google.com/file/d/1O_EwAcrsHNjwumLLX7jmjSVcA0tIVMX_/view?usp=sharing>`_) and specify the number of samples per posterior requested.
+* To produce test sample posteriors using VItamin, simply point vitamin to the directory containing your test waveforms (examples provided `here <https://drive.google.com/file/d/15LCJC6UJR34dqXO9BgLK-NsYlsWADpvc/view?usp=sharing>`_), the pre-trained model (to be made) and specify the number of samples per posterior requested.
 
 .. code-block:: console
 
