@@ -70,9 +70,9 @@ args = parser.parse_args()
 global params; global bounds; global fixed_vals
 
 # Define default location of the parameters files
-params='./params.txt'
-bounds='./bounds.txt'
-fixed_vals='./fixed_vals.txt'
+params = os.path.join(os.getcwd(), 'params_files', 'params.txt')
+bounds = os.path.join(os.getcwd(), 'params_files', 'bounds.txt')
+fixed_vals = os.path.join(os.getcwd(), 'params_files', 'fixed_vals.txt')
 
 # Load parameters files
 if args.params_file != None:
