@@ -39,6 +39,9 @@ bounds = {'mass_1_min':35.0, 'mass_1_max':80.0,
         'phi_jl_min':0.0, 'phi_jl_max':0.0,
         'luminosity_distance_min':1000.0, 'luminosity_distance_max':3000.0}
 
+# arbitrary value for normalization of timeseries (Don't change this)
+y_normscale = 36.43879218007172
+
 ##########################
 # Main tunable variables
 ##########################
@@ -183,7 +186,7 @@ def get_params():
         KL_cycles = 1,                                                          # number of cycles to repeat for the KL approximation
         samplers=samplers,                                                      
         figure_sampler_names = ['VItamin','Dynesty'],#,'ptemcee','CPNest','emcee'],
-        y_normscale = 36.43879218007172,
+        y_normscale = y_normscale,
         boost_pars=['ra','dec'],
         gauss_pars=['luminosity_distance','geocent_time','theta_jn'],        # parameters that require a truncated gaussian 
         vonmise_pars=['phase','psi'],                                        # parameters that get wrapped on the 1D parameter 
