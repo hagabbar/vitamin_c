@@ -7,6 +7,10 @@ the option to produce sky plots of results, however this requires the
 installation of basemap. VItamin also requires that you use Python3.6 (
 more versions to be available in the future). 
 
+-----------
+From Source
+-----------
+
 Clone vitamin repository
 
 .. code-block:: console
@@ -46,6 +50,22 @@ Install vitamin_b and other required pacakges
 .. code-block:: console
 
    $ pip install -r requirements.txt
-   $ pip install vitamin-b
+   $ pip install .
 
+---------
+From PyPi
+---------
 
+Make a virtual environment
+
+.. code-block:: console
+
+   $ virtualenv -p python3.6 myenv
+   $ source myenv/bin/activate
+   $ pip install --upgrade pip
+
+Install vitamin_b and other required pacakges
+
+.. code-block:: console
+
+   $ pip install vitamin_b
