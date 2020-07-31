@@ -34,11 +34,6 @@ For installing basemap:
 - Install geos-3.3.3 from source
 - Once geos is installed, install basemap using `pip install git+https://github.com/matplotlib/basemap.git`
 
-For other required packages:
-```
-pip install -r requirements.txt
-```
-
 Install VItamin using pip:
 ```
 pip install vitamin-b
