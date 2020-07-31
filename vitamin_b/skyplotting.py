@@ -5,7 +5,6 @@ matplotlib.use('Agg')
 from matplotlib.colors import to_rgb
 from matplotlib import pyplot as plt
 from mpl_toolkits.basemap import Basemap
-#matplotlib.rc('text', usetex=True)
 
 def greedy(density):
     i,j = np.shape(density)
@@ -24,10 +23,8 @@ def plot_sky(pts,contour=True,filled=False,ax=None,trueloc=None,cmap='Reds',col=
     skypost = cls(pts, trials=5, jobs=8)
 
     # make up some data on a regular lat/lon grid.
-#    nlats = 145; nlons = 291; delta = 2.*np.pi/(nlons-1)
     nlats = 145; nlons = 291; delta = 2.*np.pi/(nlons-1)
     lats = (0.5*np.pi-delta*np.indices((nlats,nlons))[0,:,:])
-#    lons = (delta*np.indices((nlats,nlons))[1,:,:])
     lons = (delta*np.indices((nlats,nlons))[1,:,:]-np.pi)
     locs = np.column_stack((lons.flatten(),lats.flatten()))
     prob = skypost(locs).reshape(nlats,nlons)
@@ -38,15 +35,12 @@ def plot_sky(pts,contour=True,filled=False,ax=None,trueloc=None,cmap='Reds',col=
     ny = np.cos(pts[:,1])*np.sin(pts[:,0])
     nz = np.sin(pts[:,1])
     mean_n = [np.mean(nx),np.mean(ny),np.mean(nz)]
-#    bestloc = [np.remainder(np.arctan2(mean_n[1],mean_n[0]),2.0*np.pi),np.arctan2(mean_n[2],np.sqrt(mean_n[0]**2 + mean_n[1]**2))]
     bestloc = [trueloc[0],trueloc[1]]
 
     if ax is None:
-#        map = Basemap(projection='ortho',lon_0=-bestloc[0]*180/np.pi,lat_0=bestloc[1]*180/np.pi,resolution=None,celestial=True)
         map = Basemap(projection='moll',lon_0=0,resolution=None,celestial=True)
         map.drawmapboundary(fill_color='white')
         # draw lat/lon grid lines every 30 degrees.
-#        map.drawmeridians(np.arange(0,360,30))
         meridian = ["-180","-150","-120","-90","-60","-30","0","30","+60","+90","+120","+150"]
         map.drawmeridians(np.arange(-180,180,30),labels=[1,1,1,1])
         for i in np.arange(len(meridian)):
@@ -56,7 +50,6 @@ def plot_sky(pts,contour=True,filled=False,ax=None,trueloc=None,cmap='Reds',col=
         map = ax    
 
     # compute native map projection coordinates of lat/lon grid.
-#    x, y = map(lons*180./np.pi, lats*180./np.pi)
     x, y = map(lons*180./np.pi, lats*180./np.pi)
  
     # contour data over the map.

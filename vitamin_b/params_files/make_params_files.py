@@ -196,15 +196,23 @@ def get_params():
 
 # Save training/test parameters of run if files do not already exist
 params=get_params()
-if not os.path.isfile('./params.txt'):
-    f = open("params.txt","w")
+
+# Make directory containing params files
+try:
+    os.mkdir('params_files')
+except FileExistsError:
+    print("directory 'params_files' already exists")
+
+# Generate params files
+if not os.path.isfile('./params_files/params.txt'):
+    f = open("params_files/params.txt","w")
     f.write( str(params) )
     f.close()
-if not os.path.isfile('./bounds.txt'):
-    f = open("bounds.txt","w")
+if not os.path.isfile('./params_files/bounds.txt'):
+    f = open("params_files/bounds.txt","w")
     f.write( str(bounds) )
     f.close()
-if not os.path.isfile('./fixed_vals.txt'):
-    f = open("fixed_vals.txt","w")
+if not os.path.isfile('./params_files/fixed_vals.txt'):
+    f = open("params_files/fixed_vals.txt","w")
     f.write( str(fixed_vals) )
     f.close()

@@ -36,13 +36,26 @@ try:
     from .gen_benchmark_pe import run
     from . import plotting
     from .plotting import prune_samples
-    from .skyplotting import plot_sky
 except ModuleNotFoundError:
     from models import CVAE_model
     from gen_benchmark_pe import run
     import plotting
     from plotting import prune_samples
-    from skyplotting import plot_sky
+
+# Check for optional basemap installation
+try:
+    from mpl_toolkits.basemap import Basemap
+    print("module 'basemap' is installed")
+except ModuleNotFoundError:
+    print("module 'basemap' is not installed")
+    print("Skyplotting functionality is automatically disabled.")
+    skyplotting_usage = False
+else:
+    skyplotting_usage = True
+    try:
+        from .skyplotting import plot_sky
+    except:
+        from skyplotting import plot_sky
 
 """ Script has 4 main functions:
 1.) Generate training data
@@ -912,14 +925,13 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals):
         y_data_test = np.array(y_data_test_new)
         del y_data_test_new
 
+    # check is basemap is installed
+    if not skyplotting_usage:
+        params['Make_sky_plot'] = False
+
     VI_pred_all = []
     # Iterate over total number of testing samples
     for i in range(params['r']*params['r']):
-
-#        if i == 221: 
-#            pass
-#        else:
-#            continue
 
         # If True, continue through and make corner plots
         if params['make_corner_plots'] == False:
@@ -990,7 +1002,6 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals):
                            color='tab:red', fill_contours=True,
                            fig=figure)
         custom_lines.append(Line2D([0], [0], color='red', lw=4))
-
 
         if params['Make_sky_plot'] == True:
             # Compute skyplot
