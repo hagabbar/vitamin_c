@@ -155,7 +155,7 @@ to the text files in any of the run_vitamin function like so:</p>
 </dl>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Time to run: ~(30 mins - 1 hr)</p>
+<p>Time to run gen_train(): ~(30 mins - 1 hr)</p>
 </div>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> run_vitamin.gen_train<span class="o">(</span><span class="nv">params</span><span class="o">=</span><span class="s1">&#39;params.txt&#39;</span>,bounds<span class="o">=</span><span class="s1">&#39;bounds.txt&#39;</span>,fixed_vals<span class="o">=</span><span class="s1">&#39;fixed_vals.txt&#39;</span><span class="o">)</span>
 </pre></div>
@@ -170,7 +170,7 @@ and a dlogz of 0.1.</p></li>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>May take a few hours depending on hardware.</p>
+<p>Time to run gen_test(): A few hours depending on hardware.</p>
 </div>
 <ol class="arabic simple" start="5">
 <li><p>We are ready to start training our network. To do so, simply run the command
@@ -187,7 +187,7 @@ iterations (depending on you batch size).</p>
 </dl>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Will take several hours to run all the way through depending on hardware. Estimate is made using an Nvidia V100 GPU.</p>
+<p>Time to run train(): Will take several hours to run all the way through depending on hardware. Estimate is made using an Nvidia V100 GPU.</p>
 </div>
 <ol class="arabic simple" start="6">
 <li><p>To resume training from the last saved checkpoint, simply set the resume_training
@@ -209,7 +209,7 @@ KL divergence plots between posteriors produced by other samplers and VItamin an
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Takes ~1s per timeseries to make corner plot results. KL and PP plot will take a few minutes to generate if only using 4 test timeseries and 1 sampler. Time to generate KL and PP plots will increase as more test timeseries and samplers are added.</p>
+<p>Time to run test(): ~1s per timeseries to make corner plot results. KL and PP plot will take a few minutes to generate if only using 4 test timeseries and 1 sampler. Time to generate KL and PP plots will increase as more test timeseries and samplers are added.</p>
 </div>
 </div>
 

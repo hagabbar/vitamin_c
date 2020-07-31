@@ -29,10 +29,10 @@ Run Your Own Analysis from Start to Finish
    $ run_vitamin.gen_train()
 
 \
-  You may use your own customized parameter files by inserting full paths 
-  to the text files in any of the run_vitamin function like so:
+   You may use your own customized parameter files by inserting full paths 
+   to the text files in any of the run_vitamin function like so:
 
-.. note:: Time to run: ~(30 mins - 1 hr)
+.. note:: Time to run gen_train(): ~(30 mins - 1 hr)
 
 .. code-block:: console
 
@@ -46,7 +46,7 @@ Run Your Own Analysis from Start to Finish
 
    $ run_vitamin.gen_test()
 
-.. note:: May take a few hours depending on hardware.
+.. note:: Time to run gen_test(): A few hours depending on hardware.
 
 5. We are ready to start training our network. To do so, simply run the command 
    below.
@@ -56,11 +56,11 @@ Run Your Own Analysis from Start to Finish
    $ run_vitamin.train()
 
 \   
-  By default, the code will run for 1,000,000 iterations (saving the model and making plots 
-  every 50,000 iterations). It is recommended to have the code run for at least a few 100 thousand 
-  iterations (depending on you batch size).
+   By default, the code will run for 1,000,000 iterations (saving the model and making plots 
+   every 50,000 iterations). It is recommended to have the code run for at least a few 100 thousand 
+   iterations (depending on you batch size).
 
-.. note:: Will take several hours to run all the way through depending on hardware. Estimate is made using an Nvidia V100 GPU.
+.. note:: Time to run train(): Will take several hours to run all the way through depending on hardware. Estimate is made using an Nvidia V100 GPU.
 
 6. To resume training from the last saved checkpoint, simply set the resume_training 
    option in train() to True.
@@ -80,5 +80,5 @@ Run Your Own Analysis from Start to Finish
 
    $ run_vitamin.test()
 
-.. note:: Takes ~1s per timeseries to make corner plot results. KL and PP plot will take a few minutes to generate if only using 4 test timeseries and 1 sampler. Time to generate KL and PP plots will increase as more test timeseries and samplers are added.
+.. note:: Time to run test(): ~1s per timeseries to make corner plot results. KL and PP plot will take a few minutes to generate if only using 4 test timeseries and 1 sampler. Time to generate KL and PP plots will increase as more test timeseries and samplers are added.
 
