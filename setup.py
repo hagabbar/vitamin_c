@@ -64,14 +64,14 @@ def readfile(filename):
     return filecontents
 
 
-VERSION = '0.2.6'
+VERSION = '0.2.7'
 version_file = write_version_file(VERSION)
 long_description = get_long_description()
 
 
 setup(
     name='vitamin_b',
-    version='0.2.6',    
+    version='0.2.7',    
     description='A user-friendly machine learning Bayesian inference library',
     long_description=long_description,
     long_description_content_type='text/markdown',
