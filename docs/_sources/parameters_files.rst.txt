@@ -150,7 +150,6 @@ The run parameters file:
 
    samplers=['vitamin','dynesty'],                                          # Bayesian samplers to use when comparing ML results (vitamin is ML approach) dynesty,ptemcee,cpnest,emcee
    figure_sampler_names = ['VItamin','Dynesty'],                           # Labels for samplers in figures 
-   y_normscale = 36.43879218007172,                                        # arbitrary scaling value for waveforms (make sure it is safe b/w testing and training of model)
    boost_pars=['ra','dec'],                                                # Parameters to provide extra boosting scaler factor to loss during training.
    gauss_pars=['luminosity_distance','geocent_time','theta_jn'],           # parameters that require a truncated gaussian      
    vonmise_pars=['phase','psi'],                                           # parameters that get wrapped on the 1D parameter   
