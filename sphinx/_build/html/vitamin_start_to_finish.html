@@ -136,29 +136,41 @@
 </pre></div>
 </div>
 <ol class="arabic" start="3">
-<li><p>You will notice that three text files have now appeared in your repository.
+<li><p>You will notice that three text files have now appeared in your repository (under dictionary params_files).
 These are the default parameter files which vitamin will use to run. Feel
 free to edit these files as you wish. More documentation on customizing your
 run can be found here. (need to provide link to parameters documentation).</p>
 <p>We will now generate some training data using the default hyperparameters.
-The code will generate 1000 samples by default, but it is recommended to use
+The code will generate 100,000 samples by default, but it is recommended to use
 at least 1 million for ideal convergence.</p>
 </li>
 </ol>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> run_vitamin.gen_train<span class="o">()</span>
 </pre></div>
 </div>
-<p>You may use your own customized parameter files by inserting full paths
+<dl class="simple">
+<dt></dt><dd><p>You may use your own customized parameter files by inserting full paths
 to the text files in any of the run_vitamin function like so:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> run_vitamin.gen_train<span class="o">(</span><span class="s1">&#39;params.txt&#39;</span>,<span class="s1">&#39;bounds.txt&#39;</span>,<span class="s1">&#39;fixed_vals.txt&#39;</span><span class="o">)</span>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Time to run: ~(30 mins - 1 hr)</p>
+</div>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> run_vitamin.gen_train<span class="o">(</span><span class="nv">params</span><span class="o">=</span><span class="s1">&#39;params.txt&#39;</span>,bounds<span class="o">=</span><span class="s1">&#39;bounds.txt&#39;</span>,fixed_vals<span class="o">=</span><span class="s1">&#39;fixed_vals.txt&#39;</span><span class="o">)</span>
 </pre></div>
 </div>
 <ol class="arabic simple" start="4">
 <li><p>Now generate test samples with corresponding posteriors. By default vitamin
-will generate 4 test samples using the dynesty sampler.</p></li>
+will generate 4 test samples using the dynesty sampler using 1000 live points
+and a dlogz of 0.1.</p></li>
 </ol>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> run_vitamin.gen_test<span class="o">()</span>
 </pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>May take a few hours depending on hardware.</p>
 </div>
 <ol class="arabic simple" start="5">
 <li><p>We are ready to start training our network. To do so, simply run the command
@@ -167,21 +179,37 @@ below.</p></li>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> run_vitamin.train<span class="o">()</span>
 </pre></div>
 </div>
-<p>By default, the code will only run for 5000 iterations (saving the model and making plots
-every 1000 iterations). It is recommended to have the code run for at least a few 100 thousand
+<dl class="simple">
+<dt></dt><dd><p>By default, the code will run for 1,000,000 iterations (saving the model and making plots
+every 50,000 iterations). It is recommended to have the code run for at least a few 100 thousand
 iterations (depending on you batch size).</p>
-<p>6. To resume training from the last saved checkpoint, simply set the resume_training
-option in train() to True.</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Will take several hours to run all the way through depending on hardware. Estimate is made using an Nvidia V100 GPU.</p>
+</div>
+<ol class="arabic simple" start="6">
+<li><p>To resume training from the last saved checkpoint, simply set the resume_training
+option in train() to True.</p></li>
+</ol>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> run_vitamin.train<span class="o">(</span><span class="nv">resume_training</span><span class="o">=</span>True<span class="o">)</span>
 </pre></div>
 </div>
-<p>7. Once your model has been fully trained, we can now produce final results plots. In order
+<ol class="arabic" start="7">
+<li><p>Once your model has been fully trained, we can now produce final results plots. In order
 to get the most use out of thse plots, it is recommended to produce test samples using more
 than one sampler. However, by default vitamin will only use the Dynesty sampler.</p>
 <p>The VItamin test() function will by default make corner plots (without sky map),
 KL divergence plots between posteriors produced by other samplers and VItamin and PP plots.</p>
+</li>
+</ol>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> run_vitamin.test<span class="o">()</span>
 </pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Takes ~1s per timeseries to make corner plot results. KL and PP plot will take a few minutes to generate if only using 4 test timeseries and 1 sampler. Time to generate KL and PP plots will increase as more test timeseries and samplers are added.</p>
 </div>
 </div>
 

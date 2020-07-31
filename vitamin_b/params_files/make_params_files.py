@@ -85,7 +85,7 @@ n_weights_q = [n_fc,n_fc,n_fc]                                                  
 #############################
 # optional tunable variables
 #############################
-run_label = 'demo_%ddet_%dpar_%dHz_run1' % (len(fixed_vals['det']),len(rand_pars),ndata) # label of run
+run_label = 'demo_%ddet_%dpar_%dHz_testing' % (len(fixed_vals['det']),len(rand_pars),ndata) # label of run
 bilby_results_label = 'all_4_samplers'                                             # label given to bilby results directory
 r = 2                                                                           # number (to the power of 2) of test samples to use for testing. r = 2 means you want to use 2^2 (i.e 4) test samples
 pe_test_num = 256                                                               # total number of test samples available to use in directory
