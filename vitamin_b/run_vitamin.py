@@ -729,6 +729,7 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
         plt.close('all')
         plot_convergence(search_result)
         plt.savefig('%s/latest_%s/hyperpar_convergence.png' % (params['plot_dir'],params['run_label']))
+        print('Saved hyperparameter convergence loss to -> %s/latest_%s/hyperpar_convergence.png' % (params['plot_dir'],params['run_label']))
         print('Did a hyperparameter search') 
 
     # train using user defined params
@@ -1049,6 +1050,7 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals):
         plt.close()
         del figure
         print('Made corner plot: %s' % str(i+1))
+        print('Saved corner plot to -> %s/latest_%s/corner_plot_%s_%d.png' % (params['plot_dir'],params['run_label'],params['run_label'],i))
 
         # Store ML predictions for later plotting use
         VI_pred_all.append(VI_pred)
@@ -1199,6 +1201,7 @@ def gen_samples(params='params.txt',bounds='bounds.txt',fixed_vals='fixed_vals.t
         figure = corner.corner(samples[0,:,:],truths=x_data[0,:],labels=parnames)
         plt.savefig('./vitamin_example_corner.png')
         plt.close()
+        print('Saved corner plot to -> ./vitamin_example_corner.png')
 
     return samples, y_data_test, x_data
 
