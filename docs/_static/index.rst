@@ -19,7 +19,7 @@ introduction to the use of VItamin at the following Google Colab
    :alt: alternate text
    :align: center
 
-.. note:: If there are any bugs/requests, please email Hunter Gabbard at h.gabbard.1@research.gla.ac.uk.
+.. note:: If there are any bugs/requests, please raise an issue on the vitamin_b GitHub page.
 
 .. toctree::
    :maxdepth: 2
