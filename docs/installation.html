@@ -122,10 +122,10 @@
       
   <div class="section" id="installation">
 <h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
-<p>This page will tell you how to install VItamin from scratch. VItamin
-currently requires the installation of basemap (though this will become
-an optional installation procedure in the future). VItamin also requires
-that you use Python3.6.</p>
+<p>This page will tell you how to install VItamin from scratch. There is also
+the option to produce sky plots of results, however this requires the
+installation of basemap. VItamin also requires that you use Python3.6 (
+more versions to be available in the future).</p>
 <p>Clone vitamin repository</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> git clone https://github.com/hagabbar/vitamin_b
 <span class="gp">$</span> <span class="nb">cd</span> vitamin_b
@@ -137,23 +137,23 @@ that you use Python3.6.</p>
 <span class="gp">$</span> pip install --upgrade pip
 </pre></div>
 </div>
-<p>cd into your environment and download geos library</p>
+<p>(optional skyplotting install) cd into your environment and download geos library</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> myenv
 <span class="gp">$</span> git clone https://github.com/matplotlib/basemap.git
 <span class="gp">$</span> <span class="nb">cd</span> basemap/geos-3.3.3/
 </pre></div>
 </div>
-<p>Install geos-3.3.3</p>
+<p>(optional skyplotting install) Install geos-3.3.3</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> mkdir opt
 <span class="gp">$</span> <span class="nb">export</span> <span class="nv">GEOS_DIR</span><span class="o">=</span>&lt;full path to opt direcotyr&gt;/opt:<span class="nv">$GEOS_DIR</span>
 <span class="gp">$</span> ./configure --prefix<span class="o">=</span><span class="nv">$GEOS_DIR</span>
 <span class="gp">$</span> make<span class="p">;</span> make install
+<span class="gp">$</span> <span class="nb">cd</span> ../../..
+<span class="gp">$</span> pip install git+https://github.com/matplotlib/basemap.git
 </pre></div>
 </div>
-<p>Install basemap, vitamin_b and other required pacakges</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> ../../..
-<span class="gp">$</span> pip install git+https://github.com/matplotlib/basemap.git
-<span class="gp">$</span> pip install -r requirements.txt
+<p>Install vitamin_b and other required pacakges</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> pip install -r requirements.txt
 <span class="gp">$</span> pip install vitamin-b
 </pre></div>
 </div>

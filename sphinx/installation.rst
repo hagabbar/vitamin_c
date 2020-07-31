@@ -2,10 +2,10 @@
 Installation
 ============
 
-This page will tell you how to install VItamin from scratch. VItamin 
-currently requires the installation of basemap (though this will become 
-an optional installation procedure in the future). VItamin also requires 
-that you use Python3.6. 
+This page will tell you how to install VItamin from scratch. There is also
+the option to produce sky plots of results, however this requires the 
+installation of basemap. VItamin also requires that you use Python3.6 (
+more versions to be available in the future). 
 
 Clone vitamin repository
 
@@ -22,7 +22,7 @@ Make a virtual environment
    $ source myenv/bin/activate
    $ pip install --upgrade pip
 
-cd into your environment and download geos library
+(optional skyplotting install) cd into your environment and download geos library
 
 .. code-block:: console
 
@@ -30,7 +30,7 @@ cd into your environment and download geos library
    $ git clone https://github.com/matplotlib/basemap.git
    $ cd basemap/geos-3.3.3/
 
-Install geos-3.3.3
+(optional skyplotting install) Install geos-3.3.3
 
 .. code-block:: console
 
@@ -38,13 +38,13 @@ Install geos-3.3.3
    $ export GEOS_DIR=<full path to opt direcotyr>/opt:$GEOS_DIR
    $ ./configure --prefix=$GEOS_DIR
    $ make; make install
+   $ cd ../../..
+   $ pip install git+https://github.com/matplotlib/basemap.git
 
-Install basemap, vitamin_b and other required pacakges
+Install vitamin_b and other required pacakges
 
 .. code-block:: console
 
-   $ cd ../../..
-   $ pip install git+https://github.com/matplotlib/basemap.git
    $ pip install -r requirements.txt
    $ pip install vitamin-b
 
