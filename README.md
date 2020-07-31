@@ -28,7 +28,7 @@ source myenv/bin/activate
 pip install --upgrade pip
 ```
 
-Make sure to install basemap prior to installing all other packages.
+Optionally, install `basemap` and `geos` in order to produce sky plots of results.
 
 For installing basemap:
 - Install geos-3.3.3 from source
