@@ -801,8 +801,9 @@ class make_plots:
         for l in leg.legendHandles:
             l.set_alpha(1.0)
         plt.tight_layout()
-        fig.savefig('%s/pp_plot_%04d.png' % (self.params['plot_dir'],i_epoch),dpi=360)
+        #fig.savefig('%s/pp_plot_%04d.png' % (self.params['plot_dir'],i_epoch),dpi=360)
         fig.savefig('%s/latest_%s/latest_pp_plot.png' % (self.params['plot_dir'],self.params['run_label']),dpi=360)
+        print('Saved pp plot to -> %s/latest_%s/latest_pp_plot.png' % (self.params['plot_dir'],self.params['run_label']))
         plt.close(fig)
         # TODO add this back in
         hf.close()
@@ -832,10 +833,11 @@ class make_plots:
         plt.legend()
         plt.tight_layout()
         plt.savefig('%s/latest_%s/cost_%s.png' % (self.params['plot_dir'],self.params['run_label'],self.params['run_label']),dpi=360)
+        print('Saved cost unzoomed plot to -> %s/latest_%s/cost_%s.png' % (self.params['plot_dir'],self.params['run_label'],self.params['run_label']))
         plt.ylim([np.min(np.array(plotdata)[-int(0.9*np.array(plotdata).shape[0]):,0]), np.max(np.array(plotdata)[-int(0.9*np.array(plotdata).shape[0]):,1])])
         plt.savefig('%s/latest_%s/cost_zoom_%s.png' % (self.params['plot_dir'],self.params['run_label'],self.params['run_label']),dpi=360)
+        print('Saved cost zoomed plot to -> %s/latest_%s/cost_zoom_%s.png' % (self.params['plot_dir'],self.params['run_label'],self.params['run_label']))
         plt.close('all')
-
 
         return
 
@@ -1123,235 +1125,5 @@ class make_plots:
         fig_kl.savefig('%s/latest_%s/hist-kl.png' % (self.params['plot_dir'],self.params['run_label']),dpi=360)
         plt.close(fig_kl)
         hf.close()
-        return
-        
-        """
-        # Compute dynesty with itself once
-        sampler1 = 'dynesty1'
-        sampler2 = 'dynesty1'
-        logbins = np.logspace(-3,2.5,50)
-        time_dict = {}
-
-        set1,time_dict[sampler1] = self.load_test_set(model,sig_test,par_test,normscales,bounds,sampler=sampler1) 
-#        set2,time_dict[sampler2] = self.load_test_set(model,sig_test,par_test,normscales,bounds,sampler=sampler2)
-        set2 = np.copy(set1)
-        tot_kl_std = []
-        tot_kl_mean = []
-        for r in range(self.params['r']**2):
-            std_kl, mean_kl = compute_kl(set1[r],set2[r],[sampler1,sampler2])
-            tot_kl_std.append(std_kl)
-            tot_kl_mean.append(mean_kl)
-            print(tot_kl_std[r])
-            print('Completed KL for set %s-%s and test sample %s' % (sampler1,sampler2,str(r)))
-        tot_kl_std = np.array(tot_kl_std)
-        tot_kl_mean = np.array(tot_kl_mean)
-
-        # linear plot
-        fig_kl, axis_kl = plt.subplots(1,1,figsize=(6,6))
-        axis_kl.hist(tot_kl_std,bins=50,histtype='stepfilled',density=True,color='grey')
-        axis_kl.set_xlabel(r'$\mathrm{KL-Statistic}$',fontsize=14)
-        axis_kl.set_ylabel(r'$p(\mathrm{KL})$',fontsize=14)
-        axis_kl.tick_params(axis="x", labelsize=14)
-        axis_kl.tick_params(axis="y", labelsize=14)
-        leg = axis_kl.legend(loc='upper right', fontsize=10) #'medium')
-        for l in leg.legendHandles:
-            l.set_alpha(1.0)
-
-        axis_kl.set_xlim(left=1e-2,right=1)
-        axis_kl.grid(False)
-        fig_kl.canvas.draw()
-        fig_kl.savefig('/home/hunter.gabbard/public_html/CBC/VItamin/dynesty_with_itself_linear.png')
-        plt.close()
-
-        # log plot
-        fig_kl, axis_kl = plt.subplots(1,1,figsize=(6,6))
-        axis_kl.hist(tot_kl_std,bins=logbins,histtype='stepfilled',density=True,color='grey')
-        axis_kl.set_xlabel(r'$\mathrm{KL-Statistic}$',fontsize=14)
-        axis_kl.set_ylabel(r'$p(\mathrm{KL})$',fontsize=14)
-        axis_kl.tick_params(axis="x", labelsize=14)
-        axis_kl.tick_params(axis="y", labelsize=14)
-        leg = axis_kl.legend(loc='upper right', fontsize=10) #'medium')
-        for l in leg.legendHandles:
-            l.set_alpha(1.0)
-
-        axis_kl.set_xlim(left=1e-2,right=1)
-        axis_kl.set_xscale('log')
-        axis_kl.set_yscale('log')
-        axis_kl.grid(False)
-        fig_kl.canvas.draw()
-        fig_kl.savefig('/home/hunter.gabbard/public_html/CBC/VItamin/dynesty_with_itself_log.png')
-        plt.close()
-
-        print()
-        print('Mean std KL is below:')
-        print(np.mean(tot_kl_std))
-        print()
-        print('Mean KL is below: ')
-        print(np.mean(tot_kl_mean))
-        print('Finished computing KL with itself')
-        exit()
-        """
-
-        tot_kl_grey = np.array([])
-        fig_kl, axis_kl = plt.subplots(1,1,figsize=(6,6))
-        time_dict = {}
-        # single plot KL approach 
-        for i in range(len(usesamps)):
-            for j in range(tmp_idx):
-
-                # Load appropriate test sets
-                if samplers[i] == samplers[::-1][j]:
-                    print_cnt+=1
-                    sampler1, sampler2 = samplers[i]+'1', samplers[::-1][j]+'1'
-
-                    # currently not doing KL of approaches with themselves, so skip here
-                    continue
-                    if self.params['load_plot_data'] == False:
-                        set1,time_dict[sampler1] = self.load_test_set(model,sig_test,par_test,normscales,bounds,sampler=sampler1)
-                        set2,time_dict[sampler2] = self.load_test_set(model,sig_test,par_test,normscales,bounds,sampler=sampler2)
-                else:
-                    sampler1, sampler2 = samplers[i]+'1', samplers[::-1][j]+'1'
-                   
-                    if self.params['load_plot_data'] == False:
-                        set1,time_dict[sampler1] = self.load_test_set(model,sig_test,par_test,normscales,bounds,sampler=sampler1,vitamin_pred_made=vi_pred_made)
-                        set2,time_dict[sampler2] = self.load_test_set(model,sig_test,par_test,normscales,bounds,sampler=sampler2,vitamin_pred_made=vi_pred_made)
-
-                        # check if vitamin test posteriors were generated for the first time
-                        if sampler1 == 'vitamin1' and vi_pred_made == None:
-                            vi_pred_made = [set1,time_dict[sampler1]]
-                        elif sampler2 == 'vitamin1' and vi_pred_made == None:
-                            vi_pred_made = [set2,time_dict[sampler2]]
-
-                if self.params['load_plot_data'] == True:
-                    tot_kl = np.array(hf['%s-%s' % (sampler1,sampler2)])
-                else:
-
-                    # Iterate over test cases
-                    tot_kl = []  # total KL over all infered parameters
-                    indi_kl = np.zeros((self.params['r']**2,len(self.params['inf_pars']))) # KL for each individual paramter
-
-                    if self.params['make_indi_kl'] == True:
-                        for r in range(self.params['r']**2):
-                            indi_kl[r,:] = compute_kl(set1[r],set2[r],[sampler1,sampler2],one_D=True)
-                            print('Completed KL for set %s-%s and test sample %s' % (sampler1,sampler2,str(r)))
-                    for r in range(self.params['r']**2):
-                        tot_kl.append(compute_kl(set1[r],set2[r],[sampler1,sampler2]))
-                        print('Completed KL for set %s-%s and test sample %s' % (sampler1,sampler2,str(r)))
-                    tot_kl = np.array(tot_kl)
-
-                if self.params['load_plot_data'] == False:
-
-                    # Save results to h5py file
-                    hf.create_dataset('%s-%s' % (sampler1,sampler2), data=tot_kl)
-               
-                logbins = np.logspace(-3,2.5,50)
-                logbins_indi = np.logspace(-3,3,50)
-                #logbins = 50
-
-                if samplers[i] == 'vitamin' or samplers[::-1][j] == 'vitamin':
-                    # print 10 worst and 10 best kl
-                    print(tot_kl.argsort()[-15:][::-1])
-                    print(np.sort(tot_kl)[-15:][::-1])
-                    print(tot_kl.argsort()[:15][:])
-                    print(np.sort(tot_kl)[:15][:])
-
-                    # plot vitamin kls
-                    axis_kl.hist(tot_kl,bins=logbins,alpha=0.5,histtype='stepfilled',density=True,color=CB_color_cycle[print_cnt],label=r'$\textrm{VItamin-%s}$' % (samplers[::-1][j]),zorder=2)
-                    axis_kl.hist(tot_kl,bins=logbins,histtype='step',density=True,facecolor='None',ls='-',lw=2,edgecolor=CB_color_cycle[print_cnt],zorder=10)
-
-                    if self.params['make_indi_kl'] == True:
-                        # plot indi vitamin kls
-                        for u in range(len(self.params['inf_pars'])):
-                            indi_axis_kl[u].hist(indi_kl[:,u],bins=logbins_indi,alpha=0.5,histtype='stepfilled',density=True,color=CB_color_cycle[print_cnt],label=r'$\textrm{VItamin vs. %s}$' % (samplers[::-1][j]),zorder=2)
-                            indi_axis_kl[u].hist(indi_kl[:,u],bins=logbins_indi,histtype='step',density=True,facecolor='None',ls='-',lw=0.5,edgecolor=CB_color_cycle[print_cnt],zorder=10)    
-                        print('Mean total KL vitamin vs bilby: %s' % str(np.mean(tot_kl)))
-                    
-                    # Return the mean KL if doing hyperparameter optimization
-                    if self.params['hyperparam_optim'] == True:
-                        return np.mean(tot_kl)
-                else:
-                    print(tot_kl.argsort()[-15:][::-1])
-                    print(np.sort(tot_kl)[-15:][::-1])
-                    print(tot_kl.argsort()[:15][:])
-                    print(np.sort(tot_kl)[:15][:]) 
-
-                    
-                    tot_kl_grey = np.append(tot_kl_grey,tot_kl)
-
-                    if label_idx == 0:
-
-                        if self.params['make_indi_kl'] == True:
-                            # plot indi bayesian kls
-                            for u in range(len(self.params['inf_pars'])):
-                                indi_axis_kl[u].hist(indi_kl[:,u],bins=logbins_indi,alpha=0.8,histtype='stepfilled',density=True,color='grey',label=r'$\textrm{other samplers}$',zorder=1)
-
-                        label_idx += 1
-                    else:
-                        if self.params['make_indi_kl'] == True:
-                            # plot indi bayesian kls
-                            for u in range(len(self.params['inf_pars'])):
-                                indi_axis_kl[u].hist(indi_kl[:,u],bins=logbins_indi,alpha=0.8,histtype='stepfilled',density=True,color='grey',zorder=1)
-
-                    if self.params['make_indi_kl'] == True:
-                        # plot indi bayesian kls
-                        for u in range(len(self.params['inf_pars'])):
-                            indi_axis_kl[u].hist(indi_kl[:,u],bins=logbins_indi,histtype='step',density=True,facecolor='None',ls='-',lw=0.2,edgecolor='grey',zorder=1)
-                 
-                    print('Mean total KL between bilby samps: %s' % str(np.mean(tot_kl)))
-
-                print('Completed KL calculation %d/%d' % (print_cnt,len(usesamps)*2))
-                print_cnt+=1
-
-            tmp_idx -= 1
-            if self.params['load_plot_data'] == False:
-                runtime[sampler1] = time_dict[sampler1]
-
-        # plot non indi bayesian kls
-        axis_kl.hist(tot_kl_grey,bins=logbins,alpha=0.8,histtype='stepfilled',density=True,color='grey',label=r'$\textrm{other samplers vs. other samplers}$',zorder=1)
-        # plot non indi bayesian kls
-        axis_kl.hist(tot_kl_grey,bins=logbins,histtype='step',density=True,facecolor='None',ls='-',lw=2,edgecolor='grey',zorder=1)
-
-        if self.params['load_plot_data'] == False:
-#            # Print sampler runtimes
-            for i in range(len(usesamps)):
-                hf.create_dataset('%s_runtime' % (samplers[i]), data=np.array(runtime[samplers[i]+'1']))
-                print('%s sampler runtimes: %s' % (samplers[i]+'1',str(runtime[samplers[i]+'1'])))
-
-        
-
-        # Save KL histogram
-        axis_kl.set_xlabel(r'$\mathrm{KL-Statistic}$',fontsize=14)
-        axis_kl.set_ylabel(r'$p(\mathrm{KL})$',fontsize=14)
-        axis_kl.tick_params(axis="x", labelsize=14)
-        axis_kl.tick_params(axis="y", labelsize=14)
-        leg = axis_kl.legend(loc='upper right', fontsize=10) #'medium')
-        for l in leg.legendHandles: 
-            l.set_alpha(1.0)
-
-        axis_kl.set_xlim(left=8e-2,right=100)
-        axis_kl.set_xscale('log')
-        axis_kl.set_yscale('log')
-        axis_kl.grid(False)
-        fig_kl.canvas.draw()
-#        fig_kl.savefig('%s/latest_%s/hist-kl.png' % (self.params['plot_dir'],self.params['run_label']),dpi=360)
-        plt.close(fig_kl)
-
-        if self.params['make_indi_kl'] == True:
-            # save indi kl histogram
-            for u in range(len(self.params['inf_pars'])):
-                indi_axis_kl[u].set_xlabel(r'$\mathrm{%s}$' % self.params['inf_pars'][u],fontsize=5)
-                indi_axis_kl[u].tick_params(axis="x", labelsize=5)
-                indi_axis_kl[u].tick_params(axis="y", labelsize=5)
-
-                indi_axis_kl[u].set_xlim(left=1e-3)
-                indi_axis_kl[u].set_xscale('log')
-                indi_axis_kl[u].set_yscale('log')
-                indi_axis_kl[u].grid(False)
-            indi_axis_kl[7].set_visible(False)
-            indi_axis_kl[8].set_visible(False)
-            indi_fig_kl.canvas.draw()
-            indi_fig_kl.savefig('%s/latest_%s/hist-kl_individual_par.png' % (self.params['plot_dir'],self.params['run_label']),dpi=360)
-            plt.close(indi_fig_kl)
-
-        hf.close()
+        print('Saved KL plot to -> %s/latest_%s/hist-kl.png' % (self.params['plot_dir'],self.params['run_label']))
         return

@@ -676,8 +676,10 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
                 plt.ylabel('cost')
                 plt.legend()
                 plt.savefig('%s/latest_%s/cost_%s.png' % (params['plot_dir'],params['run_label'],params['run_label']))
+                print('Saving unzoomed cost to -> %s/latest_%s/cost_%s.png' % (params['plot_dir'],params['run_label'],params['run_label']))
                 plt.ylim([np.min(np.array(plotdata)[-int(0.9*np.array(plotdata).shape[0]):,0]), np.max(np.array(plotdata)[-int(0.9*np.array(plotdata).shape[0]):,1])])
                 plt.savefig('%s/latest_%s/cost_zoom_%s.png' % (params['plot_dir'],params['run_label'],params['run_label']))
+                print('Saving zoomed cost to -> %s/latest_%s/cost_zoom_%s.png' % (params['plot_dir'],params['run_label'],params['run_label']))
                 plt.close('all')
                 
             except:
@@ -707,7 +709,6 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
                     # Save loss plot data
                     np.savetxt(save_dir.split('/')[0] + '/loss_data.txt', np.array(plotdata))
                 except FileNotFoundError as err:
-                    print(err)
                     pass
 
         if i % params['save_interval'] == 0 and i > 0:
@@ -767,7 +768,9 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
 
 
                 plt.savefig('%s/corner_plot_%s_%d-%d.png' % (params['plot_dir'],params['run_label'],i,j))
+                print('Saved corner plot iteration %d to -> %s/corner_plot_%s_%d-%d.png' % (i,params['plot_dir'],params['run_label'],i,j))
                 plt.savefig('%s/latest_%s/corner_plot_%s_%d.png' % (params['plot_dir'],params['run_label'],params['run_label'],j))
+                print('Saved latest corner plot to -> %s/latest_%s/corner_plot_%s_%d.png' % (params['plot_dir'],params['run_label'],params['run_label'],j))
                 plt.close('all')
                 print('Made corner plot %d' % j)
 
