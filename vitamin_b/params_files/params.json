@@ -1,0 +1,208 @@
+{
+    "KL_cycles": 1,
+    "Make_sky_plot": false,
+    "batch_norm": true,
+    "batch_size": 512,
+    "bilby_results_label": "all_4_samplers",
+    "boost_pars": [
+        "ra",
+        "dec"
+    ],
+    "by_channel": true,
+    "conv_strides_q": [
+        1,
+        1,
+        1
+    ],
+    "conv_strides_r1": [
+        1,
+        1,
+        1,
+        1,
+        1
+    ],
+    "conv_strides_r2": [
+        1,
+        1,
+        1
+    ],
+    "cornercorner_parnames": [
+        "$m_{1}\\,(\\mathrm{M}_{\\odot})$",
+        "$m_{2}\\,(\\mathrm{M}_{\\odot})$",
+        "$d_{\\mathrm{L}}\\,(\\mathrm{Mpc})$",
+        "$t_{0}\\,(\\mathrm{seconds})$",
+        "${\\phi}$",
+        "$\\Theta_{jn}\\,(\\mathrm{rad})$",
+        "${\\psi}$",
+        "${\\alpha}\\,(\\mathrm{rad})$",
+        "${\\delta}\\,(\\mathrm{rad})$"
+    ],
+    "doPE": true,
+    "drate": 0.5,
+    "duration": 1.0,
+    "figure_sampler_names": [
+        "VItamin",
+        "Dynesty"
+    ],
+    "filter_size_q": [
+        5,
+        8,
+        11
+    ],
+    "filter_size_r1": [
+        5,
+        8,
+        11,
+        10,
+        10
+    ],
+    "filter_size_r2": [
+        5,
+        8,
+        11
+    ],
+    "gauss_pars": [
+        "luminosity_distance",
+        "geocent_time",
+        "theta_jn"
+    ],
+    "gpu_num": 0,
+    "hyperparam_n_call": 30,
+    "hyperparam_optim": false,
+    "hyperparam_optim_stop": 1500000,
+    "inf_pars": [
+        "mass_1",
+        "mass_2",
+        "luminosity_distance",
+        "geocent_time",
+        "theta_jn",
+        "ra",
+        "dec"
+    ],
+    "initial_training_rate": 0.0001,
+    "load_by_chunks": true,
+    "load_chunk_size": 10000.0,
+    "load_iteration": 488,
+    "load_plot_data": false,
+    "make_corner_plots": true,
+    "make_kl_plot": true,
+    "make_loss_plot": false,
+    "make_pp_plot": true,
+    "maxpool_q": [
+        1,
+        2,
+        1
+    ],
+    "maxpool_r1": [
+        1,
+        2,
+        1,
+        2,
+        1
+    ],
+    "maxpool_r2": [
+        1,
+        2,
+        1
+    ],
+    "n_filters_q": [
+        33,
+        33,
+        33
+    ],
+    "n_filters_r1": [
+        33,
+        33,
+        33,
+        33,
+        33
+    ],
+    "n_filters_r2": [
+        33,
+        33,
+        33
+    ],
+    "n_modes": 7,
+    "n_samples": 10000,
+    "n_weights_q": [
+        2048,
+        2048,
+        2048
+    ],
+    "n_weights_r1": [
+        2048,
+        2048,
+        2048
+    ],
+    "n_weights_r2": [
+        2048,
+        2048,
+        2048
+    ],
+    "ndata": 256,
+    "num_iterations": 1000001,
+    "pe_dir": "./test_sets/all_4_samplers/test",
+    "plot_dir": "./results/demo_3det_9par_256Hz_testing",
+    "plot_interval": 50000,
+    "pool_strides_q": [
+        1,
+        2,
+        1
+    ],
+    "pool_strides_r1": [
+        1,
+        2,
+        1,
+        2,
+        1
+    ],
+    "pool_strides_r2": [
+        1,
+        2,
+        1
+    ],
+    "print_values": true,
+    "r": 2,
+    "ramp": true,
+    "ramp_end": 100000.0,
+    "ramp_start": 10000.0,
+    "rand_pars": [
+        "mass_1",
+        "mass_2",
+        "luminosity_distance",
+        "geocent_time",
+        "phase",
+        "theta_jn",
+        "psi",
+        "ra",
+        "dec"
+    ],
+    "ref_geocent_time": 1126259642.5,
+    "report_interval": 500,
+    "resume_training": false,
+    "run_label": "demo_3det_9par_256Hz_testing",
+    "samplers": [
+        "vitamin",
+        "dynesty"
+    ],
+    "save_interval": 50000,
+    "sky_pars": [
+        "ra",
+        "dec"
+    ],
+    "test_set_dir": "./test_sets/all_4_samplers/test_waveforms",
+    "testing_data_seed": 44,
+    "tot_dataset_size": 100000,
+    "train_set_dir": "./training_sets_3det_9par_256Hz/tset_tot-100000_split-1000",
+    "training_data_seed": 43,
+    "tset_split": 1000,
+    "vonmise_pars": [
+        "phase",
+        "psi"
+    ],
+    "weight_init": "xavier",
+    "weighted_pars": null,
+    "weighted_pars_factor": 1,
+    "y_normscale": 36.43879218007172,
+    "z_dimension": 10
+}

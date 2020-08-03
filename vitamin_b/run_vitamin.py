@@ -30,6 +30,7 @@ from matplotlib.lines import Line2D
 import pandas as pd
 import logging.config
 from contextlib import contextmanager
+import json
 
 import skopt
 from skopt import gp_minimize, forest_minimize
@@ -91,9 +92,9 @@ args = parser.parse_args()
 global params; global bounds; global fixed_vals
 
 # Define default location of the parameters files
-params = os.path.join(os.getcwd(), 'params_files', 'params.txt')
-bounds = os.path.join(os.getcwd(), 'params_files', 'bounds.txt')
-fixed_vals = os.path.join(os.getcwd(), 'params_files', 'fixed_vals.txt')
+params = os.path.join(os.getcwd(), 'params_files', 'params.json')
+bounds = os.path.join(os.getcwd(), 'params_files', 'bounds.json')
+fixed_vals = os.path.join(os.getcwd(), 'params_files', 'fixed_vals.json')
 
 # Load parameters files
 if args.params_file != None:
@@ -449,24 +450,22 @@ def gen_train(params=params,bounds=bounds,fixed_vals=fixed_vals):
         exit()
 
     # Load parameters files
-    f = open(params,'r')
-    data=f.read()
-    f.close()
-    params = eval(data)
-    f = open(bounds,'r')
-    data=f.read()
-    f.close()
-    bounds = eval(data)
-    f = open(fixed_vals,'r')
-    data=f.read()
-    f.close()
-    fixed_vals = eval(data)
+    with open(params, 'r') as fp:
+        params = json.load(fp)
+    with open(bounds, 'r') as fp:
+        bounds = json.load(fp)
+    with open(fixed_vals, 'r') as fp:
+        fixed_vals = json.load(fp)
 
     # Make training set directory
     os.system('mkdir -p %s' % params['train_set_dir'])
 
     # Make directory for plots
     os.system('mkdir -p %s/latest_%s' % (params['plot_dir'],params['run_label']))
+
+    print()
+    print('... Making training set')
+    print()
 
     # Iterate over number of requested training samples
     for i in range(0,params['tot_dataset_size'],params['tset_split']):
@@ -521,18 +520,12 @@ def gen_test(params=params,bounds=bounds,fixed_vals=fixed_vals):
         exit()
 
     # Load parameters files
-    f = open(params,'r')
-    data=f.read()
-    f.close()
-    params = eval(data)
-    f = open(bounds,'r')
-    data=f.read()
-    f.close()
-    bounds = eval(data)
-    f = open(fixed_vals,'r')
-    data=f.read()
-    f.close()
-    fixed_vals = eval(data)
+    with open(params, 'r') as fp:
+        params = json.load(fp)
+    with open(bounds, 'r') as fp:
+        bounds = json.load(fp)
+    with open(fixed_vals, 'r') as fp:
+        fixed_vals = json.load(fp)
 
     # Make testing set directory
     os.system('mkdir -p %s' % params['test_set_dir'])
@@ -598,18 +591,12 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
         exit()
 
     # Load parameters files
-    f = open(params,'r')
-    data=f.read()
-    f.close()
-    params = eval(data)
-    f = open(bounds,'r')
-    data=f.read()
-    f.close()
-    bounds = eval(data)
-    f = open(fixed_vals,'r')
-    data=f.read()
-    f.close()
-    fixed_vals = eval(data)
+    with open(params, 'r') as fp:
+        params = json.load(fp)
+    with open(bounds, 'r') as fp:
+        bounds = json.load(fp)
+    with open(fixed_vals, 'r') as fp:
+        fixed_vals = json.load(fp)
 
     # If resuming training, set KL ramp off
     if resume_training:
@@ -781,18 +768,12 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
         exit()
 
     # Load parameters files
-    f = open(params,'r')
-    data=f.read()
-    f.close()
-    params = eval(data)
-    f = open(bounds,'r')
-    data=f.read()
-    f.close()
-    bounds = eval(data)
-    f = open(fixed_vals,'r')
-    data=f.read()
-    f.close()
-    fixed_vals = eval(data)
+    with open(params, 'r') as fp:
+        params = json.load(fp)
+    with open(bounds, 'r') as fp:
+        bounds = json.load(fp)
+    with open(fixed_vals, 'r') as fp:
+        fixed_vals = json.load(fp)
 
     if use_gpu == True:
         print("... GPU found")
@@ -1122,18 +1103,12 @@ def gen_samples(params='params.txt',bounds='bounds.txt',fixed_vals='fixed_vals.t
         exit()
 
     # Load parameters files
-    f = open(params,'r')
-    data=f.read()
-    f.close()
-    params = eval(data)
-    f = open(bounds,'r')
-    data=f.read()
-    f.close()
-    bounds = eval(data)
-    f = open(fixed_vals,'r')
-    data=f.read()
-    f.close()
-    fixed_vals = eval(data)
+    with open(params, 'r') as fp:
+        params = json.load(fp)
+    with open(bounds, 'r') as fp:
+        bounds = json.load(fp)
+    with open(fixed_vals, 'r') as fp:
+        fixed_vals = json.load(fp)
 
     if use_gpu == True:
         print('GPU found')
