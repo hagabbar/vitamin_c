@@ -2,10 +2,18 @@
 Installation
 ============
 
-This page will tell you how to install VItamin from scratch. There is also
-the option to produce sky plots of results, however this requires the 
-installation of basemap. VItamin also requires that you use Python3.6 (
-more versions to be available in the future). 
+This page will tell you how to install VItamin both from source and through PyPI. 
+If you would like to also produce sky plots, you will need to install from source 
+and install the optional basemap/geos packages.
+
+----------------------
+Notes on Compatibility
+----------------------
+VItamin requires Python3.6 (e.g. python3.7 will not work) More versions of python will be compatible in the future.
+
+A GPU is required in order to train a model from scratch, however it is not necessary 
+to have a GPU in order to test a pre-trained model (VItamin will default to the CPU 
+in this case, unlesss otherwise specified by the user).
 
 -----------
 From Source
