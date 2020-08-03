@@ -208,26 +208,17 @@ except FileExistsError:
 
 # Generate params files
 if not os.path.isfile('./params_files/params.txt'):
-    f = open("params_files/params.txt","w")
-    f.write( str(params) )
-    f.close()
     
     # save params json file
     with open('params_files/params.json', 'w') as fp:
         json.dump(params, fp, sort_keys=True, indent=4)
 
 if not os.path.isfile('./params_files/bounds.txt'):
-    f = open("params_files/bounds.txt","w")
-    f.write( str(bounds) )
-    f.close()
 
     # save bounds json file
     with open('params_files/bounds.json', 'w') as fp:
         json.dump(bounds, fp, sort_keys=True, indent=4)
 if not os.path.isfile('./params_files/fixed_vals.txt'):
-    f = open("params_files/fixed_vals.txt","w")
-    f.write( str(fixed_vals) )
-    f.close()
 
     # save fixed vals json file
     with open('params_files/fixed_vals.json', 'w') as fp:
