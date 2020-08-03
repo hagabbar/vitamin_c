@@ -4,8 +4,9 @@
 
 
 #######################################################################################################################
-import warnings, os
+import warnings
 warnings.filterwarnings("ignore")
+import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 import argparse
 import numpy as np
@@ -84,6 +85,7 @@ parser.add_argument("--pretrained_loc", default=None, type=str, help="location o
 parser.add_argument("--test_set_loc", default=None, type=str, help="directory containing test set waveforms")
 parser.add_argument("--gen_samples", default=False, help="If True, generate samples only (no plotting)")
 parser.add_argument("--num_samples", type=int, default=None, help="number of posterior samples to generate")
+parser.add_argument("--use_gpu", default=False, help="if True, use gpu")
 args = parser.parse_args()
 
 global params; global bounds; global fixed_vals
@@ -771,19 +773,7 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
     return
 
 # if we are now testing the network
-def test(params=params,bounds=bounds,fixed_vals=fixed_vals):
-
-    if tf.test.gpu_device_name():
-        print('GPU found')
-        os.environ["CUDA_VISIBLE_DEVICES"]=str(0)
-        config = tf.compat.v1.ConfigProto()
-        config.gpu_options.allow_growth = True  # Let GPU consumption grow as needed
-    else:
-        print("No GPU found")
-        os.environ["CUDA_VISIBLE_DEVICES"]=''
-        config = tf.compat.v1.ConfigProto()
-
-    session = tf.compat.v1.Session(config=config)
+def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
 
     # Check for requried parameters files
     if params == None or bounds == None or fixed_vals == None:
@@ -803,7 +793,19 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals):
     data=f.read()
     f.close()
     fixed_vals = eval(data)
-    
+
+    if use_gpu == True:
+        print("... GPU found")
+        os.environ["CUDA_VISIBLE_DEVICES"]=str(params['gpu_num'])
+        config = tf.compat.v1.ConfigProto()
+        config.gpu_options.allow_growth = True  # Let GPU consumption grow as needed
+        session = tf.compat.v1.Session(config=config)
+    else:
+        print("... Using CPU")
+        os.environ["CUDA_VISIBLE_DEVICES"]=''
+        config = tf.compat.v1.ConfigProto()
+        session = tf.compat.v1.Session(config=config)
+
     y_normscale = params['y_normscale']
 
     # load the testing data time series and source parameter truths
@@ -835,7 +837,6 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals):
                 dataLocations = ["%s" % input_dir]
 
             filenames = sorted(os.listdir(dataLocations[0]), key=lambda x: int(x.split('.')[0].split('_')[-1]))
-            print(i,len(filenames))
             if len(filenames) < num_finished_post:
                 sampler_loc = i + str(j+1)
                 num_finished_post = len(filenames)
@@ -866,7 +867,7 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals):
                 print(e)
                 continue
 
-            print(filename)
+            print('... Loading test sample file -> ' + filename)
             post_files.append(filename)
             
             # Prune emcee samples for bad likelihood chains
@@ -911,6 +912,7 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals):
                     #XS_all = np.vstack((XS_all,np.expand_dims(XS[rand_idx_posterior,:], axis=0)))
                     XS_all = np.vstack((XS_all,np.expand_dims(XS[:params['n_samples'],:], axis=0)))
                 except ValueError as error: # If not enough posterior samples, exit with ValueError
+                    print('Not enough samples from the posterior generated')
                     print(error)
                     exit()
 
@@ -1035,6 +1037,9 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals):
             # Compute skyplot
 #            left, bottom, width, height = [0.55, 0.47, 0.5, 0.39] # orthographic representation
 #            left, bottom, width, height = [0.525, 0.47, 0.45, 0.44] # mollweide representation
+            print()
+            print('... Generating sky plot')
+            print()
             left, bottom, width, height = [0.46, 0.6, 0.5, 0.5] # switch with waveform positioning
             ax_sky = figure.add_axes([left, bottom, width, height]) 
 
@@ -1076,8 +1081,10 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals):
         plt.savefig('%s/latest_%s/corner_plot_%s_%d.png' % (params['plot_dir'],params['run_label'],params['run_label'],i))
         plt.close()
         del figure
-        print('Made corner plot: %s' % str(i+1))
-        print('Saved corner plot to -> %s/latest_%s/corner_plot_%s_%d.png' % (params['plot_dir'],params['run_label'],params['run_label'],i))
+        print()
+        print('... Made corner plot: %s' % str(i+1))
+        print('... Saved corner plot to -> %s/latest_%s/corner_plot_%s_%d.png' % (params['plot_dir'],params['run_label'],params['run_label'],i))
+        print()
 
         # Store ML predictions for later plotting use
         VI_pred_all.append(VI_pred)
@@ -1105,21 +1112,9 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals):
 
     return
 
-def gen_samples(params='params.txt',bounds='bounds.txt',fixed_vals='fixed_vals.txt',model_loc='model-ex/model.ckpt',test_set='test-ex/',num_samples=None,plot_corner=True):
+def gen_samples(params='params.txt',bounds='bounds.txt',fixed_vals='fixed_vals.txt',model_loc='model-ex/model.ckpt',test_set='test-ex/',num_samples=None,plot_corner=True,use_gpu=False):
     """ Function to generate VItamin samples given a trained model
     """
-
-    if tf.test.gpu_device_name():
-        print('GPU found')
-        os.environ["CUDA_VISIBLE_DEVICES"]=str(0)
-        config = tf.compat.v1.ConfigProto()
-        config.gpu_options.allow_growth = True  # Let GPU consumption grow as needed
-    else:
-        print("No GPU found")
-        os.environ["CUDA_VISIBLE_DEVICES"]=''
-        config = tf.compat.v1.ConfigProto() 
-
-    session = tf.compat.v1.Session(config=config)
 
     # Check for requried parameters files
     if params == None or bounds == None or fixed_vals == None:
@@ -1139,6 +1134,18 @@ def gen_samples(params='params.txt',bounds='bounds.txt',fixed_vals='fixed_vals.t
     data=f.read()
     f.close()
     fixed_vals = eval(data)
+
+    if use_gpu == True:
+        print('GPU found')
+        os.environ["CUDA_VISIBLE_DEVICES"]=str(params['gpu_num'])
+        config = tf.compat.v1.ConfigProto()
+        config.gpu_options.allow_growth = True  # Let GPU consumption grow as needed
+    else:
+        print("No GPU found")
+        os.environ["CUDA_VISIBLE_DEVICES"]=''
+        config = tf.compat.v1.ConfigProto() 
+
+    session = tf.compat.v1.Session(config=config)
 
     if num_samples != None:
         params['n_samples'] = num_samples
@@ -1190,7 +1197,7 @@ def gen_samples(params='params.txt',bounds='bounds.txt',fixed_vals='fixed_vals.t
     if x_data.shape[1] > len(params['inf_pars']):
         idx = []
         for k in params['inf_pars']:
-            print(k)
+            print('...' + k + 'will be infered')
             for i,m in enumerate(params['rand_pars']):
                 if k==m:
                     idx.append(i)
@@ -1211,7 +1218,7 @@ def gen_samples(params='params.txt',bounds='bounds.txt',fixed_vals='fixed_vals.t
         samples[i,:], dt, _  = CVAE_model.run(params, np.expand_dims(y_data_test[i],axis=0), len(params['inf_pars']),
                                                               params['y_normscale'],
                                                               model_loc)
-        print(dt)
+        print('... Runtime to generate samples is: ' + dt)
     # unnormalize predictions
     for q_idx,q in enumerate(params['inf_pars']):
         par_min = q + '_min'
@@ -1228,7 +1235,7 @@ def gen_samples(params='params.txt',bounds='bounds.txt',fixed_vals='fixed_vals.t
         figure = corner.corner(samples[0,:,:],truths=x_data[0,:],labels=parnames)
         plt.savefig('./vitamin_example_corner.png')
         plt.close()
-        print('Saved corner plot to -> ./vitamin_example_corner.png')
+        print('... Saved corner plot to -> ./vitamin_example_corner.png')
 
     return samples, y_data_test, x_data
 
@@ -1240,8 +1247,8 @@ if args.gen_test:
 if args.train:
     train(params,bounds,fixed_vals)
 if args.test:
-    test(params,bounds,fixed_vals)
+    test(params,bounds,fixed_vals,use_gpu=bool(args.use_gpu))
 if args.gen_samples:
     gen_samples(params,bounds,fixed_vals,model_loc=args.pretrained_loc,
-                test_set=args.test_set_loc,num_samples=args.num_samples)
+                test_set=args.test_set_loc,num_samples=args.num_samples,use_gpu=bool(args.use_gpu))
 

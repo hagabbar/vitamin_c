@@ -108,7 +108,7 @@ def load_chunk(input_dir,inf_pars,params,bounds,fixed_vals,load_condor=False):
     np.random.shuffle(train_files)
     train_files = np.array(train_files)[train_files_idx]
     for filename in train_files: 
-            print(filename)
+            print('... Loading file -> ' + filename)
             data_temp={'x_data': h5py.File(dataLocations[0]+'/'+filename, 'r')['x_data'][:],
                   'y_data_noisefree': h5py.File(dataLocations[0]+'/'+filename, 'r')['y_data_noisefree'][:],
                   'rand_pars': h5py.File(dataLocations[0]+'/'+filename, 'r')['rand_pars'][:]}
@@ -144,7 +144,6 @@ def load_chunk(input_dir,inf_pars,params,bounds,fixed_vals,load_condor=False):
     # extract inference parameters
     idx = []
     for k in inf_pars:
-        print(k)
         for i,q in enumerate(data['rand_pars']):
             m = q.decode('utf-8')
             if k==m:
@@ -603,7 +602,7 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
         saver = tf.train.Saver()
 
     print()
-    print('Training Inference Model ...')    
+    print('... Training Inference Model')    
     print()
     # START OPTIMISATION OF OELBO
     indices_generator = batch_manager.SequentialIndexer(params['batch_size'], xsh[0])
@@ -636,7 +635,7 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
       
         # restore session if wanted
         if params['resume_training'] == True and i == 0:
-            print('Loading previously trained model from -> ' + save_dir)
+            print('... Loading previously trained model from -> ' + save_dir)
             saver.restore(session, save_dir)
 
         # compute the ramp value
