@@ -287,8 +287,10 @@ def load_data(params,bounds,fixed_vals,input_dir,inf_pars,load_condor=False):
  
     # extract inference parameters from all source parameters loaded earlier
     idx = []
+    print()
     for k in inf_pars:
-        print(k)
+        if load_condor == False:
+            print('... ' + k + ' will be inferred')
         for i,q in enumerate(data['rand_pars']):
             m = q.decode('utf-8')
             if k==m:
@@ -673,7 +675,8 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
             print(e)
             continue
 
-        print(filename)
+        print()
+        print('... Loading test sample -> ' + filename)
         post_files.append(filename)
         data_temp = {} 
         n = 0
@@ -753,8 +756,8 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
         plt.close('all')
         plot_convergence(search_result)
         plt.savefig('%s/latest_%s/hyperpar_convergence.png' % (params['plot_dir'],params['run_label']))
-        print('Saved hyperparameter convergence loss to -> %s/latest_%s/hyperpar_convergence.png' % (params['plot_dir'],params['run_label']))
-        print('Did a hyperparameter search') 
+        print('... Saved hyperparameter convergence loss to -> %s/latest_%s/hyperpar_convergence.png' % (params['plot_dir'],params['run_label']))
+        print('... Did a hyperparameter search') 
 
     # train using user defined params
     else:

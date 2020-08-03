@@ -602,7 +602,9 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
         session.run(init)
         saver = tf.train.Saver()
 
-    print('Training Inference Model...')    
+    print()
+    print('Training Inference Model ...')    
+    print()
     # START OPTIMISATION OF OELBO
     indices_generator = batch_manager.SequentialIndexer(params['batch_size'], xsh[0])
     plotdata = []
@@ -634,7 +636,7 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
       
         # restore session if wanted
         if params['resume_training'] == True and i == 0:
-            print(save_dir)
+            print('Loading previously trained model from -> ' + save_dir)
             saver.restore(session, save_dir)
 
         # compute the ramp value
@@ -676,10 +678,11 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
                 plt.ylabel('cost')
                 plt.legend()
                 plt.savefig('%s/latest_%s/cost_%s.png' % (params['plot_dir'],params['run_label'],params['run_label']))
-                print('Saving unzoomed cost to -> %s/latest_%s/cost_%s.png' % (params['plot_dir'],params['run_label'],params['run_label']))
+                print('... Saving unzoomed cost to -> %s/latest_%s/cost_%s.png' % (params['plot_dir'],params['run_label'],params['run_label']))
                 plt.ylim([np.min(np.array(plotdata)[-int(0.9*np.array(plotdata).shape[0]):,0]), np.max(np.array(plotdata)[-int(0.9*np.array(plotdata).shape[0]):,1])])
                 plt.savefig('%s/latest_%s/cost_zoom_%s.png' % (params['plot_dir'],params['run_label'],params['run_label']))
-                print('Saving zoomed cost to -> %s/latest_%s/cost_zoom_%s.png' % (params['plot_dir'],params['run_label'],params['run_label']))
+                print('... Saving zoomed cost to -> %s/latest_%s/cost_zoom_%s.png' % (params['plot_dir'],params['run_label'],params['run_label']))
+                print()
                 plt.close('all')
                 
             except:
@@ -698,8 +701,10 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
 
                 # terminate training if vanishing gradient
                 if np.isnan(kl+cost) == True or np.isnan(kl_val+cost_val) == True or kl+cost > int(1e5):
+                    print()
                     print('Network is returning NaN values')
                     print('Terminating network training')
+                    print()
                     if params['hyperparam_optim'] == True:
                         save_path = saver.save(session,save_dir)
                         return 5000.0, session, saver, save_dir
@@ -741,7 +746,10 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
                     XS, dt, _  = run(params, y_data_test[j].reshape([1,-1]), np.shape(x_data_test)[1],
                                                  y_normscale, 
                                                  "inverse_model_dir_%s/inverse_model.ckpt" % params['run_label'])
-                print('Runtime to generate {} samples = {} sec'.format(params['n_samples'],dt))            
+                print()
+                print('... Runtime to generate {} samples = {} sec'.format(params['n_samples'],dt))            
+                print()
+
                 # Make corner plots
                 # Get corner parnames to use in plotting labels
                 parnames = []
@@ -768,11 +776,13 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
 
 
                 plt.savefig('%s/corner_plot_%s_%d-%d.png' % (params['plot_dir'],params['run_label'],i,j))
-                print('Saved corner plot iteration %d to -> %s/corner_plot_%s_%d-%d.png' % (i,params['plot_dir'],params['run_label'],i,j))
+                print()
+                print('... Saved corner plot iteration %d to -> %s/corner_plot_%s_%d-%d.png' % (i,params['plot_dir'],params['run_label'],i,j))
                 plt.savefig('%s/latest_%s/corner_plot_%s_%d.png' % (params['plot_dir'],params['run_label'],params['run_label'],j))
-                print('Saved latest corner plot to -> %s/latest_%s/corner_plot_%s_%d.png' % (params['plot_dir'],params['run_label'],params['run_label'],j))
+                print('... Saved latest corner plot to -> %s/latest_%s/corner_plot_%s_%d.png' % (params['plot_dir'],params['run_label'],params['run_label'],j))
                 plt.close('all')
-                print('Made corner plot %d' % j)
+                print('... Made corner plot %d' % j)
+                print()
 
     return            
 
