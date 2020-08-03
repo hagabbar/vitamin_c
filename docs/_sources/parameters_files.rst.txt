@@ -11,11 +11,11 @@ First, import vitamin to produce the default parameters files
 
    $ import vitamin
 
-You will now see that there are three text files in your current directory 
-(params.txt,bounds.txt,fixed_vals.txt). The params.txt file concerns 
+You will now see that there are three json files in your current directory 
+(params.json,bounds.json,fixed_vals.json). The params.json file concerns 
 the run parameters which make your run unique (batch size, parameters to infer 
-etc.). The bounds.txt file concerns the allowed numerical bounds for the 
-source parameters to be infered. The fixed_vals.txt file dictates the 
+etc.). The bounds.json file concerns the allowed numerical bounds for the 
+source parameters to be infered. The fixed_vals.json file dictates the 
 value at which source parameters are fixed if they are chosen to be 
 fixed by the user.
 
