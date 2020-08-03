@@ -49,7 +49,7 @@ ndata = 256                                                                     
 rand_pars = ['mass_1','mass_2','luminosity_distance','geocent_time','phase',
                  'theta_jn','psi','ra','dec']                                   # parameters to randomize (those not listed here are fixed otherwise)
 inf_pars=['mass_1','mass_2','luminosity_distance','geocent_time','theta_jn','ra','dec'] # psi phase before ra and dec                     # parameters to infer
-batch_size = 64                                                                 # Number training samples shown to neural network per iteration
+batch_size = 512                                                                 # Number training samples shown to neural network per iteration
 weight_init = 'xavier'                                                         #[xavier,VarianceScaling,Orthogonal] # Network model weight initialization    
 n_modes=7                                                                      # number of modes in Gaussian mixture model (ideal 7, but may go higher/lower)
 initial_training_rate=1e-4                                                     # initial training rate for ADAM optimiser inference model (inverse reconstruction)
