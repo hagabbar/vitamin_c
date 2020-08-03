@@ -193,7 +193,7 @@ def gen_template(duration,
         parameter_conversion=bilby.gw.conversion.convert_to_lal_binary_black_hole_parameters,
         waveform_arguments=waveform_arguments,
         start_time=start_time)
-    
+
     # create waveform
     wfg = waveform_generator
 
@@ -208,13 +208,12 @@ def gen_template(duration,
 
     # set noise to be colored Gaussian noise
     ifos.set_strain_data_from_power_spectral_densities(
-        sampling_frequency=sampling_frequency, duration=duration,
-        start_time=start_time)
+    sampling_frequency=sampling_frequency, duration=duration,
+    start_time=start_time)
 
     # inject signal
     ifos.inject_signal(waveform_generator=waveform_generator,
                        parameters=injection_parameters)
-
 
     whitened_signal_td_all = []
     whitened_h_td_all = [] 

@@ -4,15 +4,19 @@
 
 
 #######################################################################################################################
-
+import warnings, os
+warnings.filterwarnings("ignore")
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 import argparse
 import numpy as np
 import tensorflow as tf
+from tensorflow.python.util import deprecation
+deprecation._PRINT_DEPRECATION_WARNINGS = False
 import scipy.io as sio
 import h5py
+import sys
 from sys import exit
 import shutil
-import os
 import bilby
 import matplotlib
 matplotlib.use('Agg')
@@ -23,6 +27,8 @@ import corner
 import glob
 from matplotlib.lines import Line2D
 import pandas as pd
+import logging.config
+from contextlib import contextmanager
 
 import skopt
 from skopt import gp_minimize, forest_minimize
@@ -173,6 +179,16 @@ default_hyperparams = [params['filter_size_r1'][0],
 
 # dummy value for initial hyperparameter best KL (to be minimized). Doesn't need to be changed.
 best_loss = int(1e6)
+
+@contextmanager
+def suppress_stdout():
+    with open(os.devnull, "w") as devnull:
+        old_stdout = sys.stdout
+        sys.stdout = devnull
+        try:
+            yield
+        finally:
+            sys.stdout = old_stdout
 
 def load_data(params,bounds,fixed_vals,input_dir,inf_pars,load_condor=False):
     """ Function to load either training or testing data.
@@ -451,8 +467,13 @@ def gen_train(params=params,bounds=bounds,fixed_vals=fixed_vals):
     # Iterate over number of requested training samples
     for i in range(0,params['tot_dataset_size'],params['tset_split']):
 
-        # generate training sample source parameter, waveform and snr
-        _, signal_train, signal_train_pars,snrs = run(sampling_frequency=params['ndata']/params['duration'],
+        logging.config.dictConfig({
+        'version': 1,
+        'disable_existing_loggers': True,
+        })
+        with suppress_stdout():
+            # generate training sample source parameter, waveform and snr
+            _, signal_train, signal_train_pars,snrs = run(sampling_frequency=params['ndata']/params['duration'],
                                                           duration=params['duration'],
                                                           N_gen=params['tset_split'],
                                                           ref_geocent_time=params['ref_geocent_time'],
@@ -462,7 +483,10 @@ def gen_train(params=params,bounds=bounds,fixed_vals=fixed_vals):
                                                           seed=params['training_data_seed']+i,
                                                           label=params['run_label'],
                                                           training=True)
-
+        logging.config.dictConfig({
+        'version': 1,
+        'disable_existing_loggers': False,
+        })
         print("Generated: %s/data_%d-%d.h5py ..." % (params['train_set_dir'],(i+params['tset_split']),params['tot_dataset_size']))
 
         # store training sample information in hdf5 format
