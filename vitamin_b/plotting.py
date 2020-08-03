@@ -710,14 +710,18 @@ class make_plots:
                     pp[1,j] = 1.0
                     pp[cnt+2,j] = self.pp_plot(pos_test[cnt,j],x[j,:])
 #                        pp[cnt+2] = self.pp_plot(pos_test[cnt,j],x[j,int(cnt*self.params['n_samples']):int((cnt+1)*self.params['n_samples'])])
-                    print('Computed param %d p-p plot iteration %d/%d' % (j,int(cnt)+1,int(Npp)))
+                    print()
+                    print('... Computed param %d p-p plot iteration %d/%d' % (j,int(cnt)+1,int(Npp)))
+                    print()
 
             # Save VItamin pp curves
             hf.create_dataset('vitamin_pp_data', data=pp)
 
         else:
             pp = hf['vitamin_pp_data']
-            print('Loaded VItamin pp curves')
+            print()
+            print('... Loaded VItamin pp curves')
+            print()
 
         
         confidence_pp = np.zeros((len(self.params['samplers'])-1,int(self.params['r']**2)+2))
@@ -751,12 +755,15 @@ class make_plots:
                 if self.params['load_plot_data'] == False:
                     for cnt in range(self.params['r']**2):
                         pp_bilby[cnt+2] = self.pp_plot(pos_test[cnt,j],samples[cnt,:,j].transpose())
-                        print('Computed %s, param %d p-p plot iteration %d/%d' % (samplers[i],j,int(cnt)+1,int(self.params['r']**2)))
+                        print()
+                        print('... Computed %s, param %d p-p plot iteration %d/%d' % (samplers[i],j,int(cnt)+1,int(self.params['r']**2)))
+                        print()
                     hf.create_dataset('%s_param%d_pp' % (samplers[i],j), data=pp_bilby)           
                 else:
                     pp_bilby = hf['%s_param%d_pp' % (samplers[i],j)]
-                    print('Loaded Bilby sampler pp curve')
-                
+                    print()
+                    print('... Loaded Bilby sampler pp curve')
+                    print()
                 # plot bilby sampler results
                 if j == 0:
                     axis.plot(np.arange((self.params['r']**2)+2)/((self.params['r']**2)+1.0),np.sort(pp_bilby),'-',color=CB_color_cycle[i-1],linewidth=1,label=r'$\textrm{%s}$' % self.params['figure_sampler_names'][i],alpha=0.5)
@@ -803,9 +810,10 @@ class make_plots:
         plt.tight_layout()
         #fig.savefig('%s/pp_plot_%04d.png' % (self.params['plot_dir'],i_epoch),dpi=360)
         fig.savefig('%s/latest_%s/latest_pp_plot.png' % (self.params['plot_dir'],self.params['run_label']),dpi=360)
-        print('Saved pp plot to -> %s/latest_%s/latest_pp_plot.png' % (self.params['plot_dir'],self.params['run_label']))
+        print()
+        print('... Saved pp plot to -> %s/latest_%s/latest_pp_plot.png' % (self.params['plot_dir'],self.params['run_label']))
+        print()
         plt.close(fig)
-        # TODO add this back in
         hf.close()
         return
 
@@ -833,10 +841,12 @@ class make_plots:
         plt.legend()
         plt.tight_layout()
         plt.savefig('%s/latest_%s/cost_%s.png' % (self.params['plot_dir'],self.params['run_label'],self.params['run_label']),dpi=360)
-        print('Saved cost unzoomed plot to -> %s/latest_%s/cost_%s.png' % (self.params['plot_dir'],self.params['run_label'],self.params['run_label']))
+        print()
+        print('... Saved cost unzoomed plot to -> %s/latest_%s/cost_%s.png' % (self.params['plot_dir'],self.params['run_label'],self.params['run_label']))
         plt.ylim([np.min(np.array(plotdata)[-int(0.9*np.array(plotdata).shape[0]):,0]), np.max(np.array(plotdata)[-int(0.9*np.array(plotdata).shape[0]):,1])])
         plt.savefig('%s/latest_%s/cost_zoom_%s.png' % (self.params['plot_dir'],self.params['run_label'],self.params['run_label']),dpi=360)
-        print('Saved cost zoomed plot to -> %s/latest_%s/cost_zoom_%s.png' % (self.params['plot_dir'],self.params['run_label'],self.params['run_label']))
+        print('... Saved cost zoomed plot to -> %s/latest_%s/cost_zoom_%s.png' % (self.params['plot_dir'],self.params['run_label'],self.params['run_label']))
+        print()
         plt.close('all')
 
         return
@@ -1005,7 +1015,9 @@ class make_plots:
             try:
                 os.mkdir('plotting_data_%s' % params['run_label']) 
             except:
-                print('Plotting directory already exists')
+                print()
+                print('... Plotting directory already exists')
+                print()
 
             try:
                 hf = h5py.File('plotting_data_%s/KL_plot_data.h5' % params['run_label'], 'w')
@@ -1061,7 +1073,9 @@ class make_plots:
 
                         for r in range(self.params['r']**2):
                             tot_kl.append(compute_kl(set1[r],set2[r],[sampler1,sampler2]))
-                            print('Completed KL for set %s-%s and test sample %s' % (sampler1,sampler2,str(r)))
+                            print()
+                            print('... Completed KL for set %s-%s and test sample %s' % (sampler1,sampler2,str(r)))
+                            print()
                         tot_kl = np.array(tot_kl)
 
                     if self.params['load_plot_data'] == False:
@@ -1081,8 +1095,10 @@ class make_plots:
 
                             tot_kl_grey = np.append(tot_kl_grey,tot_kl)
 
-                            print('Mean total KL between bilby samps: %s' % str(np.mean(tot_kl)))
-                    print('Completed KL calculation %d/%d' % (print_cnt,len(usesamps)*2))
+                            print()
+                            print('... Mean total KL between bilby samps: %s' % str(np.mean(tot_kl)))
+                    print('... Completed KL calculation %d/%d' % (print_cnt,len(usesamps)*2))
+                    print()
                     print_cnt+=1
                 tmp_idx-=1
 
@@ -1115,7 +1131,7 @@ class make_plots:
             axis_kl[kl_idx_1,kl_idx_2].set_yscale('log')
             axis_kl[kl_idx_1,kl_idx_2].grid(False)
             print()
-            print('Made hist plot %d' % k)
+            print('... Made hist plot %d' % k)
             print()
 
         # Save figure
@@ -1125,5 +1141,7 @@ class make_plots:
         fig_kl.savefig('%s/latest_%s/hist-kl.png' % (self.params['plot_dir'],self.params['run_label']),dpi=360)
         plt.close(fig_kl)
         hf.close()
-        print('Saved KL plot to -> %s/latest_%s/hist-kl.png' % (self.params['plot_dir'],self.params['run_label']))
+        print()
+        print('... Saved KL plot to -> %s/latest_%s/hist-kl.png' % (self.params['plot_dir'],self.params['run_label']))
+        print()
         return
