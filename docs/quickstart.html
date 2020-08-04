@@ -125,14 +125,13 @@
 <p>This section will detail how you can produce samples from a gravitational wave (GW) postrior within
 minutes of downloading VItamin given your own GW time series binary black hole data. You may also
 optionally use the pregenerated sets of waveforms provided here</p>
-<p>Some things to note about the provided black box:
-* We currently set all priors to be uniformly distributed and produce posteriors
-on 7 parameters (m1,m2,luminosity distance,time of coalescence,inclination angle,
-right ascension and declination). Both phase and psi are internally marginalized out.</p>
+<p>Some things to note about the provided black box:</p>
 <ul class="simple">
+<li><p>We currently set all priors to be uniformly distributed and produce posteriors on 7 parameters (m1,m2,luminosity distance,time of coalescence,inclination angle, right ascension and declination). Both phase and psi are internally marginalized out.</p></li>
 <li><p>Sampling rate is locked at 256 Hz and duration is locked at 1s (more boxes with other values will become available in future).</p></li>
 <li><p>Only works on binary black hole signals (more boxes trained on other signals to be released in the future).</p></li>
 <li><p>Does not require a GPU to generate samples, but will be ~1s slower to generate all samples per time series.</p></li>
+<li><p>Small bug with reference gps time (this will be fixed shortly).</p></li>
 <li><p>Start an ipython notebook (or Google Colab)</p></li>
 </ul>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> ipython3
@@ -154,7 +153,7 @@ number of source parameters to be infered&gt;). ‘y_data’ should be a numpy a
 &lt;sample rate X duration&gt;)</p>
 </div>
 <ul class="simple">
-<li><p>To produce test sample posteriors using VItamin, simply point vitamin to the directory containing your test waveforms (examples provided <a class="reference external" href="https://drive.google.com/file/d/15LCJC6UJR34dqXO9BgLK-NsYlsWADpvc/view?usp=sharing">here</a>), the pre-trained model (to be made) and specify the number of samples per posterior requested.</p></li>
+<li><p>To produce test sample posteriors using VItamin, simply point vitamin to the directory containing your test waveforms (examples provided <a class="reference external" href="https://drive.google.com/file/d/15LCJC6UJR34dqXO9BgLK-NsYlsWADpvc/view?usp=sharing">here</a>), the pre-trained model (<a class="reference external" href="https://drive.google.com/file/d/1khU6PCVhHdLVY4h6RIld9Jgd0L6XD26A/view?usp=sharing">model download</a>) and specify the number of samples per posterior requested.</p></li>
 </ul>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> samples,_,x_data <span class="o">=</span> run_vitamin.gen_samples<span class="o">(</span><span class="nv">model_loc</span><span class="o">=</span><span class="s1">&#39;inverse_model_dir_demo_3det_9par_256Hz_run1/inverse_model.ckpt&#39;</span>,
 <span class="go">                                             test_set=&#39;test_sets/all_4_samplers/test_waveforms/&#39;,num_samples=10000,</span>

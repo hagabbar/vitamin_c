@@ -7,15 +7,16 @@ minutes of downloading VItamin given your own GW time series binary black hole d
 optionally use the pregenerated sets of waveforms provided here
 
 Some things to note about the provided black box:
-* We currently set all priors to be uniformly distributed and produce posteriors 
-on 7 parameters (m1,m2,luminosity distance,time of coalescence,inclination angle,
-right ascension and declination). Both phase and psi are internally marginalized out.
+
+* We currently set all priors to be uniformly distributed and produce posteriors on 7 parameters (m1,m2,luminosity distance,time of coalescence,inclination angle, right ascension and declination). Both phase and psi are internally marginalized out.
 
 * Sampling rate is locked at 256 Hz and duration is locked at 1s (more boxes with other values will become available in future).
 
 * Only works on binary black hole signals (more boxes trained on other signals to be released in the future).
 
 * Does not require a GPU to generate samples, but will be ~1s slower to generate all samples per time series.  
+
+* Small bug with reference gps time (this will be fixed shortly).
 
 * Start an ipython notebook (or Google Colab)
 
@@ -36,7 +37,7 @@ right ascension and declination). Both phase and psi are internally marginalized
    number of source parameters to be infered>). 'y_data' should be a numpy array of shape (<number of detectors>,
    <sample rate X duration>) 
 
-* To produce test sample posteriors using VItamin, simply point vitamin to the directory containing your test waveforms (examples provided `here <https://drive.google.com/file/d/15LCJC6UJR34dqXO9BgLK-NsYlsWADpvc/view?usp=sharing>`_), the pre-trained model (to be made) and specify the number of samples per posterior requested.
+* To produce test sample posteriors using VItamin, simply point vitamin to the directory containing your test waveforms (examples provided `here <https://drive.google.com/file/d/15LCJC6UJR34dqXO9BgLK-NsYlsWADpvc/view?usp=sharing>`_), the pre-trained model (`model download <https://drive.google.com/file/d/1khU6PCVhHdLVY4h6RIld9Jgd0L6XD26A/view?usp=sharing>`_) and specify the number of samples per posterior requested.
 
 .. code-block:: console
 
