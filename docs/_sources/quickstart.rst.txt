@@ -39,12 +39,12 @@ Some things to note about the provided black box:
 
 .. code-block:: console
 
-   $ samples,_,x_data = run_vitamin.gen_samples(model_loc='inverse_model_dir_demo_3det_9par_256Hz_run1/inverse_model.ckpt',
+   $ samples = run_vitamin.gen_samples(model_loc='inverse_model_dir_demo_3det_9par_256Hz_run1/inverse_model.ckpt',
                                                 test_set='test_sets/all_4_samplers/test_waveforms/',num_samples=10000,
                                                 plot_corner=True)
 
 
-* The function will now return a set of samples from the posterior per timeseries(default is 10000) and the true source parameter values for each timeseries. 
+* The function will now return a set of samples from the posterior per timeseries(default is 10000). 
 
 * Since we set the option plot_corner=True, you will also find a corner plot in the same directory as we ran the code under the title 'vitamin_example_corner.png'.
 

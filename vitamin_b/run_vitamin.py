@@ -1200,7 +1200,7 @@ def gen_samples(params='params.json',bounds='bounds.json',fixed_vals='fixed_vals
             print()
 
     print('... All posterior samples generated for all waveforms in test sample directory!')
-    return samples, y_data_test
+    return samples
 
 # If running module from command line
 if args.gen_train:
