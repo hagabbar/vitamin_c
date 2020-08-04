@@ -54,7 +54,7 @@ except ModuleNotFoundError:
 try:
     from mpl_toolkits.basemap import Basemap
     print("module 'basemap' is installed")
-except ModuleNotFoundError:
+except (ModuleNotFoundError, ImportError):
     print("module 'basemap' is not installed")
     print("Skyplotting functionality is automatically disabled.")
     skyplotting_usage = False
