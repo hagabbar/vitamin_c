@@ -39,7 +39,7 @@ Some things to note about the provided black box:
 
 .. code-block:: console
 
-   $ samples = run_vitamin.gen_samples(model_loc='inverse_model_dir_demo_3det_9par_256Hz_run1/inverse_model.ckpt',
+   $ samples = run_vitamin.gen_samples(model_loc='inverse_model_dir_demo_3det_9par_256Hz/inverse_model.ckpt',
                                                 test_set='test_sets/all_4_samplers/test_waveforms/',num_samples=10000,
                                                 plot_corner=True)
 
