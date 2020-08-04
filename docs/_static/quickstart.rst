@@ -32,10 +32,8 @@ Some things to note about the provided black box:
    $ from vitamin_b import run_vitamin
 
 .. note:: Test samples should be of the format 'data_<test sample number>.h5py'. Where the h5py file 
-   should have a directory containing the source parameter scalar values to be infered of the timeseries labeled 'x_data', 
-   and a directory containing the noisy time series labeled 'y_data_noisy'. 'x_data' should be a numpy array of shape (1,<
-   number of source parameters to be infered>). 'y_data' should be a numpy array of shape (<number of detectors>,
-   <sample rate X duration>) 
+   should have a directory containing the noisy time series labeled 'y_data_noisy'. 
+   'y_data' should be a numpy array of shape (<number of detectors>,<sample rate X duration>) 
 
 * To produce test sample posteriors using VItamin, simply point vitamin to the directory containing your test waveforms (examples provided `here <https://drive.google.com/file/d/15LCJC6UJR34dqXO9BgLK-NsYlsWADpvc/view?usp=sharing>`_), the pre-trained model (`model download <https://drive.google.com/file/d/1khU6PCVhHdLVY4h6RIld9Jgd0L6XD26A/view?usp=sharing>`_) and specify the number of samples per posterior requested.
 

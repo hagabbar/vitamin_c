@@ -82,7 +82,7 @@ setup(
     packages=['vitamin_b','vitamin_b.models','vitamin_b.models.neural_networks',
               'vitamin_b.params_files'],
     package_dir={'vitamin_b': 'vitamin_b'},
-    package_data={'vitamin_b': ['params_files/*.txt'],
+    package_data={'vitamin_b': ['params_files/*.json'],
                   'vitamin_b': [version_file]},
 
     python_requires='>=3.5', 

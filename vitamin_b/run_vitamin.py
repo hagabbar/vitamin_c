@@ -1093,7 +1093,7 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
 
     return
 
-def gen_samples(params='params.txt',bounds='bounds.txt',fixed_vals='fixed_vals.txt',model_loc='model-ex/model.ckpt',test_set='test-ex/',num_samples=None,plot_corner=True,use_gpu=False):
+def gen_samples(params='params.json',bounds='bounds.json',fixed_vals='fixed_vals.json',model_loc='model-ex/model.ckpt',test_set='test-ex/',num_samples=None,plot_corner=True,use_gpu=False):
     """ Function to generate VItamin samples given a trained model
     """
 
@@ -1133,7 +1133,7 @@ def gen_samples(params='params.txt',bounds='bounds.txt',fixed_vals='fixed_vals.t
     # Get list of all training/testing files and define dictionary to store values in files
     if type("%s" % test_set) is str:
         dataLocations = ["%s" % test_set]
-        data={'x_data': [], 'y_data_noisy': []}
+        data={'y_data_noisy': []}
     # Sort files from first generated to last generated
     filenames = sorted(os.listdir(dataLocations[0]), key=lambda x: int(x.split('.')[0].split('_')[-1]))
 
@@ -1148,36 +1148,21 @@ def gen_samples(params='params.txt',bounds='bounds.txt',fixed_vals='fixed_vals.t
     # Iterate over all training/testing files and store source parameters, time series and SNR info in dictionary
     for filename in files:
         try:
-            data_temp={'x_data': h5py.File(dataLocations[0]+'/'+filename, 'r')['x_data'][:],
-                  'y_data_noisy': h5py.File(dataLocations[0]+'/'+filename, 'r')['y_data_noisy'][:]}
-            data['x_data'].append(data_temp['x_data'])
+            data_temp={'y_data_noisy': h5py.File(dataLocations[0]+'/'+filename, 'r')['y_data_noisy'][:]}
             data['y_data_noisy'].append(np.expand_dims(data_temp['y_data_noisy'], axis=0))
         except OSError:
             print('Could not load requested file')
             continue
 
     # Extract the prior bounds from training/testing files
-    data['x_data'] = np.concatenate(np.array(data['x_data']), axis=0).squeeze()
     data['y_data_noisy'] = np.concatenate(np.array(data['y_data_noisy']), axis=0)
     
 
-    x_data = data['x_data']
     y_data_test = data['y_data_noisy']
 
     # Define time series normalization factor to use on test samples. We consistantly use the same normscale value if loading by chunks
     y_normscale = params['y_normscale']   
  
-    # extract inference parameters from all source parameters loaded earlier if more than 
-    # TODO: this is an issue which will need to be resolved soon.
-    if x_data.shape[1] > len(params['inf_pars']):
-        idx = []
-        for k in params['inf_pars']:
-            print('...' + k + 'will be infered')
-            for i,m in enumerate(params['rand_pars']):
-                if k==m:
-                    idx.append(i)
-        x_data = x_data[:,idx]
-
     y_data_test = y_data_test.reshape(y_data_test.shape[0],y_data_test.shape[1]*y_data_test.shape[2])
     # reshape y data into channels last format for convolutional approach
     y_data_test_copy = np.zeros((y_data_test.shape[0],params['ndata'],len(fixed_vals['det'])))
@@ -1193,26 +1178,29 @@ def gen_samples(params='params.txt',bounds='bounds.txt',fixed_vals='fixed_vals.t
         samples[i,:], dt, _  = CVAE_model.run(params, np.expand_dims(y_data_test[i],axis=0), len(params['inf_pars']),
                                                               params['y_normscale'],
                                                               model_loc)
-        print('... Runtime to generate samples is: ' + dt)
-    # unnormalize predictions
-    for q_idx,q in enumerate(params['inf_pars']):
-        par_min = q + '_min'
-        par_max = q + '_max'
-        samples[:,:,q_idx] = (samples[:,:,q_idx] * (bounds[par_max] - bounds[par_min])) + bounds[par_min]
+        print('... Runtime to generate samples is: ' + str(dt))
 
-    # plot results
-    if plot_corner==True:
-        # Get infered parameter latex labels for corner plot
-        parnames=[]
-        for k_idx,k in enumerate(params['rand_pars']):
-            if np.isin(k, params['inf_pars']):
-                parnames.append(params['cornercorner_parnames'][k_idx])
-        figure = corner.corner(samples[0,:,:],truths=x_data[0,:],labels=parnames)
-        plt.savefig('./vitamin_example_corner.png')
-        plt.close()
-        print('... Saved corner plot to -> ./vitamin_example_corner.png')
+        # unnormalize predictions
+        for q_idx,q in enumerate(params['inf_pars']):
+            par_min = q + '_min'
+            par_max = q + '_max'
+            samples[i,:,q_idx] = (samples[i,:,q_idx] * (bounds[par_max] - bounds[par_min])) + bounds[par_min]
 
-    return samples, y_data_test, x_data
+        # plot results
+        if plot_corner==True:
+            # Get infered parameter latex labels for corner plot
+            parnames=[]
+            for k_idx,k in enumerate(params['rand_pars']):
+                if np.isin(k, params['inf_pars']):
+                    parnames.append(params['cornercorner_parnames'][k_idx])
+            figure = corner.corner(samples[i,:,:],labels=parnames)
+            plt.savefig('./vitamin_corner_timeseries-%d.png' % i)
+            plt.close()
+            print('... Saved corner plot to -> ./vitamin_corner_timeseries-%d.png' % i)
+            print()
+
+    print('... All posterior samples generated for all waveforms in test sample directory!')
+    return samples, y_data_test
 
 # If running module from command line
 if args.gen_train:

@@ -147,10 +147,8 @@ optionally use the pregenerated sets of waveforms provided here</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Test samples should be of the format ‘data_&lt;test sample number&gt;.h5py’. Where the h5py file
-should have a directory containing the source parameter scalar values to be infered of the timeseries labeled ‘x_data’,
-and a directory containing the noisy time series labeled ‘y_data_noisy’. ‘x_data’ should be a numpy array of shape (1,&lt;
-number of source parameters to be infered&gt;). ‘y_data’ should be a numpy array of shape (&lt;number of detectors&gt;,
-&lt;sample rate X duration&gt;)</p>
+should have a directory containing the noisy time series labeled ‘y_data_noisy’.
+‘y_data’ should be a numpy array of shape (&lt;number of detectors&gt;,&lt;sample rate X duration&gt;)</p>
 </div>
 <ul class="simple">
 <li><p>To produce test sample posteriors using VItamin, simply point vitamin to the directory containing your test waveforms (examples provided <a class="reference external" href="https://drive.google.com/file/d/15LCJC6UJR34dqXO9BgLK-NsYlsWADpvc/view?usp=sharing">here</a>), the pre-trained model (<a class="reference external" href="https://drive.google.com/file/d/1khU6PCVhHdLVY4h6RIld9Jgd0L6XD26A/view?usp=sharing">model download</a>) and specify the number of samples per posterior requested.</p></li>
