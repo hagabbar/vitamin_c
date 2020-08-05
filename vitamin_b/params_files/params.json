@@ -185,7 +185,7 @@
         "VItamin",
         "Dynesty"
     ],
-    "y_normscale": 36.43879218007172,
+    "y_normscale": 36.0,
     "boost_pars": [
         "ra",
         "dec"
@@ -203,9 +203,11 @@
         "ra",
         "dec"
     ],
+    "det": [
+        "H1",
+        "L1",
+        "V1"
+    ],
     "weighted_pars": null,
-    "weighted_pars_factor": 1,
-    "y_normscale": 36.0,
-    "z_dimension": 10
+    "weighted_pars_factor": 1
 }
-

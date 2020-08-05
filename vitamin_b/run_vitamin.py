@@ -719,11 +719,11 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
 
     # reshape y data into channels last format for convolutional approach (if requested)
     if params['n_filters_r1'] != None:
-        y_data_test_copy = np.zeros((y_data_test.shape[0],params['ndata'],len(fixed_vals['det'])))
-        y_data_test_noisefree_copy = np.zeros((y_data_test_noisefree.shape[0],params['ndata'],len(fixed_vals['det'])))
-        y_data_train_copy = np.zeros((y_data_train.shape[0],params['ndata'],len(fixed_vals['det'])))
+        y_data_test_copy = np.zeros((y_data_test.shape[0],params['ndata'],len(params['det'])))
+        y_data_test_noisefree_copy = np.zeros((y_data_test_noisefree.shape[0],params['ndata'],len(params['det'])))
+        y_data_train_copy = np.zeros((y_data_train.shape[0],params['ndata'],len(params['det'])))
         for i in range(y_data_test.shape[0]):
-            for j in range(len(fixed_vals['det'])):
+            for j in range(len(params['det'])):
                 idx_range = np.linspace(int(j*params['ndata']),int((j+1)*params['ndata'])-1,num=params['ndata'],dtype=int)
                 y_data_test_copy[i,:,j] = y_data_test[i,idx_range]
                 y_data_test_noisefree_copy[i,:,j] = y_data_test_noisefree[i,idx_range]
@@ -731,7 +731,7 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
         y_data_noisefree_test = y_data_test_noisefree_copy
 
         for i in range(y_data_train.shape[0]):
-            for j in range(len(fixed_vals['det'])):
+            for j in range(len(params['det'])):
                 idx_range = np.linspace(int(j*params['ndata']),int((j+1)*params['ndata'])-1,num=params['ndata'],dtype=int)
                 y_data_train_copy[i,:,j] = y_data_train[i,idx_range]
         y_data_train = y_data_train_copy
@@ -935,10 +935,10 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
     y_data_test_noisefree = y_data_test_noisefree[i_idx_use,:]
 
     # reshape y data into channels last format for convolutional approach
-    y_data_test_copy = np.zeros((y_data_test.shape[0],params['ndata'],len(fixed_vals['det'])))
+    y_data_test_copy = np.zeros((y_data_test.shape[0],params['ndata'],len(params['det'])))
     if params['n_filters_r1'] != None:
         for i in range(y_data_test.shape[0]):
-            for j in range(len(fixed_vals['det'])):
+            for j in range(len(params['det'])):
                 idx_range = np.linspace(int(j*params['ndata']),int((j+1)*params['ndata'])-1,num=params['ndata'],dtype=int)
                 y_data_test_copy[i,:,j] = y_data_test[i,idx_range]
         y_data_test = y_data_test_copy
@@ -1181,10 +1181,10 @@ def gen_samples(params=params,bounds=bounds,fixed_vals=fixed_vals,model_loc='mod
  
     y_data_test = y_data_test.reshape(y_data_test.shape[0],y_data_test.shape[1]*y_data_test.shape[2])
     # reshape y data into channels last format for convolutional approach
-    y_data_test_copy = np.zeros((y_data_test.shape[0],params['ndata'],len(fixed_vals['det'])))
+    y_data_test_copy = np.zeros((y_data_test.shape[0],params['ndata'],len(params['det'])))
     if params['n_filters_r1'] != None:
         for i in range(y_data_test.shape[0]):
-            for j in range(len(fixed_vals['det'])):
+            for j in range(len(params['det'])):
                 idx_range = np.linspace(int(j*params['ndata']),int((j+1)*params['ndata'])-1,num=params['ndata'],dtype=int)       
                 y_data_test_copy[i,:,j] = y_data_test[i,idx_range]
         y_data_test = y_data_test_copy

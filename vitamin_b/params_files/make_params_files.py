@@ -18,8 +18,7 @@ fixed_vals = {'mass_1':50.0,
 	'tilt_1':0.0,
 	'tilt_2':0.0,
         'phi_12':0.0,
-        'phi_jl':0.0,
-        'det':['H1','L1','V1']}                                                 # feel free to edit this if more or less detectors wanted
+        'phi_jl':0.0}                                                 # feel free to edit this if more or less detectors wanted
 
 
 # Prior bounds on source parameters
@@ -47,6 +46,7 @@ y_normscale = 36.0
 # Main tunable variables
 ##########################
 ndata = 256                                                                     # sampling frequency
+det=['H1','L1','V1']                                                            # LVK detectors to use
 rand_pars = ['mass_1','mass_2','luminosity_distance','geocent_time','phase',
                  'theta_jn','psi','ra','dec']                                   # parameters to randomize (those not listed here are fixed otherwise)
 inf_pars=['mass_1','mass_2','luminosity_distance','geocent_time','theta_jn','ra','dec'] # psi phase before ra and dec                     # parameters to infer
@@ -86,7 +86,7 @@ n_weights_q = [n_fc,n_fc,n_fc]                                                  
 #############################
 # optional tunable variables
 #############################
-run_label = 'demo_%ddet_%dpar_%dHz_testing' % (len(fixed_vals['det']),len(rand_pars),ndata) # label of run
+run_label = 'demo_%ddet_%dpar_%dHz_testing' % (len(det),len(rand_pars),ndata) # label of run
 bilby_results_label = 'all_4_samplers'                                             # label given to bilby results directory
 r = 2                                                                           # number (to the power of 2) of test samples to use for testing. r = 2 means you want to use 2^2 (i.e 4) test samples
 pe_test_num = 256                                                               # total number of test samples available to use in directory
@@ -100,7 +100,7 @@ samplers=['vitamin','dynesty']                                                  
 
 # Directory variables
 plot_dir="./results/%s" % run_label  # output directory to save results plots
-train_set_dir='./training_sets_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(fixed_vals['det']),len(rand_pars),ndata,tot_dataset_size,tset_split) # location of training set
+train_set_dir='./training_sets_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(det),len(rand_pars),ndata,tot_dataset_size,tset_split) # location of training set
 test_set_dir='./test_sets/%s/test_waveforms' % bilby_results_label                                                            # location of test set directory waveforms
 pe_dir='./test_sets/%s/test' % bilby_results_label                                                                            # location of test set directory Bayesian PE samples
 #############################
@@ -191,6 +191,7 @@ def get_params():
         gauss_pars=['luminosity_distance','geocent_time','theta_jn'],        # parameters that require a truncated gaussian 
         vonmise_pars=['phase','psi'],                                        # parameters that get wrapped on the 1D parameter 
         sky_pars=['ra','dec'],                                               # sky parameters
+        det=det,
         weighted_pars=None,#['ra','dec','geocent_time'],                     # set to None if not using, parameters to weight during training
         weighted_pars_factor=1,                       # Factor by which to weight parameters if `weighted_pars` is not None.
     )
