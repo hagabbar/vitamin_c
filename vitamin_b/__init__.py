@@ -36,7 +36,7 @@ from .models.neural_networks import batch_manager, vae_utils, VI_decoder_r2, VI_
 
 from . import run_vitamin
 
-__version__ = "0.2.8"
+__version__ = "0.2.10"
 __author__ = 'Hunter Gabbard'
 __credits__ = 'University of Glasgow'
 

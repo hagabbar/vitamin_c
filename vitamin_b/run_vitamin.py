@@ -1093,7 +1093,7 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
 
     return
 
-def gen_samples(params='params.json',bounds='bounds.json',fixed_vals='fixed_vals.json',model_loc='model-ex/model.ckpt',test_set='test-ex/',num_samples=None,plot_corner=True,use_gpu=False):
+def gen_samples(params=params,bounds=bounds,fixed_vals=fixed_vals,model_loc='model-ex/model.ckpt',test_set='test-ex/',num_samples=None,plot_corner=True,use_gpu=False):
     """ Function to generate VItamin samples given a trained model
     """
 
