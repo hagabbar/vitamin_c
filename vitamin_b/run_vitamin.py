@@ -576,15 +576,6 @@ def gen_test(params=params,bounds=bounds,fixed_vals=fixed_vals):
 ####################################
 def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=False):
 
-    # define which gpu to use during training
-    gpu_num = str(0)                                            # first GPU used by default
-    os.environ["CUDA_VISIBLE_DEVICES"]=gpu_num
-
-    # Let GPU consumption grow as needed
-    config = tf.compat.v1.ConfigProto()
-    config.gpu_options.allow_growth = True
-    session = tf.compat.v1.Session(config=config)
-
     # Check for requried parameters files
     if params == None or bounds == None or fixed_vals == None:
         print('Missing either params file, bounds file or fixed vals file')
@@ -597,6 +588,15 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
         bounds = json.load(fp)
     with open(fixed_vals, 'r') as fp:
         fixed_vals = json.load(fp)
+
+    # define which gpu to use during training
+    gpu_num = str(params['gpu_num'])                                            # first GPU used by default
+    os.environ["CUDA_VISIBLE_DEVICES"]=gpu_num
+
+    # Let GPU consumption grow as needed
+    config = tf.compat.v1.ConfigProto()
+    config.gpu_options.allow_growth = True
+    session = tf.compat.v1.Session(config=config)
 
     # If resuming training, set KL ramp off
     if resume_training:
@@ -633,6 +633,14 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
     for i in params['samplers']:
         if i == 'vitamin':
             continue
+
+        # remove any remaining resume files
+        resume_files=glob.glob('%s_%s1/*.resume*' % (params['pe_dir'],i))
+        filelist = [resume_files]
+        for file_idx,file_type in enumerate(filelist):
+            for file in file_type:
+                os.remove(file) 
+
         for j in range(1):
             input_dir = '%s_%s%d/' % (params['pe_dir'],i,j+1)
             if type("%s" % input_dir) is str:
@@ -812,6 +820,14 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
     for i in params['samplers']:
         if i == 'vitamin':# or i == 'emcee':
             continue
+
+        # remove any remaining resume files
+        resume_files=glob.glob('%s_%s1/*.resume*' % (params['pe_dir'],i))
+        filelist = [resume_files]
+        for file_idx,file_type in enumerate(filelist):
+            for file in file_type:
+                os.remove(file)
+
         for j in range(1):
             input_dir = '%s_%s%d/' % (params['pe_dir'],i,j+1)
             if type("%s" % input_dir) is str:

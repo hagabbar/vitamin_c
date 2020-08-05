@@ -600,7 +600,8 @@ def run(sampling_frequency=256.0,
                 png_files=glob.glob("%s_dynesty1/*.png*" % (out_dir))
                 hdf5_files=glob.glob("%s_dynesty1/*.hdf5*" % (out_dir))
                 pickle_files=glob.glob("%s_dynesty1/*.pickle*" % (out_dir))
-                filelist = [png_files,hdf5_files,pickle_files]
+                resume_files=glob.glob("%s_dynesty1/*.resume*" % (out_dir))
+                filelist = [png_files,hdf5_files,pickle_files,resume_files]
                 for file_type in filelist:
                     for file in file_type:
                         os.remove(file)
@@ -642,6 +643,7 @@ def run(sampling_frequency=256.0,
                 png_files=glob.glob("%s_cpnest1/*.png*" % (out_dir))
                 hdf5_files=glob.glob("%s_cpnest1/*.hdf5*" % (out_dir))
                 other_files=glob.glob("%s_cpnest1/*cpnest_*" % (out_dir))
+                resume_files=glob.glob("%s_cpnest1/*.resume*" % (out_dir))
                 filelist = [png_files,hdf5_files,pickle_files]
                 for file_idx,file_type in enumerate(filelist):
                     for file in file_type:
@@ -703,6 +705,7 @@ def run(sampling_frequency=256.0,
                 png_files=glob.glob("%s_ptemcee1/*.png*" % (out_dir))
                 hdf5_files=glob.glob("%s_ptemcee1/*.hdf5*" % (out_dir))
                 other_files=glob.glob("%s_ptemcee1/*ptemcee_*" % (out_dir))
+                resume_files=glob.glob("%s_ptemcee1/*.resume*" % (out_dir))
                 filelist = [png_files,hdf5_files,other_files]
                 for file_idx,file_type in enumerate(filelist):
                     for file in file_type:
@@ -767,6 +770,7 @@ def run(sampling_frequency=256.0,
                 png_files=glob.glob("%s_emcee1/*.png*" % (out_dir))
                 hdf5_files=glob.glob("%s_emcee1/*.hdf5*" % (out_dir))
                 other_files=glob.glob("%s_emcee1/*emcee_*" % (out_dir))
+                resume_files=glob.glob("%s_emcee1/*.resume*" % (out_dir))
                 filelist = [png_files,hdf5_files,other_files]
                 for file_idx,file_type in enumerate(filelist):
                     for file in file_type:
