@@ -157,10 +157,10 @@ def load_chunk(input_dir,inf_pars,params,bounds,fixed_vals,load_condor=False):
 
     # reshape y data into channels last format for convolutional approach
     if params['n_filters_r1'] != None:
-        y_data_train_copy = np.zeros((y_data_train.shape[0],params['ndata'],len(fixed_vals['det'])))
+        y_data_train_copy = np.zeros((y_data_train.shape[0],params['ndata'],len(params['det'])))
 
         for i in range(y_data_train.shape[0]):
-            for j in range(len(fixed_vals['det'])):
+            for j in range(len(params['det'])):
                 idx_range = np.linspace(int(j*params['ndata']),int((j+1)*params['ndata'])-1,num=params['ndata'],dtype=int)
                 y_data_train_copy[i,:,j] = y_data_train[i,idx_range]
         y_data_train = y_data_train_copy
@@ -424,7 +424,7 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
     drate = params['drate']
     ramp_start = params['ramp_start']
     ramp_end = params['ramp_end']
-    num_det = len(fixed_vals['det'])
+    num_det = len(params['det'])
 
     # identify the indices of different sets of physical parameters
     vonmise_mask, vonmise_idx_mask, vonmise_len = get_param_index(params['inf_pars'],params['vonmise_pars'])
@@ -621,9 +621,9 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
         # Make noise realizations and add to training data
         next_x_data = x_data[next_indices,:]
         if n_conv_r1 != None:
-            next_y_data = y_data[next_indices,:] + np.random.normal(0,1,size=(params['batch_size'],int(params['ndata']),len(fixed_vals['det'])))
+            next_y_data = y_data[next_indices,:] + np.random.normal(0,1,size=(params['batch_size'],int(params['ndata']),len(params['det'])))
         else:
-            next_y_data = y_data[next_indices,:] + np.random.normal(0,1,size=(params['batch_size'],int(params['ndata']*len(fixed_vals['det']))))
+            next_y_data = y_data[next_indices,:] + np.random.normal(0,1,size=(params['batch_size'],int(params['ndata']*len(params['det']))))
         next_y_data /= y_normscale  # required for fast convergence
 
         if params['by_channel'] == False:
