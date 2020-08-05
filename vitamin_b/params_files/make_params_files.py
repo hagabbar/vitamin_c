@@ -207,19 +207,19 @@ except FileExistsError:
     print("directory 'params_files' already exists")
 
 # Generate params files
-if not os.path.isfile('./params_files/params.txt'):
+if not os.path.isfile('./params_files/params.json'):
     
     # save params json file
     with open('params_files/params.json', 'w') as fp:
-        json.dump(params, fp, sort_keys=True, indent=4)
+        json.dump(params, fp, sort_keys=False, indent=4)
 
-if not os.path.isfile('./params_files/bounds.txt'):
+if not os.path.isfile('./params_files/bounds.json'):
 
     # save bounds json file
     with open('params_files/bounds.json', 'w') as fp:
-        json.dump(bounds, fp, sort_keys=True, indent=4)
-if not os.path.isfile('./params_files/fixed_vals.txt'):
+        json.dump(bounds, fp, sort_keys=False, indent=4)
+if not os.path.isfile('./params_files/fixed_vals.json'):
 
     # save fixed vals json file
     with open('params_files/fixed_vals.json', 'w') as fp:
-        json.dump(fixed_vals, fp, sort_keys=True, indent=4)
+        json.dump(fixed_vals, fp, sort_keys=False, indent=4)
