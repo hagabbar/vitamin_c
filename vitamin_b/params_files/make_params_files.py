@@ -41,7 +41,7 @@ bounds = {'mass_1_min':35.0, 'mass_1_max':80.0,
         'luminosity_distance_min':1000.0, 'luminosity_distance_max':3000.0}
 
 # arbitrary value for normalization of timeseries (Don't change this)
-y_normscale = 36.43879218007172
+y_normscale = 36.0
 
 ##########################
 # Main tunable variables

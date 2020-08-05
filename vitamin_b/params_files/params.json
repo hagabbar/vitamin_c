@@ -204,5 +204,8 @@
         "dec"
     ],
     "weighted_pars": null,
-    "weighted_pars_factor": 1
+    "weighted_pars_factor": 1,
+    "y_normscale": 36.0,
+    "z_dimension": 10
 }
+
