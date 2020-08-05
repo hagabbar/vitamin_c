@@ -203,6 +203,6 @@
     "weight_init": "xavier",
     "weighted_pars": null,
     "weighted_pars_factor": 1,
-    "y_normscale": 36.43879218007172,
+    "y_normscale": 36.0,
     "z_dimension": 10
 }
