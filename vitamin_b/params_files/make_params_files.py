@@ -227,7 +227,7 @@ def get_params():
         drate = drate,  
         __definition__drate='dropout rate to use in fully-connected layers',                                                     
         maxpool_r1 = maxpool_r1,                                            
-        __definition__maxpool_r1='size of maxpooling to use in r1 network' 
+        __definition__maxpool_r1='size of maxpooling to use in r1 network', 
         conv_strides_r1 = conv_strides_r1,
         __definition__conv_strides_r1='size of convolutional stride to use in r1 network',                                   
         pool_strides_r1 = pool_strides_r1,                                   
@@ -245,7 +245,7 @@ def get_params():
         pool_strides_q = pool_strides_q,                                     
         __definition__pool_strides_q='size of max pool stride to use in q network',
         ramp_start = 1e4,                                                       
-        __definition__ramp_start='starting iteration of KL divergence ramp'
+        __definition__ramp_start='starting iteration of KL divergence ramp',
         ramp_end = 1e5,                                                  
         __definition__ramp_end='ending iteration of KL divergence ramp',
         save_interval=save_interval, 
