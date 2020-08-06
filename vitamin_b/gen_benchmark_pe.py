@@ -427,9 +427,8 @@ def run(sampling_frequency=256.0,
             print('Made waveform %d/%d' % (i,N_gen)) 
 
         train_samples_noisefree = np.array(train_samples)[:,0,:]
-        train_samples_noisy = np.array(train_samples)[:,1,:]
         snrs = np.array(snrs) 
-        return train_samples_noisy,train_samples_noisefree,np.array(train_pars),snrs
+        return train_samples_noisefree,np.array(train_pars),snrs
 
     # otherwise we are doing test data 
     else:
