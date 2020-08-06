@@ -1,36 +1,68 @@
 {
     "make_corner_plots": true,
+    "__definition__make_corner_plots": "if True, make corner plots",
     "make_kl_plot": true,
+    "__definition__make_kl_plot": "If True, go through kl plotting function",
     "make_pp_plot": true,
+    "__definition__make_pp_plot": "If True, go through pp plotting function",
     "make_loss_plot": false,
+    "__definition__make_loss_plot": "If True, generate loss plot from previous plot data",
     "Make_sky_plot": false,
+    "__definition__make_sky_plot": "If True, generate sky plots on corner plots",
     "hyperparam_optim": false,
+    "__definition__hyperparam_optim": "optimize hyperparameters for model during training using gaussian process minimization",
     "resume_training": false,
+    "__definition___resume_training": "if True, resume training of a model from saved checkpoint",
     "load_by_chunks": true,
+    "__definition__load_by_chunks": "if True, load training samples by a predefined chunk size rather than all at once",
     "ramp": true,
+    "__definition__ramp": "# if true, apply linear ramp to KL loss",
     "print_values": true,
+    "__definition__print_values": "# optionally print loss values every report interval",
     "by_channel": true,
+    "__definition__by_channel": "if True, do convolutions as seperate 1-D channels, if False, stack training samples as 2-D images (n_detectors,(duration*sampling_frequency))",
     "load_plot_data": false,
+    "__definition__load_plot_data": "Use plotting data which has already been generated",
     "doPE": true,
+    "__definition__doPE": "if True then do bilby PE when generating new testing samples (not advised to change this)",
     "gpu_num": 0,
+    "__definition__gpu_num": "gpu number run is running on",
     "ndata": 256,
+    "__definition__ndata": "sampling frequency",
     "run_label": "demo_3det_9par_256Hz_testing",
+    "__definition__run_label": "label of run",
     "bilby_results_label": "all_4_samplers",
+    "__definition__bilby_result_label": "label given to bilby results directory",
     "tot_dataset_size": 100000,
+    "__definition__tot_dataset_size": "total number of training samples available to use",
     "tset_split": 1000,
+    "__definition__tset_split": "number of training samples in each training data file",
     "plot_dir": "./results/demo_3det_9par_256Hz_testing",
+    "__definition__plot_dir": "output directory to save results plots",
     "hyperparam_optim_stop": 1500000,
+    "__definition__hyperparam_optim_stop": "stopping iteration of hyperparameter optimizer per call (ideally 1.5 million)",
     "hyperparam_n_call": 30,
+    "__definition__hyperparam_n_call": "number of hyperparameter optimization calls (ideally 30)",
     "load_chunk_size": 10000.0,
+    "__definition__load_chunk_size": "Number of training samples to load in at a time.",
     "load_iteration": 488,
+    "__definition__load_iteration": "How often to load another chunk of training samples",
     "weight_init": "xavier",
+    "__definition__weight_init": "[xavier,VarianceScaling,Orthogonal]. Network model weight initialization (default is xavier)",
     "n_samples": 10000,
+    "__definition__n_samples": "number of posterior samples to save per reconstruction upon inference (default 3000)",
     "num_iterations": 1000001,
+    "__definition__num_iterations": "total number of iterations before ending training of model",
     "initial_training_rate": 0.0001,
+    "__definition__initial_training_rate": "initial training rate for ADAM optimiser inference model (inverse reconstruction)",
     "batch_size": 512,
+    "__definition__batch_size": " Number training samples shown to neural network per iteration",
     "batch_norm": true,
+    "__definition__batch_norm": "if true, do batch normalization in all layers of neural network",
     "report_interval": 500,
+    "__definition__report_interval": "interval at which to save objective function values and optionally print info during training",
     "n_modes": 7,
+    "__definition__n_modes": "number of modes in Gaussian mixture model (ideal 7, but may go higher/lower)",
     "n_filters_r1": [
         33,
         33,
@@ -38,16 +70,19 @@
         33,
         33
     ],
+    "__definition__n_filters_r1": "number of convolutional filters to use in r1 network (must be divisible by 3)",
     "n_filters_r2": [
         33,
         33,
         33
     ],
+    "__definition__n_filters_r2": "number of convolutional filters to use in r2 network (must be divisible by 3)",
     "n_filters_q": [
         33,
         33,
         33
     ],
+    "__definition__n_filters_q": "number of convolutional filters to use in q network  (must be divisible by 3)",
     "filter_size_r1": [
         5,
         8,
@@ -55,17 +90,21 @@
         10,
         10
     ],
+    "__definition__filter_size_r1": "size of convolutional fitlers in r1 network",
     "filter_size_r2": [
         5,
         8,
         11
     ],
+    "__definition__filter_size_r2": "size of convolutional filters in r2 network",
     "filter_size_q": [
         5,
         8,
         11
     ],
+    "__definition__filter_size_q": "size of convolutional filters in q network",
     "drate": 0.5,
+    "__definition__drate": "dropout rate to use in fully-connected layers",
     "maxpool_r1": [
         1,
         2,
@@ -73,6 +112,7 @@
         2,
         1
     ],
+    "__definition__maxpool_r1": "size of maxpooling to use in r1 network",
     "conv_strides_r1": [
         1,
         1,
@@ -80,6 +120,7 @@
         1,
         1
     ],
+    "__definition__conv_strides_r1": "size of convolutional stride to use in r1 network",
     "pool_strides_r1": [
         1,
         2,
@@ -87,58 +128,75 @@
         2,
         1
     ],
+    "__definition_pool_strides_r1": "size of max pool stride to use in r1 network",
     "maxpool_r2": [
         1,
         2,
         1
     ],
+    "__definition_maxpool_r2": "size of max pooling to use in r2 network",
     "conv_strides_r2": [
         1,
         1,
         1
     ],
+    "__definition__conv_strides_r2": "size of convolutional stride in r2 network",
     "pool_strides_r2": [
         1,
         2,
         1
     ],
+    "__definition__pool_strides_r2": "size of max pool stride in r2 network",
     "maxpool_q": [
         1,
         2,
         1
     ],
+    "__definition__maxpool_q": "size of max pooling to use in q network",
     "conv_strides_q": [
         1,
         1,
         1
     ],
+    "__definition__conv_strides_q": "size of convolutional stride to use in q network",
     "pool_strides_q": [
         1,
         2,
         1
     ],
+    "__definition__pool_strides_q": "size of max pool stride to use in q network",
     "ramp_start": 10000.0,
+    "__definition__ramp_start": "starting iteration of KL divergence ramp",
     "ramp_end": 100000.0,
+    "__definition__ramp_end": "ending iteration of KL divergence ramp",
     "save_interval": 50000,
+    "__definition__save_interval": "number of iterations to save model",
     "plot_interval": 50000,
+    "__definition__plot_interval": "number of iterations to plot validation results corner plots",
     "z_dimension": 10,
+    "__definition__z_dimension": "number of latent space dimensions of model",
     "n_weights_r1": [
         2048,
         2048,
         2048
     ],
+    "__definition__n_weights_r1": "number fully-connected neurons in layers of encoders and decoders in the r1 model",
     "n_weights_r2": [
         2048,
         2048,
         2048
     ],
+    "__definition__n_weights_r2": "number fully-connected neurons in layers of encoders and decoders in the r2 model",
     "n_weights_q": [
         2048,
         2048,
         2048
     ],
+    "__definition__n_weights_q": "number fully-connected neurons in layers of encoders and decoders in the q model",
     "duration": 1.0,
+    "__definition__duration": "length of training/validation/test sample time series in seconds",
     "r": 2,
+    "__definition__r": "number (to the power of 2) of test samples to use for testing. r = 2 means you want to use 2^2 (i.e 4) test samples",
     "rand_pars": [
         "mass_1",
         "mass_2",
@@ -150,6 +208,7 @@
         "ra",
         "dec"
     ],
+    "__definition__rand_pars": "parameters to randomize (those not listed here are fixed otherwise)",
     "corner_labels": {
         "mass_1": "$m_{1}\\,(\\mathrm{M}_{\\odot})$",
         "mass_2": "$m_{2}\\,(\\mathrm{M}_{\\odot})$",
@@ -161,9 +220,13 @@
         "ra": "${\\alpha}\\,(\\mathrm{rad})$",
         "dec": "${\\delta}\\,(\\mathrm{rad})$"
     },
+    "__definition__corner_labels": "latex source parameter labels for plotting",
     "ref_geocent_time": 1126259642.5,
+    "__definition__ref_geocent_time": "reference gps time (not advised to change this)",
     "training_data_seed": 43,
+    "__definition__training_data_seed": "tensorflow training random seed number",
     "testing_data_seed": 44,
+    "__definition__testing_data_seed": " tensorflow testing random seed number",
     "inf_pars": [
         "mass_1",
         "mass_2",
@@ -173,41 +236,56 @@
         "ra",
         "dec"
     ],
+    "__definition__inf_pars": "parameters to infer",
     "train_set_dir": "./training_sets_3det_9par_256Hz/tset_tot-100000_split-1000",
+    "__definition__train_set_dir": "location of training set directory",
     "test_set_dir": "./test_sets/all_4_samplers/test_waveforms",
+    "__definition__test_set_dir": "location of test set directory waveforms",
     "pe_dir": "./test_sets/all_4_samplers/test",
+    "__definition__pe_dir": "location of test set directory Bayesian PE samples",
     "KL_cycles": 1,
+    "__definition__KL_cycles": " number of cycles to repeat for the KL approximation",
     "samplers": [
         "vitamin",
         "dynesty"
     ],
+    "__definition__samplers": "Samplers to use when comparing ML results (vitamin is ML approach) dynesty,ptemcee,cpnest,emcee",
     "figure_sampler_names": [
         "VItamin",
         "Dynesty"
     ],
+    "__definition__figure_sampler_names": "matplotlib figure sampler labels (e.g. [ptemcee,CPNest,emcee])",
     "y_normscale": 36.0,
+    "__definition__y_normscale": "arbitrary normalization factor on all time series waveforms (helps convergence in training)",
     "boost_pars": [
         "ra",
         "dec"
     ],
+    "__definition__boost_pars": "parameters to boost during training (by default this is off)",
     "gauss_pars": [
         "luminosity_distance",
         "geocent_time",
         "theta_jn"
     ],
+    "__definition__gauss_pars": "parameters that require a truncated gaussian distribution",
     "vonmise_pars": [
         "phase",
         "psi"
     ],
+    "__definition__vonmises_pars": "parameters that get wrapped on the 1D parameter",
     "sky_pars": [
         "ra",
         "dec"
     ],
+    "__definition__sky_pars": "sky parameters",
     "det": [
         "H1",
         "L1",
         "V1"
     ],
+    "__definition__det": "LIGO detectors to perform analysis on (default is 3detector H1,L1,V1)",
     "weighted_pars": null,
-    "weighted_pars_factor": 1
+    "__definition__weighted_pars": "set to None if not using, parameters to weight during training",
+    "weighted_pars_factor": 1,
+    "__definition__weighted_pars_factor": "factor by which to weight weighted parameters"
 }
