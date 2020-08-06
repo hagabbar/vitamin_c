@@ -476,7 +476,7 @@ def gen_train(params=params,bounds=bounds,fixed_vals=fixed_vals):
         })
         with suppress_stdout():
             # generate training sample source parameter, waveform and snr
-            _, signal_train, signal_train_pars,snrs = run(sampling_frequency=params['ndata']/params['duration'],
+            signal_train, signal_train_pars,snrs = run(sampling_frequency=params['ndata']/params['duration'],
                                                           duration=params['duration'],
                                                           N_gen=params['tset_split'],
                                                           ref_geocent_time=params['ref_geocent_time'],
@@ -502,7 +502,7 @@ def gen_train(params=params,bounds=bounds,fixed_vals=fixed_vals):
         hf.create_dataset('x_data', data=signal_train_pars)
         for k, v in bounds.items():
             hf.create_dataset(k,data=v)
-        hf.create_dataset('y_data_noisy', data=signal_train)
+        hf.create_dataset('y_data_noisy', data=np.array([]))
         hf.create_dataset('y_data_noisefree', data=signal_train)
         hf.create_dataset('rand_pars', data=np.string_(params['rand_pars']))
         hf.create_dataset('snrs', data=snrs)
