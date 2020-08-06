@@ -485,7 +485,7 @@ def gen_train(params=params,bounds=bounds,fixed_vals=fixed_vals):
                                                           rand_pars=params['rand_pars'],
                                                           seed=params['training_data_seed']+i,
                                                           label=params['run_label'],
-                                                          training=True)
+                                                          training=True,det=params['det'])
         logging.config.dictConfig({
         'version': 1,
         'disable_existing_loggers': False,
@@ -545,7 +545,7 @@ def gen_test(params=params,bounds=bounds,fixed_vals=fixed_vals):
                                                       samplers=params['samplers'],
                                                       training=False,
                                                       seed=params['testing_data_seed']+i,
-                                                      do_pe=params['doPE'])
+                                                      do_pe=params['doPE'],det=params['det'])
 
         signal_test_noisy = temp_noisy
         signal_test_noisefree = temp_noisefree
@@ -992,7 +992,7 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
         # Get infered parameter latex labels for corner plot
         for k_idx,k in enumerate(params['rand_pars']):
             if np.isin(k, params['inf_pars']):
-                parnames.append(params['cornercorner_parnames'][k_idx])
+                parnames.append(params['corner_labels'][k])
 
         # unnormalize the predictions from VICI (comment out if not wanted)
         color_cycle=['tab:blue','tab:green','tab:purple','tab:orange']
@@ -1208,7 +1208,7 @@ def gen_samples(params=params,bounds=bounds,fixed_vals=fixed_vals,model_loc='mod
             parnames=[]
             for k_idx,k in enumerate(params['rand_pars']):
                 if np.isin(k, params['inf_pars']):
-                    parnames.append(params['cornercorner_parnames'][k_idx])
+                    parnames.append(params['corner_labels'][k])
             figure = corner.corner(samples[i,:,:],labels=parnames)
             plt.savefig('./vitamin_corner_timeseries-%d.png' % i)
             plt.close()

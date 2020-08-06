@@ -150,17 +150,17 @@
         "ra",
         "dec"
     ],
-    "cornercorner_parnames": [
-        "$m_{1}\\,(\\mathrm{M}_{\\odot})$",
-        "$m_{2}\\,(\\mathrm{M}_{\\odot})$",
-        "$d_{\\mathrm{L}}\\,(\\mathrm{Mpc})$",
-        "$t_{0}\\,(\\mathrm{seconds})$",
-        "${\\phi}$",
-        "$\\Theta_{jn}\\,(\\mathrm{rad})$",
-        "${\\psi}$",
-        "${\\alpha}\\,(\\mathrm{rad})$",
-        "${\\delta}\\,(\\mathrm{rad})$"
-    ],
+    "corner_labels": {
+        "mass_1": "$m_{1}\\,(\\mathrm{M}_{\\odot})$",
+        "mass_2": "$m_{2}\\,(\\mathrm{M}_{\\odot})$",
+        "luminosity_distance": "$d_{\\mathrm{L}}\\,(\\mathrm{Mpc})$",
+        "geocent_time": "$t_{0}\\,(\\mathrm{seconds})$",
+        "phase": "${\\phi}$",
+        "theta_jn": "$\\Theta_{jn}\\,(\\mathrm{rad})$",
+        "psi": "${\\psi}$",
+        "ra": "${\\alpha}\\,(\\mathrm{rad})$",
+        "dec": "${\\delta}\\,(\\mathrm{rad})$"
+    },
     "ref_geocent_time": 1126259642.5,
     "training_data_seed": 43,
     "testing_data_seed": 44,

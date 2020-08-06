@@ -175,7 +175,7 @@ def get_params():
         duration = 1.0,                                                         # length of training/validation/test sample time series in seconds (haven't tried using at any other value than 1s)
         r = r,                                                                  
         rand_pars=rand_pars,                                                    
-        cornercorner_parnames = ['$m_{1}\,(\mathrm{M}_{\odot})$','$m_{2}\,(\mathrm{M}_{\odot})$','$d_{\mathrm{L}}\,(\mathrm{Mpc})$','$t_{0}\,(\mathrm{seconds})$','${\phi}$','$\Theta_{jn}\,(\mathrm{rad})$','${\psi}$',r'${\alpha}\,(\mathrm{rad})$','${\delta}\,(\mathrm{rad})$'], # latex source parameter labels for plotting
+        corner_labels = {'mass_1': '$m_{1}\,(\mathrm{M}_{\odot})$','mass_2': '$m_{2}\,(\mathrm{M}_{\odot})$','luminosity_distance': '$d_{\mathrm{L}}\,(\mathrm{Mpc})$','geocent_time': '$t_{0}\,(\mathrm{seconds})$','phase': '${\phi}$','theta_jn': '$\Theta_{jn}\,(\mathrm{rad})$','psi': '${\psi}$','ra': r'${\alpha}\,(\mathrm{rad})$','dec': '${\delta}\,(\mathrm{rad})$'}, # latex source parameter labels for plotting
         ref_geocent_time=ref_geocent_time,                                      
         training_data_seed=43,                                                  # tensorflow training random seed number
         testing_data_seed=44,                                                   # tensorflow testing random seed number
