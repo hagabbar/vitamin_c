@@ -382,7 +382,8 @@ def run(sampling_frequency=256.0,
            seed=None,
            samplers=['vitamin','dynesty'],
            condor_run=False,
-           params=None
+           params=None,
+           det=['H1','L1','V1']
            ):
     """
     Generate data sets
@@ -406,6 +407,7 @@ def run(sampling_frequency=256.0,
             
             # choose waveform parameters here
             pars = gen_par(fixed_vals,bounds=bounds,rand_pars=rand_pars,mdist='uniform')
+            pars['det'] = det
             
             # store the params
             temp = []
@@ -434,6 +436,7 @@ def run(sampling_frequency=256.0,
         
         # generate parameters
         pars = gen_par(fixed_vals,bounds=bounds,rand_pars=rand_pars,mdist='uniform')
+        pars['det'] = det
         temp = []
         for p in rand_pars:
             for q,qi in pars.items():

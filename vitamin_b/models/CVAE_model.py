@@ -754,7 +754,7 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
                 parnames = []
                 for k_idx,k in enumerate(params['rand_pars']):
                     if np.isin(k, params['inf_pars']):
-                        parnames.append(params['cornercorner_parnames'][k_idx])
+                        parnames.append(params['corner_labels'][k])
 
                 defaults_kwargs = dict(
                     bins=50, smooth=0.9, label_kwargs=dict(fontsize=16),
