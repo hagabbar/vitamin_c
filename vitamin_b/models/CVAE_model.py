@@ -734,7 +734,7 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
 
             n_mode_weight_copy = 100 # must be a multiple of 50
             # just run the network on the test data
-            for j in range(params['r']*params['r']):
+            for j in range(params['r']):
 
                 # The trained inverse model weights can then be used to infer a probability density of solutions given new measurements
                 if params['n_filters_r1'] != None:
