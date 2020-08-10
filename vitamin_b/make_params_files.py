@@ -263,7 +263,7 @@ def get_params():
         duration = 1.0,                                                         
         __definition__duration='length of training/validation/test sample time series in seconds',
         r = r,     
-        __definition__r='number (to the power of 2) of test samples to use for testing. r = 2 means you want to use 2^2 (i.e 4) test samples',                                                             
+        __definition__r='number of GW timeseries to use for testing.',                                                             
         rand_pars=rand_pars,                                                    
         __definition__rand_pars='parameters to randomize (those not listed here are fixed otherwise)',
         corner_labels = {'mass_1': '$m_{1}\,(\mathrm{M}_{\odot})$','mass_2': '$m_{2}\,(\mathrm{M}_{\odot})$','luminosity_distance': '$d_{\mathrm{L}}\,(\mathrm{Mpc})$','geocent_time': '$t_{0}\,(\mathrm{seconds})$','phase': '${\phi}$','theta_jn': '$\Theta_{jn}\,(\mathrm{rad})$','psi': '${\psi}$','ra': r'${\alpha}\,(\mathrm{rad})$','dec': '${\delta}\,(\mathrm{rad})$'},

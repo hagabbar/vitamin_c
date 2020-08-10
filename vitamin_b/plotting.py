@@ -239,14 +239,14 @@ class make_plots:
                     return vitamin_pred_made[0], vitamin_pred_made[1]
 
                 VI_pred_all = []
-                for i in range(params['r']*params['r']):
+                for i in range(params['r']):
                     # The trained inverse model weights can then be used to infer a probability density of solutions given new measurements
                     VI_pred,dt,_  = model.run(params, np.expand_dims(sig_test[i],axis=0), np.shape(par_test)[1],
                                                              y_normscale,
                                                              "inverse_model_dir_%s/inverse_model.ckpt" % params['run_label'])
                     VI_pred_all.append(VI_pred)
 
-                    print('Generated vitamin preds %d/%d' % (int(i),int(params['r']*params['r'])))
+                    print('Generated vitamin preds %d/%d' % (int(i),int(params['r'])))
 
                 VI_pred_all = np.array(VI_pred_all)
 
@@ -281,7 +281,7 @@ class make_plots:
             i = 0
             i_idx_use = []
             dt = []
-            while i_idx < self.params['r']*self.params['r']:
+            while i_idx < self.params['r']:
 
                 filename_try = '%s/%s_%d.h5py' % (dataLocations_try,self.params['bilby_results_label'],i)
                 filename = '%s/%s_%d.h5py' % (dataLocations,self.params['bilby_results_label'],i)
@@ -536,7 +536,7 @@ class make_plots:
         """
         from bilby.core.prior import Uniform
 
-        Npp = int(self.params['r']*self.params['r']) # number of test GW waveforms to use to calculate PP plot
+        Npp = int(self.params['r']) # number of test GW waveforms to use to calculate PP plot
         ndim_y = self.params['ndata']
 #        priors = {f"x{jj}": Uniform(0, 1, f"x{jj}") for jj in range(len(self.params['inf_pars'])*len(self.params['samplers']))}       
         priors = {f"x{jj}": Uniform(0, 1, f"x{jj}") for jj in range(len(self.params['inf_pars']))}
@@ -651,7 +651,7 @@ class make_plots:
 
         """
         matplotlib.rc('text', usetex=True)
-        Npp = int(self.params['r']*self.params['r']) # number of test GW waveforms to use to calculate PP plot
+        Npp = int(self.params['r']) # number of test GW waveforms to use to calculate PP plot
         ndim_y = self.params['ndata']
         
         fig, axis = plt.subplots(1,1,figsize=(6,6))
@@ -668,7 +668,7 @@ class make_plots:
             hf = h5py.File('plotting_data_%s/pp_plot_data.h5' % self.params['run_label'], 'w')
 
         if self.params['load_plot_data'] == False:
-            pp = np.zeros(((self.params['r']**2)+2,len(self.params['inf_pars']))) 
+            pp = np.zeros(((self.params['r'])+2,len(self.params['inf_pars']))) 
             for cnt in range(Npp):
 
                 # generate Vitamin samples
@@ -724,13 +724,13 @@ class make_plots:
             print()
 
         
-        confidence_pp = np.zeros((len(self.params['samplers'])-1,int(self.params['r']**2)+2))
+        confidence_pp = np.zeros((len(self.params['samplers'])-1,int(self.params['r'])+2))
         # plot the pp plot
         for j in range(len(self.params['inf_pars'])):        
             if j == 0:
-                axis.plot(np.arange((self.params['r']**2)+2)/((self.params['r']**2)+1.0),np.sort(pp[:,j]),'-',color='red',linewidth=1,zorder=50,label=r'$\textrm{%s}$' % self.params['figure_sampler_names'][0],alpha=0.5)
+                axis.plot(np.arange((self.params['r'])+2)/((self.params['r'])+1.0),np.sort(pp[:,j]),'-',color='red',linewidth=1,zorder=50,label=r'$\textrm{%s}$' % self.params['figure_sampler_names'][0],alpha=0.5)
             else:
-                axis.plot(np.arange((self.params['r']**2)+2)/((self.params['r']**2)+1.0),np.sort(pp[:,j]),'-',color='red',linewidth=1,zorder=50,alpha=0.5)
+                axis.plot(np.arange((self.params['r'])+2)/((self.params['r'])+1.0),np.sort(pp[:,j]),'-',color='red',linewidth=1,zorder=50,alpha=0.5)
 
         # make bilby p-p plots
         samplers = self.params['samplers']
@@ -742,21 +742,20 @@ class make_plots:
             if self.params['load_plot_data'] == False:
                 # load bilby sampler samples
                 samples,time = self.load_test_set(model,sig_test,par_test,normscales,bounds,sampler=samplers[i]+'1')
-                if samples.shape[0] == self.params['r']**2:
+                if samples.shape[0] == self.params['r']:
                     samples = samples[:,:,-self.params['n_samples']:]
                 else:
                     samples = samples[:self.params['n_samples'],:]
-                #samples = samples.reshape(self.params['r']**2,len(self.params['inf_pars']),samples.shape[1])
 
             for j in range(len(self.params['inf_pars'])):
-                pp_bilby = np.zeros((self.params['r']**2)+2)
+                pp_bilby = np.zeros((self.params['r'])+2)
                 pp_bilby[0] = 0.0
                 pp_bilby[1] = 1.0
                 if self.params['load_plot_data'] == False:
-                    for cnt in range(self.params['r']**2):
+                    for cnt in range(self.params['r']):
                         pp_bilby[cnt+2] = self.pp_plot(pos_test[cnt,j],samples[cnt,:,j].transpose())
                         print()
-                        print('... Computed %s, param %d p-p plot iteration %d/%d' % (samplers[i],j,int(cnt)+1,int(self.params['r']**2)))
+                        print('... Computed %s, param %d p-p plot iteration %d/%d' % (samplers[i],j,int(cnt)+1,int(self.params['r'])))
                         print()
                     hf.create_dataset('%s_param%d_pp' % (samplers[i],j), data=pp_bilby)           
                 else:
@@ -766,9 +765,9 @@ class make_plots:
                     print()
                 # plot bilby sampler results
                 if j == 0:
-                    axis.plot(np.arange((self.params['r']**2)+2)/((self.params['r']**2)+1.0),np.sort(pp_bilby),'-',color=CB_color_cycle[i-1],linewidth=1,label=r'$\textrm{%s}$' % self.params['figure_sampler_names'][i],alpha=0.5)
+                    axis.plot(np.arange((self.params['r'])+2)/((self.params['r'])+1.0),np.sort(pp_bilby),'-',color=CB_color_cycle[i-1],linewidth=1,label=r'$\textrm{%s}$' % self.params['figure_sampler_names'][i],alpha=0.5)
                 else:
-                    axis.plot(np.arange((self.params['r']**2)+2)/((self.params['r']**2)+1.0),np.sort(pp_bilby),'-',color=CB_color_cycle[i-1],linewidth=1,alpha=0.5)
+                    axis.plot(np.arange((self.params['r'])+2)/((self.params['r'])+1.0),np.sort(pp_bilby),'-',color=CB_color_cycle[i-1],linewidth=1,alpha=0.5)
 
             confidence_pp[i-1,:] = np.sort(pp_bilby)
 
@@ -779,9 +778,8 @@ class make_plots:
         axis.plot([0,1],[0,1],'--k')
         conf_color_wheel = ['#D8D8D8','#A4A4A4','#6E6E6E']
         confidence = [0.9,0.5]
-        #x_values = np.arange((self.params['r']**2)+2)/((self.params['r']**2)+1.0)
         x_values = np.linspace(0, 1, 1001)
-        N = int(self.params['r']**2)
+        N = int(self.params['r'])
 
         """
         # Add credibility interals
@@ -1025,8 +1023,6 @@ class make_plots:
                 os.remove('plotting_data_%s/KL_plot_data.h5' % params['run_label'])
                 hf = h5py.File('plotting_data_%s/KL_plot_data.h5' % params['run_label'], 'w')
         else:
-            # TODO: uncomment this
-            #hf = h5py.File('plotting_data_%s/KL_plot_data.h5' % params['run_label'], 'r')
             hf = h5py.File('plotting_data_%s/KL_plot_data.h5' % params['run_label'], 'r')
         
 
@@ -1071,7 +1067,7 @@ class make_plots:
                         # Iterate over test cases
                         tot_kl = []  # total KL over all infered parameters
 
-                        for r in range(self.params['r']**2):
+                        for r in range(self.params['r']):
                             tot_kl.append(compute_kl(set1[r],set2[r],[sampler1,sampler2]))
                             print()
                             print('... Completed KL for set %s-%s and test sample %s' % (sampler1,sampler2,str(r)))

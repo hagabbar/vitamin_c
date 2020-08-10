@@ -531,7 +531,7 @@ def gen_test(params=params,bounds=bounds,fixed_vals=fixed_vals):
     os.system('mkdir -p %s' % params['test_set_dir'])
 
     # Make testing samples
-    for i in range(params['r']*params['r']):
+    for i in range(params['r']):
         temp_noisy, temp_noisefree, temp_pars, temp_snr = run(sampling_frequency=params['ndata']/params['duration'],
                                                       duration=params['duration'],
                                                       N_gen=1,
@@ -651,8 +651,18 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
                 sampler_loc = i + str(j+1)
                 num_finished_post = len(filenames)
 
+
     dataLocations_try = '%s_%s' % (params['pe_dir'],sampler_loc)
     dataLocations = '%s_%s1' % (params['pe_dir'],params['samplers'][1])
+
+    # Assert user has the minimum number of test samples generated
+    number_of_files_in_dir = len(os.listdir(dataLocations[0]))
+    try:
+        assert number_of_files_in_dir >= params['r']
+    except Exception as e:
+        print(e)
+        print('You are requesting to use more GW time series than you have made.')
+        exit()
 
     #for i,filename in enumerate(glob.glob(dataLocations[0])):
     i_idx = 0
@@ -660,7 +670,8 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
     i_idx_use = []
 
     # Iterate over requested number of testing samples to use
-    while i_idx < params['r']*params['r']:
+    while i_idx < params['r']:
+
         filename_try = '%s/%s_%d.h5py' % (dataLocations_try,params['bilby_results_label'],i)
         filename = '%s/%s_%d.h5py' % (dataLocations,params['bilby_results_label'],i)
 
@@ -838,6 +849,16 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
                 sampler_loc = i + str(j+1)
                 num_finished_post = len(filenames)
 
+
+    # Assert user has the minimum number of test samples generated
+    number_of_files_in_dir = len(os.listdir(dataLocations[0]))
+    try:
+        assert number_of_files_in_dir >= params['r']
+    except Exception as e:
+        print(e)
+        print('You are requesting to use more GW time series than you have made.')
+        exit()
+
     samp_posteriors = {}
     # Iterate over all Bayesian PE samplers
     for samp_idx in params['samplers'][1:]:
@@ -850,7 +871,7 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
 
 
         # Iterate over all requested testing samples
-        while i_idx < params['r']*params['r']:
+        while i_idx < params['r']:
 
 
             filename_try = '%s/%s_%d.h5py' % (dataLocations_try,params['bilby_results_label'],i)
@@ -958,7 +979,7 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
 
     VI_pred_all = []
     # Iterate over total number of testing samples
-    for i in range(params['r']*params['r']):
+    for i in range(params['r']):
 
         # If True, continue through and make corner plots
         if params['make_corner_plots'] == False:
@@ -1150,6 +1171,7 @@ def gen_samples(params=params,bounds=bounds,fixed_vals=fixed_vals,model_loc='mod
     if type("%s" % test_set) is str:
         dataLocations = ["%s" % test_set]
         data={'y_data_noisy': []}
+
     # Sort files from first generated to last generated
     filenames = sorted(os.listdir(dataLocations[0]), key=lambda x: int(x.split('.')[0].split('_')[-1]))
 
