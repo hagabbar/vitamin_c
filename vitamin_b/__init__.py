@@ -20,6 +20,7 @@ import sys
 from . import models
 from . import gen_benchmark_pe, plotting
 from . import params_files
+from . import make_params_files
 
 # Check for optional basemap installation
 try:

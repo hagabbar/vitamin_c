@@ -329,6 +329,7 @@ if not os.path.isfile('./params_files/bounds.json'):
     # save bounds json file
     with open('params_files/bounds.json', 'w') as fp:
         json.dump(bounds, fp, sort_keys=False, indent=4)
+
 if not os.path.isfile('./params_files/fixed_vals.json'):
 
     # save fixed vals json file
