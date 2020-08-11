@@ -273,6 +273,9 @@ def load_data(params,bounds,fixed_vals,input_dir,inf_pars,load_condor=False):
     data['y_data_noisefree'] = np.concatenate(np.array(data['y_data_noisefree']), axis=0)
     data['y_data_noisy'] = np.concatenate(np.array(data['y_data_noisy']), axis=0)
     
+    # expand dimensions if only using one test sample
+    if data['x_data'].ndim == 1:
+        data['x_data'] = np.expand_dims(data['x_data'],axis=0)
 
     # Normalise the source parameters np.remainder(blah,np.pi)
     for i,k in enumerate(data_temp['rand_pars']):
