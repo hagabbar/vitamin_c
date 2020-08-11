@@ -81,7 +81,7 @@ det=['H1','L1','V1']
 rand_pars = ['mass_1','mass_2','luminosity_distance','geocent_time','phase',
                  'theta_jn','psi','ra','dec']                                   
 inf_pars=['mass_1','mass_2','luminosity_distance','geocent_time','theta_jn','ra','dec'] 
-batch_size = 512                                                                 
+batch_size = 64                                                                 
 weight_init = 'xavier'                                                            
 n_modes=7                                                                      
 initial_training_rate=1e-4                                                     
@@ -119,11 +119,11 @@ n_weights_q = [n_fc,n_fc,n_fc]
 #############################
 run_label = 'demo_%ddet_%dpar_%dHz_testing' % (len(det),len(rand_pars),ndata) 
 bilby_results_label = 'all_4_samplers'                                             
-r = 2                                                                           
+r = 1                                                                           
 pe_test_num = 256                                                               
-tot_dataset_size = int(1e5)                                                     
+tot_dataset_size = int(5e3)                                                     
 tset_split = int(1e3)                                                           
-save_interval = int(5e4)                                                        
+save_interval = int(1e3)                                                        
 num_iterations=int(1e6)+1                                                       
 ref_geocent_time=1126259642.5                                                   
 load_chunk_size = 1e4                                                           
