@@ -31,6 +31,7 @@ import pandas as pd
 import logging.config
 from contextlib import contextmanager
 import json
+from lal import GreenwichMeanSiderealTime
 
 import skopt
 from skopt import gp_minimize, forest_minimize
@@ -277,13 +278,39 @@ def load_data(params,bounds,fixed_vals,input_dir,inf_pars,load_condor=False):
     if data['x_data'].ndim == 1:
         data['x_data'] = np.expand_dims(data['x_data'],axis=0)
 
+    # only convert to sidereal for training data    
+    if load_condor==False:
+        # get geocenttime and ra index
+        for i,k in enumerate(data_temp['rand_pars']):
+            k = k.decode('utf-8')
+            if k == 'geocent_time':
+                geo_idx = i
+            elif k == 'ra':
+                ra_idx = i 
+        # Check if both geocentime and RA exist
+        try:
+            geo_idx; ra_idx
+        except NameError:
+            print('Either time or RA is fixed. Not converting RA to hour angle.')
+        else:
+            # Iterate over all training samples and convert to hour angle
+            for i in range(data['x_data'].shape[0]):
+                #data['x_data'][i,ra_idx]=(GreenwichMeanSiderealTime(float(params['ref_geocent_time']+data['x_data'][i,geo_idx])) * (2*np.pi/86400))-data['x_data'][i,ra_idx]
+                data['x_data'][i,ra_idx]=np.mod(GreenwichMeanSiderealTime(float(params['ref_geocent_time']+data['x_data'][i,geo_idx])) - data['x_data'][i,ra_idx], 2.0*np.pi)
+
+
     # Normalise the source parameters np.remainder(blah,np.pi)
     for i,k in enumerate(data_temp['rand_pars']):
         par_min = k.decode('utf-8') + '_min'
         par_max = k.decode('utf-8') + '_max'
+
+        # ensure psi is 0 to pi
         if par_min == 'psi_min':
             data['x_data'][:,i]=np.remainder(data['x_data'][:,i],np.pi)
+
+        # normalize by bounds
         data['x_data'][:,i]=(data['x_data'][:,i] - bounds[par_min]) / (bounds[par_max] - bounds[par_min])
+
     x_data = data['x_data']
     y_data = data['y_data_noisefree']
     y_data_noisy = data['y_data_noisy']

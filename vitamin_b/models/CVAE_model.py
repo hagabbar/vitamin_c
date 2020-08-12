@@ -14,6 +14,7 @@ tf.disable_v2_behavior()
 import tensorflow_probability as tfp
 import corner
 import h5py
+from lal import GreenwichMeanSiderealTime
 
 from .neural_networks import VI_decoder_r2
 from .neural_networks import VI_encoder_r1
@@ -576,11 +577,13 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
                          scale_diag=tf.concat([tf.sqrt(temp_var_r2_sky),tf.sqrt(temp_var_r2_sky)],axis=1))   # use the same 1D concentration parameter for both RA and dec dimensions
             reconstr_loss_gauss_sky = gauss_sky.log_prob(tf.boolean_mask(x_ph,sky_mask,axis=1))     # compute the logprob at the true sky location
             reconstr_loss_sky = ramp*reconstr_loss_sky + (1.0-ramp)*reconstr_loss_gauss_sky   # start with a Gaussian model and fade in the true vonmises Fisher
+        else:
+            reconstr_loss_sky = 0
 
         cost_R = -1.0*tf.reduce_mean(reconstr_loss_gauss + reconstr_loss_vonmise + reconstr_loss_masses + reconstr_loss_sky)
         r2_xzy_mean = tf.gather(tf.concat([r2_xzy_mean_gauss,r2_xzy_mean_vonmise,r2_xzy_mean_m1,r2_xzy_mean_m2,r2_xzy_mean_sky],axis=1),tf.constant(idx_mask),axis=1)      # put the elements back in order
         r2_xzy_scale = tf.gather(tf.concat([r2_xzy_log_sig_sq_gauss,r2_xzy_log_sig_sq_vonmise,r2_xzy_log_sig_sq_m1,r2_xzy_log_sig_sq_m2,r2_xzy_log_sig_sq_sky],axis=1),tf.constant(idx_mask),axis=1)   # put the elements back in order
-        
+       
         log_q_q = mvn_q.log_prob(q_zxy_samp)
         log_r1_q = bimix_gauss.log_prob(q_zxy_samp)   # evaluate the log prob of r1 at the q samples
         KL = tf.reduce_mean(log_q_q - log_r1_q)      # average over batch
@@ -748,6 +751,27 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
                 print()
                 print('... Runtime to generate {} samples = {} sec'.format(params['n_samples'],dt))            
                 print()
+
+                """
+                # convert back to RA for plotting
+                if np.isin('ra', params['inf_pars']) and  np.isin('geocent_time', params['inf_pars']): 
+                    # get geocenttime index
+                    for k_idx,k in enumerate(params['inf_pars']):
+                        if k == 'geocent_time':
+                            geo_idx = k_idx
+                        elif k == 'ra':
+                            ra_idx = k_idx
+
+                    # unnormalize and get gps time
+                    XS[:,ra_idx] = (XS[:,ra_idx] * (bounds['ra_max'] - bounds['ra_min'])) + bounds['ra_min']
+                    gps_time_arr = (XS[:,geo_idx] * (bounds['geocent_time_max'] - bounds['geocent_time_min'])) + bounds['geocent_time_min']                   
+                    # convert to RA
+                    # Iterate over all training samples and convert to hour angle
+                    for k in range(XS.shape[0]):
+                        XS[k,ra_idx]=np.mod(GreenwichMeanSiderealTime(float(params['ref_geocent_time']+gps_time_arr[k]))-XS[k,ra_idx], 2.0*np.pi) 
+                    # normalize
+                    XS[:,ra_idx]=(XS[:,ra_idx] - bounds['ra_min']) / (bounds['ra_max'] - bounds['ra_min'])
+                """
 
                 # Make corner plots
                 # Get corner parnames to use in plotting labels
