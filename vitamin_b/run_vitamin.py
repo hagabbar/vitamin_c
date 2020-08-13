@@ -31,6 +31,7 @@ import pandas as pd
 import logging.config
 from contextlib import contextmanager
 import json
+from lal import GreenwichMeanSiderealTime
 
 import skopt
 from skopt import gp_minimize, forest_minimize
@@ -85,7 +86,7 @@ parser.add_argument("--fixed_vals_file", default=None, type=str, help="dictionar
 parser.add_argument("--pretrained_loc", default=None, type=str, help="location of a pretrained network (i.e. .ckpt file)")
 parser.add_argument("--test_set_loc", default=None, type=str, help="directory containing test set waveforms")
 parser.add_argument("--gen_samples", default=False, help="If True, generate samples only (no plotting)")
-parser.add_argument("--num_samples", type=int, default=None, help="number of posterior samples to generate")
+parser.add_argument("--num_samples", type=int, default=10000, help="number of posterior samples to generate")
 parser.add_argument("--use_gpu", default=False, help="if True, use gpu")
 args = parser.parse_args()
 
@@ -263,6 +264,7 @@ def load_data(params,bounds,fixed_vals,input_dir,inf_pars,load_condor=False):
             data['x_data'].append(data_temp['x_data'])
             data['y_data_noisy'].append(np.expand_dims(data_temp['y_data_noisy'], axis=0))
             data['rand_pars'] = data_temp['rand_pars']
+            print('... Loaded file ' + filename)
         except OSError:
             print('Could not load requested file')
             continue
@@ -277,13 +279,38 @@ def load_data(params,bounds,fixed_vals,input_dir,inf_pars,load_condor=False):
     if data['x_data'].ndim == 1:
         data['x_data'] = np.expand_dims(data['x_data'],axis=0)
 
+    # only convert to sidereal for training data    
+    if load_condor==False:
+        # get geocenttime and ra index
+        for i,k in enumerate(data_temp['rand_pars']):
+            k = k.decode('utf-8')
+            if k == 'geocent_time':
+                geo_idx = i
+            elif k == 'ra':
+                ra_idx = i 
+        # Check if both geocentime and RA exist
+        try:
+            geo_idx; ra_idx
+        except NameError:
+            print('Either time or RA is fixed. Not converting RA to hour angle.')
+        else:
+            # Iterate over all training samples and convert to hour angle
+            for i in range(data['x_data'].shape[0]):
+                #data['x_data'][i,ra_idx]=(GreenwichMeanSiderealTime(float(params['ref_geocent_time']+data['x_data'][i,geo_idx])) * (2*np.pi/86400))-data['x_data'][i,ra_idx]
+                data['x_data'][i,ra_idx]=np.mod(GreenwichMeanSiderealTime(float(params['ref_geocent_time']+data['x_data'][i,geo_idx])) - data['x_data'][i,ra_idx], 2.0*np.pi)
+
     # Normalise the source parameters np.remainder(blah,np.pi)
     for i,k in enumerate(data_temp['rand_pars']):
         par_min = k.decode('utf-8') + '_min'
         par_max = k.decode('utf-8') + '_max'
+
+        # ensure psi is 0 to pi
         if par_min == 'psi_min':
             data['x_data'][:,i]=np.remainder(data['x_data'][:,i],np.pi)
+
+        # normalize by bounds
         data['x_data'][:,i]=(data['x_data'][:,i] - bounds[par_min]) / (bounds[par_max] - bounds[par_min])
+
     x_data = data['x_data']
     y_data = data['y_data_noisefree']
     y_data_noisy = data['y_data_noisy']
@@ -1026,6 +1053,22 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
                 par_max = q + '_max'
                 VI_pred[:,q_idx] = (VI_pred[:,q_idx] * (bounds[par_max] - bounds[par_min])) + bounds[par_min]
 
+        # Convert hour angle to right ascension
+        if np.isin('ra', params['inf_pars']) and  np.isin('geocent_time', params['inf_pars']):
+            for k_idx, k in enumerate(params['inf_pars']):
+                if k == 'geocent_time':
+                    geo_idx = k_idx
+                elif k=='ra':
+                    ra_idx=k_idx
+            # Check if both geocentime and RA exist
+            try:
+                geo_idx; ra_idx
+            except NameError:
+                print('Either time or RA is fixed. Not converting RA to hour angle.')
+            else:
+                for k_idx in range(VI_pred.shape[0]):
+                    VI_pred[k_idx,ra_idx]=np.mod(GreenwichMeanSiderealTime(float(params['ref_geocent_time']+VI_pred[k_idx,geo_idx])) - VI_pred[k_idx,ra_idx], 2.0*np.pi)
+
 
         # Iterate over all Bayesian PE samplers and plot results
         custom_lines = []
@@ -1133,7 +1176,7 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
 
     return
 
-def gen_samples(params=params,bounds=bounds,fixed_vals=fixed_vals,model_loc='model-ex/model.ckpt',test_set='test-ex/',num_samples=None,plot_corner=True,use_gpu=False):
+def gen_samples(params=params,bounds=bounds,fixed_vals=fixed_vals,model_loc='model_ex/model.ckpt',test_set='test_waveforms/',num_samples=None,plot_corner=True,use_gpu=False):
     """ Function to generate VItamin samples given a trained model
     """
 
@@ -1220,6 +1263,26 @@ def gen_samples(params=params,bounds=bounds,fixed_vals=fixed_vals,model_loc='mod
                                                               params['y_normscale'],
                                                               model_loc)
         print('... Runtime to generate samples is: ' + str(dt))
+
+        # convert RA to hour angle for test set validation cost if both ra and geo time present
+        if np.isin('ra', params['inf_pars']) and  np.isin('geocent_time', params['inf_pars']):     
+            # get geocenttime index
+            for k_idx,k in enumerate(params['inf_pars']):
+                if k == 'geocent_time':
+                    geo_idx = k_idx
+                elif k == 'ra':
+                    ra_idx = k_idx
+
+            # unnormalize and get gps time
+            samples[i,:][:,ra_idx] = (samples[i,:][:,ra_idx] * (bounds['ra_max'] - bounds['ra_min'])) + bounds['ra_min']
+
+            gps_time_arr = (samples[i,:][:,geo_idx] * (bounds['geocent_time_max'] - bounds['geocent_time_min'])) + bounds['geocent_time_min']
+            # convert to RA
+            # Iterate over all training samples and convert to hour angle
+            for k in range(samples[i,:].shape[0]):
+                samples[i,:][k,ra_idx]=np.mod(GreenwichMeanSiderealTime(float(params['ref_geocent_time']+gps_time_arr[k]))-samples[i,:][k,ra_idx], 2.0*np.pi)
+            # normalize
+            samples[i,:][:,ra_idx]=(samples[i,:][:,ra_idx] - bounds['ra_min']) / (bounds['ra_max'] - bounds['ra_min'])
 
         # unnormalize predictions
         for q_idx,q in enumerate(params['inf_pars']):

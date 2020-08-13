@@ -19,60 +19,7 @@ import pandas as pd
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter, FixedLocator,
                                AutoMinorLocator)
 import matplotlib.ticker as ticker
-
-"""
-def prune_samples(chain_file_loc,params):
-    nsteps = 5000
-    nburnin = 2000
-    nwalkers = 250
-    thresh_num = 50
-    ndim=len(params['inf_pars'])
-    chain_file = pd.read_csv(chain_file_loc, sep="\t", dtype=np.float64)
-#    chain_file = h5py.File(chain_file_loc, 'r')
-
-    # Iterate over all parameters in chain file
-    XS = np.array([])
-    chain_file_header = list(chain_file.columns.values)
-    for par_idx,par in enumerate(params['inf_pars']):
-#        print(list(chain_file.columns.values))
-#        print(chain_file.values.shape)
-#        chains_before = np.array(chain_file[params['inf_pars'][idx]+'_post']).reshape((nsteps-nburnin,nwalkers))
-#        logL = np.array(chain_file['log_like_eval']).reshape((nsteps-nburnin,nwalkers))
-        chains_before = np.array(chain_file.loc[:,par])#.reshape((nsteps,nwalkers))
-
-        if par_idx == 0:
-            XS = np.expand_dims(chains_before[-(nsteps-nburnin)*nwalkers:],0)
-        else:
-            XS = np.vstack((XS,np.expand_dims(chains_before[-(nsteps-nburnin)*nwalkers:],0)))
-        #XS = np.append(XS,np.expand_dims(chains_before,0))
-
-    logL = np.array(chain_file.values[:,-2]).reshape((nsteps,nwalkers))
-    logL = logL[-(nsteps-nburnin):,:]
-    logL_max = np.max(logL)
-
-    # data starts as (nsteps*nwalkers) x ndim -> 2D
-#    XS = XS.transpose()                                     # now ndim x (nsteps*nwalkers) -> 2D
-    XS = XS.reshape(ndim,nwalkers,nsteps-nburnin)                      # now ndim x nwalkers x nsteps -> 3D
-    XSex = XS[:,0,:].squeeze().transpose()        # take one walker nsteps x ndim -> 2D
-    XS = XS.transpose((2,1,0))                          # now nsteps x nwalkers x ndim -> 3D
-
-    # identify good walkers
-    # logL starts off with shape (nsteps*nwalkers) -> 1D
-    thresh = logL_max - thresh_num                                 # define log likelihood threshold
-    idx_walkers = np.argwhere([np.all(logL[:,i]>thresh) for i in range(nwalkers)])       # get the indices of good chains
-    Nsamp = len(idx_walkers)*(nsteps-nburnin)                                 # redefine total number of good samples 
-
-    # select good walkers
-    XS = np.array([XS[:,i,:] for i in idx_walkers]).squeeze()     # just pick out good walkers
-
-    XS = XS.reshape(-1,ndim)                                    # now back to original shape (but different order) (walkers*nstep) x 
-    idx = np.random.choice(Nsamp,10000)          # choose 10000 random indices for corner plots
-
-        # pick out random samples from clean set
-    XS = XS[idx,:]                                                  # select 10000 random samples
-
-    return XS
-"""
+from lal import GreenwichMeanSiderealTime
 
 def prune_samples(chain_file_loc,params):
     """ Function to remove bad likelihood emcee chains 
@@ -244,6 +191,26 @@ class make_plots:
                     VI_pred,dt,_  = model.run(params, np.expand_dims(sig_test[i],axis=0), np.shape(par_test)[1],
                                                              y_normscale,
                                                              "inverse_model_dir_%s/inverse_model.ckpt" % params['run_label'])
+                    # convert RA to hour angle for test set validation cost if both ra and geo time present
+                    if np.isin('ra', params['inf_pars']) and  np.isin('geocent_time', params['inf_pars']):
+                        # get geocenttime index
+                        for k_idx,k in enumerate(params['inf_pars']):
+                            if k == 'geocent_time':
+                                geo_idx = k_idx
+                            elif k == 'ra':
+                                ra_idx = k_idx
+
+                        # unnormalize and get gps time
+                        VI_pred[:,ra_idx] = (VI_pred[:,ra_idx] * (bounds['ra_max'] - bounds['ra_min'])) + bounds['ra_min']   
+
+                        gps_time_arr = (VI_pred[:,geo_idx] * (bounds['geocent_time_max'] - bounds['geocent_time_min'])) + bounds['geocent_time_min']
+                        # convert to RA
+                        # Iterate over all training samples and convert to hour angle
+                        for k in range(VI_pred.shape[0]):
+                            VI_pred[k,ra_idx]=np.mod(GreenwichMeanSiderealTime(float(params['ref_geocent_time']+gps_time_arr[k]))-VI_pred[k,ra_idx], 2.0*np.pi)
+                        # normalize
+                        VI_pred[:,ra_idx]=(VI_pred[:,ra_idx] - bounds['ra_min']) / (bounds['ra_max'] - bounds['ra_min'])
+                    
                     VI_pred_all.append(VI_pred)
 
                     print('Generated vitamin preds %d/%d' % (int(i),int(params['r'])))
@@ -681,6 +648,26 @@ class make_plots:
                 x, dt, _  = model.run(self.params, y, np.shape(par_test)[1],
                                                      normscales,
                                                      "inverse_model_dir_%s/inverse_model.ckpt" % self.params['run_label'])
+
+                # convert RA to hour angle for test set validation cost if both ra and geo time present
+                if np.isin('ra', self.params['inf_pars']) and  np.isin('geocent_time', self.params['inf_pars']):
+                    # get geocenttime index
+                    for k_idx,k in enumerate(self.params['inf_pars']):
+                        if k == 'geocent_time':
+                            geo_idx = k_idx
+                        elif k == 'ra':
+                            ra_idx = k_idx
+
+                    # unnormalize and get gps time
+                    x[:,ra_idx] = (x[:,ra_idx] * (bounds['ra_max'] - bounds['ra_min'])) + bounds['ra_min']   
+ 
+                    gps_time_arr = (x[:,geo_idx] * (bounds['geocent_time_max'] - bounds['geocent_time_min'])) + bounds['geocent_time_min']
+                    # convert to RA
+                    # Iterate over all training samples and convert to hour angle
+                    for k in range(x.shape[0]):
+                        x[k,ra_idx]=np.mod(GreenwichMeanSiderealTime(float(self.params['ref_geocent_time']+gps_time_arr[k]))-x[k,ra_idx], 2.0*np.pi)
+                    # normalize
+                    x[:,ra_idx]=(x[:,ra_idx] - bounds['ra_min']) / (bounds['ra_max'] - bounds['ra_min'])
 
                 # Apply mask
                 x = x.T
