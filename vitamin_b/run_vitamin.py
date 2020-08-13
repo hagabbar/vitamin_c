@@ -264,6 +264,7 @@ def load_data(params,bounds,fixed_vals,input_dir,inf_pars,load_condor=False):
             data['x_data'].append(data_temp['x_data'])
             data['y_data_noisy'].append(np.expand_dims(data_temp['y_data_noisy'], axis=0))
             data['rand_pars'] = data_temp['rand_pars']
+            print('... Loaded file ' + filename)
         except OSError:
             print('Could not load requested file')
             continue
@@ -297,7 +298,6 @@ def load_data(params,bounds,fixed_vals,input_dir,inf_pars,load_condor=False):
             for i in range(data['x_data'].shape[0]):
                 #data['x_data'][i,ra_idx]=(GreenwichMeanSiderealTime(float(params['ref_geocent_time']+data['x_data'][i,geo_idx])) * (2*np.pi/86400))-data['x_data'][i,ra_idx]
                 data['x_data'][i,ra_idx]=np.mod(GreenwichMeanSiderealTime(float(params['ref_geocent_time']+data['x_data'][i,geo_idx])) - data['x_data'][i,ra_idx], 2.0*np.pi)
-
 
     # Normalise the source parameters np.remainder(blah,np.pi)
     for i,k in enumerate(data_temp['rand_pars']):
@@ -1052,6 +1052,21 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
                 par_min = q + '_min'
                 par_max = q + '_max'
                 VI_pred[:,q_idx] = (VI_pred[:,q_idx] * (bounds[par_max] - bounds[par_min])) + bounds[par_min]
+
+        # Convert hour angle to right ascension
+        for k_idx, k in enumerate(params['inf_pars']):
+            if k == 'geocent_time':
+                geo_idx = k_idx
+            elif k=='ra':
+                ra_idx=k_idx
+        # Check if both geocentime and RA exist
+        try:
+            geo_idx; ra_idx
+        except NameError:
+            print('Either time or RA is fixed. Not converting RA to hour angle.')
+        else:
+            for k_idx in range(VI_pred.shape[0]):
+                VI_pred[k_idx,ra_idx]=np.mod(GreenwichMeanSiderealTime(float(params['ref_geocent_time']+VI_pred[k_idx,geo_idx])) - VI_pred[k_idx,ra_idx], 2.0*np.pi)
 
 
         # Iterate over all Bayesian PE samplers and plot results

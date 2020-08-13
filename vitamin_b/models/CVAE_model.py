@@ -131,6 +131,23 @@ def load_chunk(input_dir,inf_pars,params,bounds,fixed_vals,load_condor=False):
     data['x_data'] = np.concatenate(np.array(data['x_data']), axis=0).squeeze()
     data['y_data_noisefree'] = np.concatenate(np.array(data['y_data_noisefree']), axis=0)
 
+    # get geocenttime and ra index
+    for i,k in enumerate(data_temp['rand_pars']):
+        k = k.decode('utf-8')
+        if k == 'geocent_time':
+            geo_idx = i
+        elif k == 'ra':
+            ra_idx = i
+    # Check if both geocentime and RA exist
+    try:
+        geo_idx; ra_idx
+    except NameError:
+        print('Either time or RA is fixed. Not converting RA to hour angle.')
+    else:
+        # Iterate over all training samples and convert to hour angle
+        for i in range(data['x_data'].shape[0]):
+            data['x_data'][i,ra_idx]=np.mod(GreenwichMeanSiderealTime(float(params['ref_geocent_time']+data['x_data'][i,geo_idx])) - data['x_data'][i,ra_idx], 2.0*np.pi)
+
 
     # normalise the data parameters
     for i,k in enumerate(data_temp['rand_pars']):
@@ -611,6 +628,27 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
     indices_generator = batch_manager.SequentialIndexer(params['batch_size'], xsh[0])
     plotdata = []
 
+    # convert RA to hour angle for test set validation cost if both ra and geo time present
+    if np.isin('ra', params['inf_pars']) and  np.isin('geocent_time', params['inf_pars']):
+        x_data_test_hour_angle = np.copy(x_data_test)
+        # get geocenttime index
+        for k_idx,k in enumerate(params['inf_pars']):
+            if k == 'geocent_time':
+                geo_idx = k_idx
+            elif k == 'ra':
+                ra_idx = k_idx
+
+        # unnormalize and get gps time
+        x_data_test_hour_angle[:,ra_idx] = (x_data_test[:,ra_idx] * (bounds['ra_max'] - bounds['ra_min'])) + bounds['ra_min']
+        gps_time_arr = (x_data_test[:,geo_idx] * (bounds['geocent_time_max'] - bounds['geocent_time_min'])) + bounds['geocent_time_min']
+        # convert to RA
+        # Iterate over all training samples and convert to hour angle
+        for k in range(x_data_test_hour_angle.shape[0]):
+            x_data_test_hour_angle[k,ra_idx]=np.mod(GreenwichMeanSiderealTime(float(params['ref_geocent_time']+gps_time_arr[k]))-x_data_test_hour_angle[k,ra_idx], 2.0*np.pi)
+        # normalize
+        x_data_test_hour_angle[:,ra_idx]=(x_data_test_hour_angle[:,ra_idx] - bounds['ra_min']) / (bounds['ra_max'] - bounds['ra_min'])
+
+
     load_chunk_it = 1
     for i in range(params['num_iterations']):
 
@@ -661,7 +699,10 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
             cost, kl, AB_batch = session.run([cost_R, KL, r1_weight], feed_dict={bs_ph:bs, x_ph:next_x_data, y_ph:next_y_data, ramp:rmp})
 
             # get validation loss on test set
-            cost_val, kl_val = session.run([cost_R, KL], feed_dict={bs_ph:y_data_test.shape[0], x_ph:x_data_test, y_ph:y_data_test/y_normscale, ramp:rmp})
+            if np.isin('ra', params['inf_pars']) and  np.isin('geocent_time', params['inf_pars']):
+                cost_val, kl_val = session.run([cost_R, KL], feed_dict={bs_ph:y_data_test.shape[0], x_ph:x_data_test_hour_angle, y_ph:y_data_test/y_normscale, ramp:rmp})
+            else:
+                cost_val, kl_val = session.run([cost_R, KL], feed_dict={bs_ph:y_data_test.shape[0], x_ph:x_data_test, y_ph:y_data_test/y_normscale, ramp:rmp})
             plotdata.append([cost,kl,cost+kl,cost_val,kl_val,cost_val+kl_val])
 
            
@@ -752,7 +793,7 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
                 print('... Runtime to generate {} samples = {} sec'.format(params['n_samples'],dt))            
                 print()
 
-                """
+                
                 # convert back to RA for plotting
                 if np.isin('ra', params['inf_pars']) and  np.isin('geocent_time', params['inf_pars']): 
                     # get geocenttime index
@@ -771,7 +812,7 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
                         XS[k,ra_idx]=np.mod(GreenwichMeanSiderealTime(float(params['ref_geocent_time']+gps_time_arr[k]))-XS[k,ra_idx], 2.0*np.pi) 
                     # normalize
                     XS[:,ra_idx]=(XS[:,ra_idx] - bounds['ra_min']) / (bounds['ra_max'] - bounds['ra_min'])
-                """
+               
 
                 # Make corner plots
                 # Get corner parnames to use in plotting labels
