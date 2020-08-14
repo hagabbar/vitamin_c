@@ -452,7 +452,7 @@ def run(sampling_frequency=256.0,
 
         # if not doing PE then return signal data
         if not do_pe:
-            return test_samples_noisy,test_samples_noisefree,np.array([temp])
+            return test_samples_noisy,test_samples_noisefree,np.array([temp]),snr
 
         try:
             bilby.core.utils.setup_logger(outdir=out_dir, label=label)
