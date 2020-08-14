@@ -57,12 +57,12 @@ condor_bounds = {'mass_1_min':35.0, 'mass_1_max':80.0,
         'dec_min':-0.5*np.pi, 'dec_max':0.5*np.pi,
         'psi_min':0.0, 'psi_max':2.0*np.pi,
         'theta_jn_min':0.0, 'theta_jn_max':np.pi,
-        'a_1_min':0.0, 'a_1_max':0.0,
-        'a_2_min':0.0, 'a_2_max':0.0,
-        'tilt_1_min':0.0, 'tilt_1_max':0.0,
-        'tilt_2_min':0.0, 'tilt_2_max':0.0,
-        'phi_12_min':0.0, 'phi_12_max':0.0,
-        'phi_jl_min':0.0, 'phi_jl_max':0.0,
+        'a_1_min':0.0, 'a_1_max':0.8,
+        'a_2_min':0.0, 'a_2_max':0.8,
+        'tilt_1_min':0.0, 'tilt_1_max':np.pi,
+        'tilt_2_min':0.0, 'tilt_2_max':np.pi,
+        'phi_12_min':0.0, 'phi_12_max':2.0*np.pi,
+        'phi_jl_min':0.0, 'phi_jl_max':2.0*np.pi,
         'luminosity_distance_min':1000.0, 'luminosity_distance_max':3000.0}
 
 
@@ -93,69 +93,6 @@ def parser():
     
 
     return parser.parse_args()
-
-def tukey(M,alpha=0.5):
-    """ Tukey window code copied from scipy.
-    Parameters
-    ----------
-    M:
-        Number of points in the output window.
-    alpha:
-        The fraction of the window inside the cosine tapered region.
-    Returns
-    -------
-    w:
-        The window
-    """
-    n = np.arange(0, M)
-    width = int(np.floor(alpha*(M-1)/2.0))
-    n1 = n[0:width+1]
-    n2 = n[width+1:M-width-1]
-    n3 = n[M-width-1:]
-
-    w1 = 0.5 * (1 + np.cos(np.pi * (-1 + 2.0*n1/alpha/(M-1))))
-    w2 = np.ones(n2.shape)
-    w3 = 0.5 * (1 + np.cos(np.pi * (-2.0/alpha + 1 + 2.0*n3/alpha/(M-1))))
-    w = np.concatenate((w1, w2, w3))
-
-    return np.array(w[:M])
-
-def make_bbh(hp,hc,fs,ra,dec,psi,det,ifos,event_time):
-    """ Turns hplus and hcross into a detector output
-    applies antenna response and
-    and applies correct time delays to each detector
-    Parameters
-    ----------
-    hp:
-        h-plus version of GW waveform
-    hc:
-        h-cross version of GW waveform
-    fs:
-        sampling frequency
-    ra:
-        right ascension
-    dec:
-        declination
-    psi:
-        polarization angle        
-    det:
-        detector
-    Returns
-    -------
-    ht:
-        combined h-plus and h-cross version of waveform
-    hp:
-        h-plus version of GW waveform 
-    hc:
-        h-cross version of GW waveform
-    """
-    # compute antenna response and apply
-    #Fp=ifos.antenna_response(ra,dec,float(event_time),psi,'plus')
-    #Fc=ifos.antenna_response(ra,dec,float(event_time),psi,'cross')
-    #Fp,Fc,_,_ = antenna.response(float(event_time), ra, dec, 0, psi, 'radians', det )
-    ht = hp + hc     # overwrite the timeseries vector to reuse it
-
-    return ht, hp, hc
 
 def gen_template(duration,
                  sampling_frequency,
@@ -364,6 +301,36 @@ def gen_par(pars,
         pars['theta_jn'] = np.arccos(np.random.uniform(low=np.cos(bounds['theta_jn_min']),high=np.cos(bounds['theta_jn_max'])))
         print('{}: selected bbh inclination angle = {}'.format(time.asctime(),pars['theta_jn']))
 
+    # generate a_1
+    if np.any([r=='a_1' for r in rand_pars]):
+        pars['a_1'] = np.random.uniform(low=bounds['a_1_min'],high=bounds['a_1_max'])
+        print('{}: selected bbh a_1 = {}'.format(time.asctime(),pars['a_1']))
+
+    # generate a_2
+    if np.any([r=='a_2' for r in rand_pars]):
+        pars['a_2'] = np.random.uniform(low=bounds['a_2_min'],high=bounds['a_2_max'])
+        print('{}: selected bbh a_2 = {}'.format(time.asctime(),pars['a_2']))
+
+    # generate tilt_1
+    if np.any([r=='tilt_1' for r in rand_pars]):
+        pars['tilt_1'] = np.arccos(np.random.uniform(low=np.cos(bounds['tilt_1_min']),high=np.cos(bounds['tilt_1_max'])))
+        print('{}: selected bbh tilt_1 = {}'.format(time.asctime(),pars['tilt_1']))
+
+    # generate tilt_2
+    if np.any([r=='tilt_2' for r in rand_pars]):
+        pars['tilt_2'] = np.arccos(np.random.uniform(low=np.cos(bounds['tilt_2_min']),high=np.cos(bounds['tilt_2_max'])))
+        print('{}: selected bbh tilt_2 = {}'.format(time.asctime(),pars['tilt_2']))
+
+    # generate phi_12
+    if np.any([r=='phi_12' for r in rand_pars]):
+        pars['phi_12'] = np.random.uniform(low=bounds['phi_12_min'],high=bounds['phi_12_max'])
+        print('{}: selected bbh phi_12 = {}'.format(time.asctime(),pars['phi_12']))
+
+    # generate phi_j1
+    if np.any([r=='phi_jl' for r in rand_pars]):
+        pars['phi_jl'] = np.random.uniform(low=bounds['phi_jl_min'],high=bounds['phi_jl_max'])
+        print('{}: selected bbh phi_jl = {}'.format(time.asctime(),pars['phi_jl']))
+
     return pars
 
 ##########################################################################
@@ -478,60 +445,72 @@ def run(sampling_frequency=256.0,
                 name='geocent_time', latex_label='$t_c$', unit='$s$')
         else:
             priors['geocent_time'] = fixed_vals['geocent_time']
+
         if np.any([r=='mass_1' for r in inf_pars]):
             priors['mass_1'] = bilby.gw.prior.Uniform(name='mass_1', minimum=bounds['mass_1_min'], maximum=bounds['mass_1_max'],unit='$M_{\odot}$')
         else:
             priors['mass_1'] = fixed_vals['mass_1']
+
         if np.any([r=='mass_2' for r in inf_pars]):
             priors['mass_2'] = bilby.gw.prior.Uniform(name='mass_2', minimum=bounds['mass_2_min'], maximum=bounds['mass_2_max'],unit='$M_{\odot}$')
         else:
             priors['mass_2'] = fixed_vals['mass_2']
+
         if np.any([r=='a_1' for r in inf_pars]):
             priors['a_1'] = bilby.gw.prior.Uniform(name='a_1', minimum=bounds['a_1_min'], maximum=bounds['a_1_max'])
         else:
             priors['a_1'] = fixed_vals['a_1']
+
         if np.any([r=='a_2' for r in inf_pars]):
             priors['a_2'] = bilby.gw.prior.Uniform(name='a_2', minimum=bounds['a_2_min'], maximum=bounds['a_2_max'])
         else:
             priors['a_2'] = fixed_vals['a_2']
+
         if np.any([r=='tilt_1' for r in inf_pars]):
             priors['tilt_1'] = bilby.gw.prior.Uniform(name='tilt_1', minimum=bounds['tilt_1_min'], maximum=bounds['tilt_1_max'])
         else:
             priors['tilt_1'] = fixed_vals['tilt_1']
+
         if np.any([r=='tilt_2' for r in inf_pars]):
             priors['tilt_2'] = bilby.gw.prior.Uniform(name='tilt_2', minimum=bounds['tilt_2_min'], maximum=bounds['tilt_2_max'])
         else:
             priors['tilt_2'] = fixed_vals['tilt_2']
+
         if np.any([r=='phi_12' for r in inf_pars]):
-            priors['phi_12'] = bilby.gw.prior.Uniform(name='phi_12', minimum=bounds['phi_12_min'], maximum=bounds['phi_12_max'])
+            priors['phi_12'] = bilby.gw.prior.Uniform(name='phi_12', minimum=bounds['phi_12_min'], maximum=bounds['phi_12_max'], boundary='periodic')
         else:
             priors['phi_12'] = fixed_vals['phi_12']
+
         if np.any([r=='phi_jl' for r in inf_pars]):
-            priors['phi_jl'] = bilby.gw.prior.Uniform(name='phi_jl', minimum=bounds['phi_jl_min'], maximum=bounds['phi_jl_max'])
+            priors['phi_jl'] = bilby.gw.prior.Uniform(name='phi_jl', minimum=bounds['phi_jl_min'], maximum=bounds['phi_jl_max'], boundary='periodic')
         else:
             priors['phi_jl'] = fixed_vals['phi_jl']
+
         if np.any([r=='ra' for r in inf_pars]):
             priors['ra'] = bilby.gw.prior.Uniform(name='ra', minimum=bounds['ra_min'], maximum=bounds['ra_max'], boundary='periodic')
         else:
             priors['ra'] = fixed_vals['ra']
+
         if np.any([r=='dec' for r in inf_pars]):
-#            priors['dec'] = bilby.gw.prior.Cosine(name='dec', boundary='reflective')
             pass
         else:    
             priors['dec'] = fixed_vals['dec']
+
         if np.any([r=='psi' for r in inf_pars]):
             priors['psi'] = bilby.gw.prior.Uniform(name='psi', minimum=bounds['psi_min'], maximum=bounds['psi_max'], boundary='periodic')
         else:
             priors['psi'] = fixed_vals['psi']
+
         if np.any([r=='theta_jn' for r in inf_pars]):
-#            priors['theta_jn'] = bilby.gw.prior.Sine(name='theta_jn', minimum=bounds['theta_jn_min'], maximum=bounds['theta_jn_max'], boundary='reflective')
              pass
         else:
             priors['theta_jn'] = fixed_vals['theta_jn']
+
         if np.any([r=='phase' for r in inf_pars]):
             priors['phase'] = bilby.gw.prior.Uniform(name='phase', minimum=bounds['phase_min'], maximum=bounds['phase_max'], boundary='periodic')
         else:
             priors['phase'] = fixed_vals['phase']
+
         if np.any([r=='luminosity_distance' for r in inf_pars]):
             priors['luminosity_distance'] =  bilby.gw.prior.Uniform(name='luminosity_distance', minimum=bounds['luminosity_distance_min'], maximum=bounds['luminosity_distance_max'], unit='Mpc')
         else:

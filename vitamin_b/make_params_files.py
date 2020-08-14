@@ -55,17 +55,17 @@ bounds = {'mass_1_min':35.0, 'mass_1_max':80.0,
         '__definition__psi': 'psi range',
         'theta_jn_min':0.0, 'theta_jn_max':np.pi,
         '__definition__theta_jn': 'inclination angle range',
-        'a_1_min':0.0, 'a_1_max':0.0,
+        'a_1_min':0.0, 'a_1_max':0.8,
         '__definition__a_1': 'a1 range',
-        'a_2_min':0.0, 'a_2_max':0.0,
+        'a_2_min':0.0, 'a_2_max':0.8,
         '__definition__a_2': 'a2 range',
-        'tilt_1_min':0.0, 'tilt_1_max':0.0,
+        'tilt_1_min':0.0, 'tilt_1_max':np.pi,
         '__definition__tilt1': 'tilt1 range',
-        'tilt_2_min':0.0, 'tilt_2_max':0.0,
+        'tilt_2_min':0.0, 'tilt_2_max':np.pi,
         '__definition__tilt2': 'tilt2 range',
-        'phi_12_min':0.0, 'phi_12_max':0.0,
+        'phi_12_min':0.0, 'phi_12_max':2.0*np.pi,
         '__definition__phi12': 'phi12 range',
-        'phi_jl_min':0.0, 'phi_jl_max':0.0,
+        'phi_jl_min':0.0, 'phi_jl_max':2.0*np.pi,
         '__definition_phijl': 'phijl range',
         'luminosity_distance_min':1000.0, 'luminosity_distance_max':3000.0,
         '__definition__luminosity_distance': 'luminosity distance range'}
@@ -79,8 +79,8 @@ y_normscale = 36.0
 ndata = 256                                                                     
 det=['H1','L1','V1']                                                            
 rand_pars = ['mass_1','mass_2','luminosity_distance','geocent_time','phase',
-                 'theta_jn','psi','ra','dec']                                   
-inf_pars=['mass_1','mass_2','luminosity_distance','geocent_time','theta_jn','ra','dec'] 
+                 'theta_jn','psi','a_1','a_2','tilt_1','tilt_2','phi_12','phi_jl','ra','dec']                                   
+inf_pars=['mass_1','mass_2','luminosity_distance','geocent_time','theta_jn','a_1','a_2','tilt_1','tilt_2','phi_12','phi_jl','ra','dec'] 
 batch_size = 64                                                                 
 weight_init = 'xavier'                                                            
 n_modes=7                                                                      
@@ -121,19 +121,23 @@ run_label = 'demo_%ddet_%dpar_%dHz_testing' % (len(det),len(rand_pars),ndata)
 bilby_results_label = 'all_4_samplers'                                             
 r = 1                                                                           
 pe_test_num = 256                                                               
-tot_dataset_size = int(5e3)                                                     
+tot_dataset_size = int(1e3)                                                     
 tset_split = int(1e3)                                                           
 save_interval = int(1e3)                                                        
 num_iterations=int(1e6)+1                                                       
-ref_geocent_time=1126259642.5                                                   
-load_chunk_size = 1e4                                                           
+#ref_geocent_time=1126259642.5                                                   
+ref_geocent_time=1126259642.5 + ((86400.0/2.0))
+load_chunk_size = 1e3                                                           
 samplers=['vitamin','dynesty']                                                  
 
 # Directory variables
 plot_dir="./results/%s" % run_label  
-train_set_dir='./training_sets_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(det),len(rand_pars),ndata,tot_dataset_size,tset_split) 
-test_set_dir='./test_sets/%s/test_waveforms' % bilby_results_label                                                           
-pe_dir='./test_sets/%s/test' % bilby_results_label                                                                            
+#train_set_dir='/home/hunter.gabbard/CBC/VItamin/training_sets_second_sub_3det_9par_256Hz/tset_tot-10000000_split-1000'#'./training_sets_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(det),len(rand_pars),ndata,tot_dataset_size,tset_split) 
+#test_set_dir='/home/hunter.gabbard/CBC/public_VItamin/testing_directory/test_sets/all_4_samplers/test_waveforms'#'./test_sets/%s/test_waveforms' % bilby_results_label                                                           
+#pe_dir='/home/hunter.gabbard/CBC/public_VItamin/testing_directory/test_sets/all_4_samplers/test'#'./test_sets/%s/test' % bilby_results_label                                                                            
+train_set_dir='./training_sets_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(det),len(rand_pars),ndata,tot_dataset_size,tset_split)
+test_set_dir='./test_sets/%s/test_waveforms' % bilby_results_label
+pe_dir='./test_sets/%s/test' % bilby_results_label
 #############################
 # optional tunable variables
 
@@ -168,7 +172,7 @@ def get_params():
         __definition__load_plot_data='Use plotting data which has already been generated',
         doPE = True,                                                            
         __definition__doPE='if True then do bilby PE when generating new testing samples (not advised to change this)',
-        gpu_num=0,                                                              
+        gpu_num=2,                                                              
         __definition__gpu_num='gpu number run is running on',
         ndata = ndata,                                                          
         __definition__ndata='sampling frequency',
@@ -266,7 +270,22 @@ def get_params():
         __definition__r='number of GW timeseries to use for testing.',                                                             
         rand_pars=rand_pars,                                                    
         __definition__rand_pars='parameters to randomize (those not listed here are fixed otherwise)',
-        corner_labels = {'mass_1': '$m_{1}\,(\mathrm{M}_{\odot})$','mass_2': '$m_{2}\,(\mathrm{M}_{\odot})$','luminosity_distance': '$d_{\mathrm{L}}\,(\mathrm{Mpc})$','geocent_time': '$t_{0}\,(\mathrm{seconds})$','phase': '${\phi}$','theta_jn': '$\Theta_{jn}\,(\mathrm{rad})$','psi': '${\psi}$','ra': r'${\alpha}\,(\mathrm{rad})$','dec': '${\delta}\,(\mathrm{rad})$'},
+        corner_labels = {'mass_1': '$m_{1}\,(\mathrm{M}_{\odot})$',
+                         'mass_2': '$m_{2}\,(\mathrm{M}_{\odot})$',
+                         'luminosity_distance': '$d_{\mathrm{L}}\,(\mathrm{Mpc})$',
+                         'geocent_time': '$t_{0}\,(\mathrm{seconds})$',
+                         'phase': '${\phi}$',
+                         'theta_jn': '$\Theta_{jn}\,(\mathrm{rad})$',
+                         'psi': '${\psi}$',
+                         'ra': r'${\alpha}\,(\mathrm{rad})$',
+                         'dec': '${\delta}\,(\mathrm{rad})$',
+                         'a_1': '${a_1}$',
+                         'a_2': '${a_2}$',
+                         'tilt_1': '${\Theta_{1}}$',
+                         'tilt_2': '${\Theta_{2}}$',
+                         'phi_12': '${\phi_{12}}$',
+                         'phi_jl': '${\phi_{jl}}$'},
+
         __definition__corner_labels='latex source parameter labels for plotting',
         ref_geocent_time=ref_geocent_time,                                      
         __definition__ref_geocent_time='reference gps time (not advised to change this)',
@@ -292,7 +311,7 @@ def get_params():
         __definition__y_normscale='arbitrary normalization factor on all time series waveforms (helps convergence in training)',
         boost_pars=['ra','dec'],
         __definition__boost_pars='parameters to boost during training (by default this is off)',
-        gauss_pars=['luminosity_distance','geocent_time','theta_jn'],         
+        gauss_pars=['luminosity_distance','geocent_time','theta_jn','a_1','a_2','tilt_1','tilt_2','phi_12','phi_jl'],         
         __definition__gauss_pars='parameters that require a truncated gaussian distribution',
         vonmise_pars=['phase','psi'],                                        
         __definition__vonmises_pars='parameters that get wrapped on the 1D parameter', 
