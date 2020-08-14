@@ -685,15 +685,6 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
     dataLocations_try = '%s_%s' % (params['pe_dir'],sampler_loc)
     dataLocations = '%s_%s1' % (params['pe_dir'],params['samplers'][1])
 
-    # Assert user has the minimum number of test samples generated
-    number_of_files_in_dir = len(os.listdir(dataLocations[0]))
-    try:
-        assert number_of_files_in_dir >= params['r']
-    except Exception as e:
-        print(e)
-        print('You are requesting to use more GW time series than you have made.')
-        exit()
-
     #for i,filename in enumerate(glob.glob(dataLocations[0])):
     i_idx = 0
     i = 0
@@ -704,6 +695,16 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
 
         filename_try = '%s/%s_%d.h5py' % (dataLocations_try,params['bilby_results_label'],i)
         filename = '%s/%s_%d.h5py' % (dataLocations,params['bilby_results_label'],i)
+
+        # Assert user has the minimum number of test samples generated
+        number_of_files_in_dir = len(os.listdir(dataLocations))
+        try:
+            assert number_of_files_in_dir >= params['r']
+        except Exception as e:
+            print(e)
+            print('You are requesting to use more test GW time series than you have made.')
+            print('... Exiting program now')
+            exit()
 
         # If file does not exist, skip to next file
         try:
