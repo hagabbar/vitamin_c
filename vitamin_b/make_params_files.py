@@ -78,10 +78,11 @@ y_normscale = 36.0
 ##########################
 ndata = 256                                                                     
 det=['H1','L1','V1']                                                            
+psd_files=[] 
 rand_pars = ['mass_1','mass_2','luminosity_distance','geocent_time','phase',
-                 'theta_jn','psi','a_1','a_2','tilt_1','tilt_2','phi_12','phi_jl','ra','dec']                                   
-inf_pars=['mass_1','mass_2','luminosity_distance','geocent_time','theta_jn','a_1','a_2','tilt_1','tilt_2','phi_12','phi_jl','ra','dec'] 
-batch_size = 64                                                                 
+                 'theta_jn','psi','ra','dec']#,'a_1','a_2','tilt_1','tilt_2','phi_12','phi_jl','ra','dec']                                   
+inf_pars=['mass_1','mass_2','luminosity_distance','geocent_time','theta_jn','ra','dec']#,'a_1','a_2','tilt_1','tilt_2','phi_12','phi_jl','ra','dec'] 
+batch_size = 512                                                                 
 weight_init = 'xavier'                                                            
 n_modes=7                                                                      
 initial_training_rate=1e-4                                                     
@@ -117,8 +118,8 @@ n_weights_q = [n_fc,n_fc,n_fc]
 #############################
 # optional tunable variables
 #############################
-run_label = 'demo_%ddet_%dpar_%dHz_testing' % (len(det),len(rand_pars),ndata) 
-bilby_results_label = 'all_4_samplers'                                             
+run_label = 'demo_%ddet_%dpar_%dHz_test' % (len(det),len(rand_pars),ndata) 
+bilby_results_label = 'test'                                             
 r = 1                                                                           
 pe_test_num = 256                                                               
 tot_dataset_size = int(1e3)                                                     
@@ -126,13 +127,13 @@ tset_split = int(1e3)
 save_interval = int(1e3)                                                        
 num_iterations=int(1e6)+1                                                       
 #ref_geocent_time=1126259642.5                                                   
-ref_geocent_time=1126259642.5 + ((86400.0/2.0))
+ref_geocent_time=1126259642.5 #+ ((86400.0/2.0))
 load_chunk_size = 1e3                                                           
 samplers=['vitamin','dynesty']                                                  
 
 # Directory variables
 plot_dir="./results/%s" % run_label  
-#train_set_dir='/home/hunter.gabbard/CBC/VItamin/training_sets_second_sub_3det_9par_256Hz/tset_tot-10000000_split-1000'#'./training_sets_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(det),len(rand_pars),ndata,tot_dataset_size,tset_split) 
+#train_set_dir='/home/hunter.gabbard/CBC/VItamin/training_sets_second_sub_3det_9par_256Hz/tset_tot-10000000_split-1000/'#'./training_sets_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(det),len(rand_pars),ndata,tot_dataset_size,tset_split) 
 #test_set_dir='/home/hunter.gabbard/CBC/public_VItamin/testing_directory/test_sets/all_4_samplers/test_waveforms'#'./test_sets/%s/test_waveforms' % bilby_results_label                                                           
 #pe_dir='/home/hunter.gabbard/CBC/public_VItamin/testing_directory/test_sets/all_4_samplers/test'#'./test_sets/%s/test' % bilby_results_label                                                                            
 train_set_dir='./training_sets_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(det),len(rand_pars),ndata,tot_dataset_size,tset_split)
@@ -172,7 +173,7 @@ def get_params():
         __definition__load_plot_data='Use plotting data which has already been generated',
         doPE = True,                                                            
         __definition__doPE='if True then do bilby PE when generating new testing samples (not advised to change this)',
-        gpu_num=2,                                                              
+        gpu_num=0,                                                              
         __definition__gpu_num='gpu number run is running on',
         ndata = ndata,                                                          
         __definition__ndata='sampling frequency',
@@ -319,6 +320,8 @@ def get_params():
         __definition__sky_pars='sky parameters',
         det=det,
         __definition__det='LIGO detectors to perform analysis on (default is 3detector H1,L1,V1)',
+        psd_files=psd_files,
+        __definition__psd_files='User may specficy their own psd files for each detector. Must be bilby compatible .txt files. If specifying your own files, do so for each detector. If list is empty, default Bilby PSD values will be used for each detector. ',
         weighted_pars=None,
         __definition__weighted_pars='set to None if not using, parameters to weight during training',
         weighted_pars_factor=1,                       

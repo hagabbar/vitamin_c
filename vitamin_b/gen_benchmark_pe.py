@@ -97,7 +97,7 @@ def parser():
 def gen_template(duration,
                  sampling_frequency,
                  pars,
-                 ref_geocent_time
+                 ref_geocent_time, psd_files=[]
                  ):
     """
     Generates a whitened waveform
@@ -142,6 +142,13 @@ def gen_template(duration,
     # Set up interferometers. These default to their design
     # sensitivity
     ifos = bilby.gw.detector.InterferometerList(pars['det'])
+
+    # If user is specifying PSD files
+    if len(psd_files) > 0:
+        print(psd_files)
+        exit()
+        for int_idx,ifo in enumerate(ifos):
+            ifo.power_spectral_density = bilby.gw.detector.PowerSpectralDensity(psd_file=psd_files[int_idx])
 
     # set noise to be colored Gaussian noise
     ifos.set_strain_data_from_power_spectral_densities(
@@ -350,7 +357,8 @@ def run(sampling_frequency=256.0,
            samplers=['vitamin','dynesty'],
            condor_run=False,
            params=None,
-           det=['H1','L1','V1']
+           det=['H1','L1','V1'],
+           psd_files=[]
            ):
     """
     Generate data sets
@@ -386,7 +394,8 @@ def run(sampling_frequency=256.0,
         
             # make the data - shift geocent time to correct reference
             pars['geocent_time'] += ref_geocent_time
-            train_samp_noisefree, train_samp_noisy,_,ifos,_ = gen_template(duration,sampling_frequency,pars,ref_geocent_time)
+            train_samp_noisefree, train_samp_noisy,_,ifos,_ = gen_template(duration,sampling_frequency,
+                                                                           pars,ref_geocent_time,psd_files)
             train_samples.append([train_samp_noisefree,train_samp_noisy])
             small_snr_list = [ifos[j].meta_data['optimal_SNR'] for j in range(len(pars['det']))]
             snrs.append(small_snr_list)
@@ -412,7 +421,7 @@ def run(sampling_frequency=256.0,
         # inject signal - shift geocent time to correct reference
         pars['geocent_time'] += ref_geocent_time
         test_samples_noisefree,test_samples_noisy,injection_parameters,ifos,waveform_generator = gen_template(duration,sampling_frequency,
-                               pars,ref_geocent_time)
+                               pars,ref_geocent_time,psd_files)
 
         # get test sample snr
         snr = np.array([ifos[j].meta_data['optimal_SNR'] for j in range(len(pars['det']))])
