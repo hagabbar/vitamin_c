@@ -1,12 +1,6 @@
 #! /usr/bin/env python
 
-"""
-Tutorial to demonstrate running parameter estimation on a reduced parameter
-space for an injected signal.
-
-This example estimates the masses using a uniform prior in both component masses
-and distance using a uniform in comoving volume prior on luminosity distance
-between luminosity distances of 100Mpc and 5Gpc, the cosmology is Planck15.
+""" Script to generate training and testing samples
 """
 
 from __future__ import division, print_function
@@ -25,10 +19,9 @@ import lal
 import time
 import h5py
 from scipy.ndimage.interpolation import shift
-#from pylal import antenna, cosmography
 import argparse
 
-# fixed parameter values
+# fixed parameter values to use when running condor
 condor_fixed_vals = {'mass_1':50.0,
         'mass_2':50.0,
         'mc':None,
@@ -47,7 +40,7 @@ condor_fixed_vals = {'mass_1':50.0,
         'phi_jl':0.0,
         'det':['H1','L1','V1']}
 
-# prior bounds
+# prior bounds to use when running condor
 condor_bounds = {'mass_1_min':35.0, 'mass_1_max':80.0,
         'mass_2_min':35.0, 'mass_2_max':80.0,
         'M_min':70.0, 'M_max':160.0,
@@ -67,9 +60,11 @@ condor_bounds = {'mass_1_min':35.0, 'mass_1_max':80.0,
 
 
 def parser():
-    """
-    Parses command line arguments
-    :return: arguments
+    """ Parses command line arguments
+
+    Returns
+    -------
+        arguments
     """
 
     #TODO: complete help sections
@@ -99,8 +94,31 @@ def gen_template(duration,
                  pars,
                  ref_geocent_time, psd_files=[]
                  ):
-    """
-    Generates a whitened waveform
+    """ Generates a whitened waveforms
+
+    Parameters
+    ----------
+    duration: float
+        duration of the signal in seconds
+    sampling_frequency: float
+        sampling frequency of the signal
+    pars: dict
+        values of source parameters for the waveform
+    ref_geocent_time: float
+        reference geocenter time of injected signal
+    psd_files: list
+        list of psd files to use for each detector (if other than default is wanted)
+
+    Returns
+    -------
+    whitened noise-free signal: array_like
+    whitened noisy signal: array_like
+    injection_parameters: dict
+        source parameter values of injected signal
+    ifos: dict
+        interferometer properties
+    waveform_generator: bilby function
+        function used by bilby to inject signal into noise 
     """
 
     if sampling_frequency>4096:
@@ -193,19 +211,22 @@ def gen_masses(m_min=5.0,M_max=100.0,mdist='metric'):
    
     Parameters
     ----------
-    m_min:
+    m_min: float
         minimum component mass
-    M_max:
+    M_max: float
         maximum total mass
-    mdist:
+    mdist: string
         mass distribution to use when generating templates
+
     Returns
     -------
-    m12: list
-        both component mass parameters
-    eta:
+    m12[0]: float
+        mass 1
+    m12[1]: float
+        mass 2
+    eta: float
         eta parameter
-    mc:
+    mc: float
         chirp mass parameter
     """
     
@@ -263,8 +284,23 @@ def gen_par(pars,
             bounds=None,
             mdist='uniform'
             ):
-    """ 
-    Generates a random set of parameters
+    """ Sample randomly from distributions of source parameters
+    
+    Parameters
+    ----------
+    pars: dict
+        dictionary to store randomly sampled source parameter values
+    rand_pars: list
+        source parameters to randomly sample
+    bounds: dict
+        allowed bounds of source parameters
+    mdist: string
+        type of mass distribution to use
+
+    Returns
+    -------
+    pars: dict
+        randomly sampled source parameter values
     """
 
     # make masses
@@ -360,8 +396,47 @@ def run(sampling_frequency=256.0,
            det=['H1','L1','V1'],
            psd_files=[]
            ):
-    """
-    Generate data sets
+    """ Main function to generate both training sample time series 
+    and test sample time series/posteriors.
+
+    Parameters
+    ----------
+    sampling_frequency: float
+        sampling frequency of the signals
+    duration: float
+        duration of signals in seconds
+    N_gen: int
+        number of test/training timeseries to generate
+    bounds: dict
+        allowed bounds of timeseries source parameters
+    fixed_vals: dict
+        fixed values of source parameters not randomized
+    rand_pars: list
+        source parameters to randomize
+    inf_pars: list
+        source parameters to infer
+    ref_geocent_time: float
+        reference geocenter time of injected signals
+    training: bool
+        if true, generate training timeseries
+    do_pe: bool
+        if true, generate posteriors in addtion to test sample time series
+    label: string
+        label to give to saved files
+    out_dir: string
+        output directory of saved files
+    seed: float
+        random seed for generating timeseries and posterior samples
+    samplers: list
+        samplers to use when generating posterior samples
+    condor_run: bool
+        if true, use setting to make condor jobs run properly
+    params: dict
+        general script run parameters
+    det: list
+        detectors to use
+    psd_files
+        optional list of psd files to use for each detector
     """
 
     # use bounds specifically for condor test sample runs defined in this script. Can't figure out yet how to pass a dictionary. This is a temporary fix.
