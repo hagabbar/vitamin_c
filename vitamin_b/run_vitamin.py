@@ -4,6 +4,7 @@
 
 
 #######################################################################################################################
+
 import warnings
 warnings.filterwarnings("ignore")
 import os
@@ -197,27 +198,33 @@ def suppress_stdout():
 def load_data(params,bounds,fixed_vals,input_dir,inf_pars,load_condor=False):
     """ Function to load either training or testing data.
 
-    PARAMETERS:
-        input_dir:
-            Directory where training or testing files are stored
-        inf_pars:
-            list of parameters to infer when training ML model
-        load_condor:
-            if True, load test samples generated using a condor cluster
+    Parameters
+    ----------
+    params: dict
+        Dictionary containing parameter values of run
+    bounds: dict
+        Dictionary containing the allowed bounds of source GW parameters
+    fixed_vals: dict
+        Dictionary containing the fixed values of GW source parameters
+    input_dir: str
+        Directory where training or testing files are stored
+    inf_pars: list
+        list of parameters to infer when training ML model
+    load_condor: bool
+        if True, load test samples rather than training samples
 
-    RETURNS:
-        x_data, y_data, y_data_noisy, y_normscale, snrs
-        x_data:
-            array containing training/testing source parameter values
-        y_data:
-            array containing training/testing noise-free times series
-        y_data_noisy:
-            array containing training/testing noisy time series	
-        y_normscale:
-            value by which to normalize all time series to be between zero and one
-        snrs:
-            array containing optimal snr values for all training/testing time series
-
+    Returns
+    -------
+    x_data: array_like
+        array containing training/testing source parameter values
+    y_data: array_like
+        array containing training/testing noise-free times series
+    y_data_noisy: array_like
+        array containing training/testing noisy time series	
+    y_normscale: float
+        value by which to normalize all time series to be between zero and one
+    snrs: array_like
+        array containing optimal snr values for all training/testing time series
     """
 
     ########################
@@ -345,12 +352,57 @@ def hyperparam_fitness(kernel_1, strides_1, pool_1,
     Returns a value to be minimized (in this case, the total loss of the 
     neural network during training.
 
-    PARAMETERS:
-        hyperparameters to be tuned
-   
-    RETURNS:
-        KL divergence (scalar value)
+    Parameters
+    ----------
+    kernel_1: skopt function
+        Range over which kernel size in first CNN layer is allowed to vary
+    kernel_2: skopt function
+        Range over which kernel size in second CNN layer is allowed to vary
+    kernel_3: skopt function
+        Range over which kernel size in third CNN layer is allowed to vary  
+    kernel_4: skopt function
+        Range over which kernel size in fourth CNN layer is allowed to vary
+    strides_1: skopt function
+        Range over which stride size in first CNN layer is allowed to vary 
+    strides_2: skopt function
+        Range over which stride size in second CNN layer is allowed to vary
+    strides_3: skopt function
+        Range over which stride size in third CNN layer is allowed to vary
+    strides_4: skopt function
+        Range over which stride size in fourth CNN layer is allowed to vary
+    pool_1: skopt function
+        Range over which pool size in first CNN layer is allowed to vary
+    pool_2: skopt function
+        Range over which pool size in second CNN layer is allowed to vary
+    pool_3: skopt function
+        Range over which pool size in third CNN layer is allowed to vary
+    pool_4: skopt function
+        Range over which pool size in fourth CNN layer is allowed to vary
+    z_dimension: skopt function
+        Range over which latent space is allowed to vary
+    n_modes: skopt function
+        Range over which the number of gaussian modes in latent space is allowed to vary
+    n_filters_1: skopt function
+        Range over which the number of filters in first CNN layer is allowed to vary
+    n_filters_2: skopt function
+        Range over which the number of filters in second CNN layer is allowed to vary
+    n_filters_3: skopt function
+        Range over which the number of filters in third CNN layer is allowed to vary
+    n_filters_4: skopt function
+        Range over which the number of filters in fourth CNN layer is allowed to vary
+    batch_size: skopt function
+        Range over which the batch size is allowed to vary
+    n_weights_fc_1: skopt function
+        Range over which the number of neurons in the first hidden layer is allowed to vary
+    n_weights_fc_2: skopt function
+        Range over which the number of neurons in the second hidden layer is allowed to vary
+    n_weights_fc_3: skopt function
+        Range over which the number of neurons in the third hidden layer is allowed to vary
 
+    Returns
+    -------
+    VICI_loss: float
+        Total loss of the current optimized network
     """
 
     # set tunable hyper-parameters
@@ -473,6 +525,17 @@ def hyperparam_fitness(kernel_1, strides_1, pool_1,
 # Make training samples
 #######################
 def gen_train(params=params,bounds=bounds,fixed_vals=fixed_vals):
+    """ Generate training samples
+
+    Parameters
+    ----------
+    params: dict
+        Dictionary containing run parameters
+    bounds: dict
+        Dictionary containing allowed bounds of GW source parameters
+    fixed_vals: dict
+        Dictionary containing the fixed values of GW source parameters
+    """
 
     # Check for requried parameters files
     if params == None or bounds == None or fixed_vals == None:
@@ -544,6 +607,17 @@ def gen_train(params=params,bounds=bounds,fixed_vals=fixed_vals):
 # Make test samples
 ############################
 def gen_test(params=params,bounds=bounds,fixed_vals=fixed_vals):
+    """ Generate testing sample time series and posteriors using Bayesian inference (bilby)
+
+    Parameters
+    ----------
+    params: dict
+        Dictionary containing run parameters
+    bounds: dict
+        Dictionary containing allowed bounds of GW source parameters
+    fixed_vals: dict
+        Dictionary containing the fixed values of GW source parameters
+    """
 
     # Check for requried parameters files
     if params == None or bounds == None or fixed_vals == None:
@@ -607,6 +681,19 @@ def gen_test(params=params,bounds=bounds,fixed_vals=fixed_vals):
 # Train neural network
 ####################################
 def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=False):
+    """ Train neural network given pre-made training/testing samples
+
+    Parameters
+    ----------
+    params: dict
+        Dictionary containing run parameters
+    bounds: dict
+        Dictionary containing allowed bounds of GW source parameters
+    fixed_vals: dict
+        Dictionary containing the fixed values of GW source parameters
+    resume_training: bool
+        If True, continue training a pre-trained model.
+    """
 
     # Check for requried parameters files
     if params == None or bounds == None or fixed_vals == None:
@@ -808,11 +895,25 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
                                  "inverse_model_dir_%s/inverse_model.ckpt" % params['run_label'],
                                  x_data_test, bounds, fixed_vals,
                                  XS_all,snrs_test) 
-
     return
 
 # if we are now testing the network
 def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
+    """ Test a pre-trained neural network. There are several metrics by 
+    which the user may test the efficiency of the model (e.g. KL divergence, 
+    pp plots, corner plots).
+
+    Parameters
+    ----------
+    params: dict
+        Dictionary containing run parameters
+    bounds: dict
+        Dictionary containing allowed bounds of GW source parameters
+    fixed_vals: dict
+        Dictionary containing the fixed values of GW source parameters
+    use_gpu: bool
+        If True, use a GPU to generate samples from the posterior of a pretrained neural network
+    """
 
     # Check for requried parameters files
     if params == None or bounds == None or fixed_vals == None:
@@ -1181,6 +1282,30 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
 
 def gen_samples(params=params,bounds=bounds,fixed_vals=fixed_vals,model_loc='model_ex/model.ckpt',test_set='test_waveforms/',num_samples=None,plot_corner=True,use_gpu=False):
     """ Function to generate VItamin samples given a trained model
+
+    Parameters
+    ----------
+    params: dict
+        Dictionary containing run parameters
+    bounds: dict
+        Dictionary containing allowed bounds of GW source parameters
+    fixed_vals: dict
+        Dictionary containing the fixed values of GW source parameters
+    model_loc: str
+        location of pre-trained model (i.e. file with .ckpt)
+    test_set: str
+        dictionary location of test sample time series
+    num_samples: float
+        number of posterior samples to generate using neural network
+    plot_corner: bool
+        if true, make corner plots of generated posterior samples
+    use_gpu: bool
+        if true, use gpu to make posterior samples
+
+    Returns
+    -------
+    samples: array_like
+        posterior samples generated by neural network
     """
 
     # Check for requried parameters files
