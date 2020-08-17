@@ -227,9 +227,6 @@ def load_data(params,bounds,fixed_vals,input_dir,inf_pars,load_condor=False):
         array containing optimal snr values for all training/testing time series
     """
 
-    ########################
-    # load generated samples
-    ########################
     train_files = []
     
     # Get list of all training/testing files and define dictionary to store values in files
@@ -521,9 +518,6 @@ def hyperparam_fitness(kernel_1, strides_1, pool_1,
 
     return VICI_loss
 
-#######################
-# Make training samples
-#######################
 def gen_train(params=params,bounds=bounds,fixed_vals=fixed_vals):
     """ Generate training samples
 
@@ -603,9 +597,6 @@ def gen_train(params=params,bounds=bounds,fixed_vals=fixed_vals):
         hf.close()
     return
 
-############################
-# Make test samples
-############################
 def gen_test(params=params,bounds=bounds,fixed_vals=fixed_vals):
     """ Generate testing sample time series and posteriors using Bayesian inference (bilby)
 
@@ -677,9 +668,6 @@ def gen_test(params=params,bounds=bounds,fixed_vals=fixed_vals):
         hf.close()
     return
 
-####################################
-# Train neural network
-####################################
 def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=False):
     """ Train neural network given pre-made training/testing samples
 
@@ -1336,9 +1324,7 @@ def gen_samples(params=params,bounds=bounds,fixed_vals=fixed_vals,model_loc='mod
     if num_samples != None:
         params['n_samples'] = num_samples
 
-    ########################
     # load generated samples
-    ########################
     files = []
    
     # Get list of all training/testing files and define dictionary to store values in files
