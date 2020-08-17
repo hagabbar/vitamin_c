@@ -515,7 +515,8 @@ def gen_train(params=params,bounds=bounds,fixed_vals=fixed_vals):
                                                           rand_pars=params['rand_pars'],
                                                           seed=params['training_data_seed']+i,
                                                           label=params['run_label'],
-                                                          training=True,det=params['det'])
+                                                          training=True,det=params['det'],
+                                                          psd_files=params['psd_files'])
         logging.config.dictConfig({
         'version': 1,
         'disable_existing_loggers': False,
@@ -575,7 +576,8 @@ def gen_test(params=params,bounds=bounds,fixed_vals=fixed_vals):
                                                       samplers=params['samplers'],
                                                       training=False,
                                                       seed=params['testing_data_seed']+i,
-                                                      do_pe=params['doPE'],det=params['det'])
+                                                      do_pe=params['doPE'],det=params['det'],
+                                                      psd_files=params['psd_files'])
 
         signal_test_noisy = temp_noisy
         signal_test_noisefree = temp_noisefree
