@@ -1,3 +1,6 @@
+""" Script used to generate run parameters json files
+"""
+
 import numpy as np
 import os
 import json

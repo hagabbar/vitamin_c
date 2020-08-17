@@ -1,3 +1,6 @@
+""" Script containing a suite of plotting-related functions used by vitamin_b
+"""
+
 from __future__ import division
 from decimal import *
 import os, shutil
