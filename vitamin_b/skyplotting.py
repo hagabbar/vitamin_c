@@ -7,6 +7,19 @@ from matplotlib import pyplot as plt
 from mpl_toolkits.basemap import Basemap
 
 def greedy(density):
+    """ computes greedy bins
+    
+    Parameters
+    ----------
+    density: array_like
+        probablity density
+
+    Returns
+    -------
+    p: array_like
+        greedy bins
+    """
+
     i,j = np.shape(density)
     idx = np.argsort(density.flatten())[::-1]
     c = np.cumsum(density.flatten()[idx])
@@ -17,7 +30,30 @@ def greedy(density):
     return p.reshape(i,j)
 
 def plot_sky(pts,contour=True,filled=False,ax=None,trueloc=None,cmap='Reds',col='red'):
+    """ plot right ascencion and declination onto a Mollweide sky plot
 
+    Parameters
+    ----------
+    pts: array_like
+        right ascension and declination posterior samples
+    contour: bool
+        if True make contour plots
+    filled: bool
+        if true, make filled contour plots
+    ax: matplotlib figure
+        previously generated matplotlib figure object
+    trueloc: array_like
+        true location of the right ascension and declination
+    cmap: string
+        color to use in plot
+    col: string
+        color to use in plot 
+
+    Returns
+    -------
+    map: matplotlib figure
+        sky plot figure
+    """
     cls = kde.Clustered2DSkyKDE
     pts[:,0] = pts[:,0] - np.pi
     skypost = cls(pts, trials=5, jobs=8)
