@@ -6,6 +6,8 @@ tf.disable_v2_behavior()
 # https://github.com/tensorflow/models/blob/master/autoencoder/Utils.py
 
 def xavier_init(fan_in, fan_out, constant = 1):
+    """ xavier weight initialization
+    """
     low = -constant * np.sqrt(6.0 / (fan_in + fan_out))
     high = constant * np.sqrt(6.0 / (fan_in + fan_out))
     return tf.random_uniform((fan_in, fan_out),
