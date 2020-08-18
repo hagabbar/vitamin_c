@@ -2,7 +2,7 @@
 #
 # --Variational Inference for gravitational wave parameter estimation--
 # 
-# This model takes as input measured signals and infers target images/objects.
+# Our model takes as input measured signals and infers target images/objects.
 #
 ################################################################################################################
 
@@ -32,59 +32,31 @@ tfd = tfp.distributions
 SMALL_CONSTANT = 1e-12 # necessary to prevent the division by zero in many operations 
 GAUSS_RANGE = 10.0     # Actual range of truncated gaussian when the ramp is 0
 
-# NORMALISE DATASET FUNCTION
-def tf_normalise_dataset(xp):
-    
-    Xs = tf.shape(xp)
-    
-    l2norm = tf.sqrt(tf.reduce_sum(tf.multiply(xp,xp),1))
-    l2normr = tf.reshape(l2norm,[Xs[0],1])
-    x_data = tf.divide(xp,l2normr)
-  
-    # comment this if you want to use normalise 
-    x_data = xp 
-    return x_data
-
-# MULTIMODAL UPDATE: NORMALISE DATASET TO THE SUM FUNCTION
-def tf_normalise_sum_dataset(xp):
-    
-    Xs = tf.shape(xp)
-    
-    log_norm = tf.math.reduce_logsumexp(xp,1)
-    log_norm = tf.reshape(log_norm,[Xs[0],1])
-    x_data = tf.add(xp,-log_norm)    
-
-    return x_data
-
-def get_wrap_index(params):
-
-    # identify the indices of wrapped and non-wrapped parameters - clunky code
-    wrap_mask, nowrap_mask = [], []
-    idx_wrap, idx_nowrap = [], []
-    
-    # loop over inference params
-    for i,p in enumerate(params['inf_pars']):
-
-        # loop over wrapped params 
-        flag = False
-        for q in params['wrap_pars']:
-            if p==q:
-                flag = True    # if inf params is a wrapped param set flag
-        
-        # record the true/false value for this inference param
-        if flag==True:
-            wrap_mask.append(True)
-            nowrap_mask.append(False)
-            idx_wrap.append(i)
-        elif flag==False:
-            wrap_mask.append(False)
-            nowrap_mask.append(True)
-            idx_nowrap.append(i)
-     
-    idx_mask = idx_nowrap + idx_wrap
-    return wrap_mask, nowrap_mask, idx_mask
-
 def load_chunk(input_dir,inf_pars,params,bounds,fixed_vals,load_condor=False):
+    """ Function to load more training/testing data
+
+    Parameters
+    ----------
+    input_dir: str
+        Directory where training or testing files are stored
+    inf_pars: list
+        list of parameters to infer when training ML model
+    params: dict
+        Dictionary containing parameter values of run
+    bounds: dict
+        Dictionary containing the allowed bounds of source GW parameters
+    fixed_vals: dict
+        Dictionary containing the fixed values of GW source parameters
+    load_condor: bool
+        if True, load test samples rather than training samples
+
+    Returns
+    -------
+    x_data: array_like
+        data source parameter values
+    y_data_train: array_like
+        data time series 
+    """
 
     # load generated samples back in
     train_files = []
@@ -187,7 +159,24 @@ def load_chunk(input_dir,inf_pars,params,bounds,fixed_vals,load_condor=False):
     return x_data, y_data_train
 
 def get_param_index(all_pars,pars):
+    """ Get the list index of requested source parameter types 
+  
+    Parameters
+    ----------
+    all_pars: list
+        list of infered parameters
+    pars: list
+        parameters to get index of
 
+    Returns
+    -------
+    mask: list
+        boolean array of parameter indices
+    idx: list
+        array of parameter indices
+    np.sum(mask): float
+        total number of parameter indices
+    """
     # identify the indices of wrapped and non-wrapped parameters - clunky code
     mask = []
     idx = []
@@ -211,7 +200,30 @@ def get_param_index(all_pars,pars):
     return mask, idx, np.sum(mask)
 
 def run(params, y_data_test, siz_x_data, y_normscale, load_dir):
+    """ Function to run a pre-trained tensorflow neural network
+    
+    Parameters
+    ----------
+    params: dict
+        Dictionary containing parameter values of the run
+    y_data_test: array_like
+        test sample time series
+    siz_x_data: float
+        Number of source parameters to infer
+    y_normscale: float
+        arbitrary normalization factor for time series
+    load_dir: str
+        location of pre-trained model
 
+    Returns
+    -------
+    xs: array_like
+        predicted posterior samples
+    (run_endt-run_startt): float
+        total time to make predicted posterior samples
+    mode_weights: array_like
+        learned Gaussian Mixture Model modal weights
+    """
     multi_modal = True
 
     # USEFUL SIZES
@@ -395,13 +407,40 @@ def run(params, y_data_test, siz_x_data, y_normscale, load_dir):
     xs, mode_weights = session.run([r2_xzy_samp,r1_weight],feed_dict={bs_ph:ns,y_ph:y_data_test_exp})
     run_endt = time.time()
 
-#    run_startt = time.time()
-#    xs, mode_weights = session.run([r2_xzy_samp,r1_weight],feed_dict={bs_ph:ns,y_ph:y_data_test_exp})
-#    run_endt = time.time()
+    run_startt = time.time()
+    xs, mode_weights = session.run([r2_xzy_samp,r1_weight],feed_dict={bs_ph:ns,y_ph:y_data_test_exp})
+    run_endt = time.time()
 
     return xs, (run_endt - run_startt), mode_weights
 
 def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefree, y_normscale, save_dir, truth_test, bounds, fixed_vals, posterior_truth_test,snrs_test=None):    
+    """ Main function to train tensorflow model
+    
+    Parameters
+    ----------
+    params: dict
+        Dictionary containing parameter values of run
+    x_data: array_like
+        array containing training source parameter values
+    x_data_test: array_like
+        array containing testing source parameter values
+    y_data_test: array_like
+        array containing noisy testing time series
+    y_data_test_noisefree: array_like
+        array containing noisefree testing time series
+    y_normscale: float
+        arbitrary normalization factor for time series
+    save_dir: str
+        location to save trained tensorflow model
+    truth_test: array_like TODO: this is redundant, must be removed ...
+        array containing testing source parameter values
+    bounds: dict
+        allowed bounds of GW source parameters
+    fixed_vals: dict
+        fixed values of GW source parameters
+    posterior_truth_test: array_like
+        posterior from test Bayesian sampler analysis 
+    """
 
     # if True, do multi-modal
     multi_modal = True
