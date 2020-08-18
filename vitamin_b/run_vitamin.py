@@ -300,8 +300,8 @@ def load_data(params,bounds,fixed_vals,input_dir,inf_pars,load_condor=False):
         else:
             # Iterate over all training samples and convert to hour angle
             for i in range(data['x_data'].shape[0]):
-                #data['x_data'][i,ra_idx]=(GreenwichMeanSiderealTime(float(params['ref_geocent_time']+data['x_data'][i,geo_idx])) * (2*np.pi/86400))-data['x_data'][i,ra_idx]
-                data['x_data'][i,ra_idx]=np.mod(GreenwichMeanSiderealTime(float(params['ref_geocent_time']+data['x_data'][i,geo_idx])) - data['x_data'][i,ra_idx], 2.0*np.pi)
+#                data['x_data'][i,ra_idx]=np.mod(GreenwichMeanSiderealTime(float(params['ref_geocent_time']+data['x_data'][i,geo_idx])) - data['x_data'][i,ra_idx], 2.0*np.pi)
+                data['x_data'][i,ra_idx]=np.mod(GreenwichMeanSiderealTime(params['ref_geocent_time']) - data['x_data'][i,ra_idx], 2.0*np.pi)
 
     # Normalise the source parameters np.remainder(blah,np.pi)
     for i,k in enumerate(data_temp['rand_pars']):
@@ -1261,7 +1261,7 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
 
     if params['make_pp_plot'] == True:
         # Make pp plot
-        plotter.plot_pp(CVAE_model,y_data_test,x_data_test,0,y_normscale,x_data_test,bounds)
+        plotter.plot_pp(CVAE_model,y_data_test,x_data_test,y_normscale,bounds)
 
     if params['make_loss_plot'] == True:
         plotter.plot_loss()

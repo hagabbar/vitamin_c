@@ -146,7 +146,8 @@ def load_chunk(input_dir,inf_pars,params,bounds,fixed_vals,load_condor=False):
     else:
         # Iterate over all training samples and convert to hour angle
         for i in range(data['x_data'].shape[0]):
-            data['x_data'][i,ra_idx]=np.mod(GreenwichMeanSiderealTime(float(params['ref_geocent_time']+data['x_data'][i,geo_idx])) - data['x_data'][i,ra_idx], 2.0*np.pi)
+#            data['x_data'][i,ra_idx]=np.mod(GreenwichMeanSiderealTime(float(params['ref_geocent_time']+data['x_data'][i,geo_idx])) - data['x_data'][i,ra_idx], 2.0*np.pi)
+            data['x_data'][i,ra_idx]=np.mod(GreenwichMeanSiderealTime(params['ref_geocent_time']) - data['x_data'][i,ra_idx], 2.0*np.pi)
 
 
     # normalise the data parameters
@@ -644,7 +645,8 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
         # convert to RA
         # Iterate over all training samples and convert to hour angle
         for k in range(x_data_test_hour_angle.shape[0]):
-            x_data_test_hour_angle[k,ra_idx]=np.mod(GreenwichMeanSiderealTime(float(params['ref_geocent_time']+gps_time_arr[k]))-x_data_test_hour_angle[k,ra_idx], 2.0*np.pi)
+#            x_data_test_hour_angle[k,ra_idx]=np.mod(GreenwichMeanSiderealTime(float(params['ref_geocent_time']+gps_time_arr[k]))-x_data_test_hour_angle[k,ra_idx], 2.0*np.pi)
+            x_data_test_hour_angle[k,ra_idx]=np.mod(GreenwichMeanSiderealTime(params['ref_geocent_time'])-x_data_test_hour_angle[k,ra_idx], 2.0*np.pi)
         # normalize
         x_data_test_hour_angle[:,ra_idx]=(x_data_test_hour_angle[:,ra_idx] - bounds['ra_min']) / (bounds['ra_max'] - bounds['ra_min'])
 
@@ -809,7 +811,8 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
                     # convert to RA
                     # Iterate over all training samples and convert to hour angle
                     for k in range(XS.shape[0]):
-                        XS[k,ra_idx]=np.mod(GreenwichMeanSiderealTime(float(params['ref_geocent_time']+gps_time_arr[k]))-XS[k,ra_idx], 2.0*np.pi) 
+#                        XS[k,ra_idx]=np.mod(GreenwichMeanSiderealTime(float(params['ref_geocent_time']+gps_time_arr[k]))-XS[k,ra_idx], 2.0*np.pi) 
+                         XS[k,ra_idx]=np.mod(GreenwichMeanSiderealTime(params['ref_geocent_time'])-XS[k,ra_idx], 2.0*np.pi)
                     # normalize
                     XS[:,ra_idx]=(XS[:,ra_idx] - bounds['ra_min']) / (bounds['ra_max'] - bounds['ra_min'])
                

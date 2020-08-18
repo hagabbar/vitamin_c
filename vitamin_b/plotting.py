@@ -26,6 +26,18 @@ from lal import GreenwichMeanSiderealTime
 
 def prune_samples(chain_file_loc,params):
     """ Function to remove bad likelihood emcee chains 
+   
+    Parameters
+    ----------
+    chain_file_loc: str
+        location of emcee chain file
+    params: dict
+        general run parameters
+
+    Returns
+    -------
+    XS: array_like
+        pruned emcee samples
     """
     nsteps = 14000
     nburnin = 4000
@@ -69,8 +81,14 @@ def prune_samples(chain_file_loc,params):
     return XS
 
 def make_dirs(params,out_dir):
-    """
-    Make directories to store plots. Directories that already exist will be overwritten.
+    """ Make directories to store plots. Directories that already exist will be overwritten.
+    
+    Parameters
+    ----------
+    params: dict
+        general run parameters
+    out_dir: str
+        output directory for test plots
     """
 
     ## If file exists, delete it ##
@@ -100,86 +118,45 @@ def make_dirs(params,out_dir):
 
 
 class make_plots:
-    """
-    Generate plots
+    """ Class to generate a suite of testing plots
     """
     
     def __init__(self,params,samples,rev_x,pos_test):
+        """ Add variables here later if need be
         """
-        Add variables here later if need be
-        """
-        self.params = params
-        self.samples = samples
-        self.rev_x = rev_x
-        self.pos_test = pos_test
-
-        def ad_ks_test(parnames,inn_samps,mcmc_samps,cnt):
-            """
-            Record and print ks and AD test statistics
-            """
-    
-            ks_mcmc_arr = []
-            ks_inn_arr = []
-            ad_mcmc_arr = []
-            ad_inn_arr = []
-            cur_max = self.params['n_samples']
-            mcmc = []
-            c=vici = []
-            for i in range(inn_samps.shape[0]):
-                # remove samples outside of the prior mass distribution
-                mask = [(inn_samps[0,:] >= inn_samps[2,:]) & (inn_samps[3,:] >= 0.0) & (inn_samps[3,:] <= 1.0) & (inn_samps[1,:] >= 0.0) & (inn_samps[1,:] <= 1.0) & (inn_samps[0,:] >= 0.0) & (inn_samps[0,:] <= 1.0) & (inn_samps[2,:] <= 1.0) & (inn_samps[2,:] >= 0.0)]
-                mask = np.argwhere(mask[0])
-                new_rev = inn_samps[i,mask]
-                new_rev = new_rev.reshape(new_rev.shape[0])
-                new_samples = mcmc_samps[mask,i]
-                new_samples = new_samples.reshape(new_samples.shape[0])
-                tmp_max = new_rev.shape[0]
-                if tmp_max < cur_max: cur_max = tmp_max
-                vici.append(new_rev[:cur_max])
-                mcmc.append(new_samples[:cur_max])
-
-            mcmc = np.array(mcmc)
-            vici = np.array(vici)
-
-            # iterate through each parameter
-            for i in range(inn_samps.shape[0]):
-                ks_mcmc_samps = []
-                ks_inn_samps = []
-                ad_mcmc_samps = []
-                ad_inn_samps = []
-                n_samps = self.params['n_samples']
-                n_pars = self.params['ndim_x']
-
-                # iterate over number of randomized sample slices
-                for j in range(self.params['n_kl_samp']):
-                    # get ideal bayesian number. We want the 2 tailed p value from the KS test FYI
-                    ks_mcmc_result = ks_2samp(np.random.choice(mcmc[i,:],size=int(mcmc.shape[1]/2.0)), np.random.choice(mcmc[i,:],size=int(mcmc.shape[1]/2.0)))
-                    ad_mcmc_result = anderson_ksamp([np.random.choice(mcmc[i,:],size=int(mcmc.shape[1]/2.0)), np.random.choice(mcmc[i,:],size=int(mcmc.shape[1]/2.0))])
-                
-
-                    # get predicted vs. true number
-                    ks_inn_result = ks_2samp(np.random.choice(vici[i,:],size=int(mcmc.shape[1]/2.0)),np.random.choice(mcmc[i,:],size=int(mcmc.shape[1]/2.0)))
-                    ad_inn_result = anderson_ksamp([np.random.choice(vici[i,:],size=int(mcmc.shape[1]/2.0)),np.random.choice(mcmc[i,:],size=int(mcmc.shape[1]/2.0))])
-
-                    # store result stats
-                    ks_mcmc_samps.append(ks_mcmc_result[1])
-                    ks_inn_samps.append(ks_inn_result[1])
-                    ad_mcmc_samps.append(ad_mcmc_result[0])
-                    ad_inn_samps.append(ad_inn_result[0])
-                print('Test Case %d, Parameter(%s) k-s result: [Ideal(%.6f), Predicted(%.6f)]' % (int(cnt),parnames[i],np.array(ks_mcmc_result[1]),np.array(ks_inn_result[1])))
-                print('Test Case %d, Parameter(%s) A-D result: [Ideal(%.6f), Predicted(%.6f)]' % (int(cnt),parnames[i],np.array(ad_mcmc_result[0]),np.array(ad_inn_result[0])))
-
-                # store result stats
-                ks_mcmc_arr.append(ks_mcmc_samps)
-                ks_inn_arr.append(ks_inn_samps)
-                ad_mcmc_arr.append(ad_mcmc_samps)
-                ad_inn_arr.append(ad_inn_samps)
-
-            return ks_mcmc_arr, ks_inn_arr, ad_mcmc_arr, ad_inn_arr, 0, 0
+        self.params = params       # general run parameters
+        self.samples = samples     # Bayesian posterior samples
+        self.rev_x = rev_x         # pre-generated NN posteriors
+        self.pos_test = pos_test   # scalar truths of test samples
 
         def load_test_set(model,sig_test,par_test,y_normscale,bounds,sampler='dynesty1',vitamin_pred_made=None):
-            """
-            load requested test set
+            """ load requested test set
+
+            Parameters
+            ----------
+            model: tensorflow object
+                pre-trained tensorflow neural network
+            sig_test: array_like
+                test signal time series
+            par_test: array_like
+                test signal source parameter values
+            y_normscale: float
+                arbitrary normalization factor to scale time series
+            bounds: dict
+                bounds allowed for GW waveforms
+            sampler: str
+                sampler results to load
+            vitamin_pred_made: bool
+                if True, use pre-generated vitamin predictions
+
+            Returns
+            -------
+            VI_pred_all: array_like
+                predictions made by the vitamin box
+            XS_all: array_like
+                predictions made by the Bayesian samplers
+            dt: array_like
+                time to compute posterior predictions 
             """
 
             if sampler=='vitamin1' or sampler=='vitamin2':
@@ -315,8 +292,17 @@ class make_plots:
             return XS_all, dt
 
         def confidence_bd(samp_array):
-            """
-            compute confidence bounds for a given array
+            """ compute confidence bounds for a given array
+            
+            Parameters
+            ----------
+            samp_array: array_like
+                posterior samples
+ 
+            Returns
+            -------
+            list:
+                lower and upper bounds of the confidence interval
             """
             cf_bd_sum_lidx = 0
             cf_bd_sum_ridx = 0
@@ -329,295 +315,44 @@ class make_plots:
 
             return [cf_bd_sum_lidx, cf_bd_sum_ridx]
 
-        def make_contour_plot(ax,x,y,dataset,parnames,prior_min=0,prior_max=1,color='red',load_plot_data=False,contours=None):
-            """ Module used to make contour plots in pe scatter plots.
-
-            Parameters
-            ----------
-            ax: matplotlib figure
-                a matplotlib figure instance
-            x: 1D numpy array
-                pe sample parameters for x-axis
-            y: 1D numpy array
-                pe sample parameters for y-axis
-            dataset: 2D numpy array
-                array containing both parameter estimates
-            color:
-                color of contours in plot
-            Returns
-            -------
-            kernel: scipy kernel
-                gaussian kde of the input dataset
-            """
-              
-            def get_contours(x,y,prior_min=[0,0],prior_max=[1,1],mass_flag=False):
-
-                #idx = np.argwhere((x>=0.0)*(x<=1.0)*(y>=0.0)*(y<=1.0)).flatten()
-                #x = x[idx]
-                #y = y[idx]
-                N = len(x)
-
-                values = np.vstack([x,y])
-                kernel = gaussian_kde(values)
-                f = lambda b, a: kernel(np.vstack([a,b]))
-                if mass_flag:
-                    R = dblquad(f, prior_min[0], prior_max[0], lambda x: prior_min[1], lambda x: x)[0]
-                    dist = lambda a, b: f(b,a)/R*(b>=prior_min[1])*(b<=prior_max[1])*(a>=prior_min[0])*(a<=prior_max[0])*(a>=b)
-                else:
-                    R = dblquad(f, prior_min[0], prior_max[0], lambda x: prior_min[1], lambda x: prior_max[1])[0]
-                    dist = lambda a, b: f(b,a)/R*(b>=prior_min[1])*(b<=prior_max[1])*(a>=prior_min[0])*(a<=prior_max[0])
-                    #R = dblquad(f, 0, 1, lambda x: 1, lambda x: 1)
-                    #dist = lambda a, b: f(b,a)/R*(b>=0)*(b<=1)*(a>=0)*(a<=1)
-
-                Z = dist(x,y)
-                Lidx = np.argsort(Z)
-                Z68 = Z[Lidx[int((1.0-0.68)*N)]]
-                Z90 = Z[Lidx[int((1.0-0.90)*N)]]
-                Z95 = Z[Lidx[int((1.0-0.95)*N)]]
-
-                x_range = np.max(x) - np.min(x)
-                y_range = np.max(y) - np.min(y)
-                xv = np.arange(np.min(x)-0.1*x_range, np.max(x)+0.1*x_range, 1.2*x_range/100.0)
-                yv = np.arange(np.min(y)-0.1*y_range, np.max(y)+0.1*y_range, 1.2*y_range/100.0)
-                X, Y = np.meshgrid(xv, yv)
-                Q = dist(X.flatten(),Y.flatten()).reshape(X.shape)
-
-                return Q,X,Y,[Z95,Z90,Z68,np.max(Q)]
-
-            do_unnorm_contours = False
-
-            if do_unnorm_contours: 
-                # Make a 2d normed histogram
-                H,xedges,yedges=np.histogram2d(x,y,bins=20,normed=True)
-
-                norm=H.sum() # Find the norm of the sum
-                # Set contour levels
-                contour1=0.95
-                contour2=0.90
-                contour3=0.68
-
-                # Set target levels as percentage of norm
-                target1 = norm*contour1
-                target2 = norm*contour2
-                target3 = norm*contour3
-
-                # Take histogram bin membership as proportional to Likelihood
-                # This is true when data comes from a Markovian process
-                def objective(limit, target):
-                    w = np.where(H>limit)
-                    count = H[w]
-                    return count.sum() - target
-
-                # Find levels by summing histogram to objective
-                level1= scipy.optimize.bisect(objective, H.min(), H.max(), args=(target1,))
-                level2= scipy.optimize.bisect(objective, H.min(), H.max(), args=(target2,))
-                level3= scipy.optimize.bisect(objective, H.min(), H.max(), args=(target3,))
-
-                # For nice contour shading with seaborn, define top level
-                level4=H.max()
-                levels=[level1,level2,level3,level4]
-
-                # Pass levels to normed kde plot
-                X, Y = np.mgrid[np.min(x):np.max(x):100j, np.min(y):np.max(y):100j]
-                positions = np.vstack([X.ravel(), Y.ravel()])
-                kernel = gaussian_kde(dataset)
-                Z = np.reshape(kernel(positions).T, X.shape)
-
-                if color == 'blue':
-                    ax.contour(X,Y,Z,levels=levels,alpha=0.5,colors=color)
-                elif color == 'red':
-                    ax.contourf(X,Y,Z,levels=levels,alpha=1.0,colors=['#e61a0b','#f75448','#ff7a70'])
-
-            else:
-#                if load_plot_data==False:
-                if (parnames[0] == 'm_{1} (M_\odot)' and parnames[1]=='m_{2} (M_\odot)') or (parnames[0]=='m_{2} (M_\odot)' and parnames[1]=='m_{1} (M_\odot)'):
-                    mass_flag=True
-                else:
-                    mass_flag=False
-                # Get contours for plotting
-                Q,X,Y,L = get_contours(x,y,prior_min=prior_min,prior_max=prior_max,mass_flag=mass_flag)
-#                else:
-#                    Q = contours[0]
-#                    X = contours[1]
-#                    Y = contours[2]
-#                    L = contours[3]
-                    
-                if color == 'blue':
-                    ax.contour(X,Y,Q,levels=L,alpha=0.5,colors=color, origin='lower', linewidths=1)
-                elif color == 'red':
-                    ax.contourf(X,Y,Q,levels=L,alpha=1.0,colors=['#e61a0b','#f75448','#ff7a70'], origin='lower')
-                ax.set_xlim(np.min(X),np.max(X))
-                ax.set_ylim(np.min(Y),np.max(Y))
-            return [Q,X,Y,L]
-
         # Store above declared functions to be used later
-        self.ad_ks_test = ad_ks_test
         self.load_test_set = load_test_set
         self.confidence_bd = confidence_bd
-        self.make_contour_plot = make_contour_plot
-
-    def plot_testdata(self,y,s,N,outdir):
-        """
-        Plot the test data timeseries
-
-        y:
-            noisy time series
-        s:
-            noise free time series
-        N:
-            total number of samples?
-        outdir:
-            output directory
-        """
-        cnt = 0
-        r1 = int(np.sqrt(N))
-        r2 = int(N/r1)
-        print(r1,r2)
-        fig, axes = plt.subplots(r1,r2,figsize=(6,6),sharex='col',sharey='row',squeeze=False)
-        for i in range(r1):
-            for j in range(r2):
-                axes[i,j].plot(y[cnt,:],'-k')
-                axes[i,j].plot(s[cnt,:],'-r')
-                #axes[i,j].set_xlim([0,1])
-                axes[i,j].set_xlabel('t') if i==r1-1 else axes[i,j].set_xlabel('')
-                axes[i,j].set_ylabel('y') if j==0 else axes[i,j].set_ylabel('')
-                cnt += 1
-        plt.savefig('%s/latest/test_data.png' % outdir, dpi=360)
-        plt.close()
-
-        return
 
     def pp_plot(self,truth,samples):
+        """ generates the pp plot data given samples and truth values
+        
+        Parameters
+        ----------
+        truth: float
+            true scalar value of source parameter
+        samples: array_like
+            posterior samples of source parameter
+
+        Returns
+        -------
+        r: float
+            pp value
         """
-        generates the pp plot data given samples and truth values
-        """
+
         Nsamp = samples.shape[0]
 
-        #kernel = gaussian_kde(samples.transpose())
-        #v = kernel.pdf(truth)
-        #x = kernel.pdf(samples.transpose())
-        #r = np.sum(x>v)/float(Nsamp)
         r = np.sum(samples>truth)/float(Nsamp)
 
         return r
 
-    def plot_bilby_pp(self,model,sig_test,par_test,i_epoch,normscales,pos_test,bounds):
-        """ Function to make a pp plot using built-in bilby functionality
-        """
-        from bilby.core.prior import Uniform
-
-        Npp = int(self.params['r']) # number of test GW waveforms to use to calculate PP plot
-        ndim_y = self.params['ndata']
-#        priors = {f"x{jj}": Uniform(0, 1, f"x{jj}") for jj in range(len(self.params['inf_pars'])*len(self.params['samplers']))}       
-        priors = {f"x{jj}": Uniform(0, 1, f"x{jj}") for jj in range(len(self.params['inf_pars']))}
-        samplers = self.params['samplers']
-        CB_color_cycle=['r-','b-','g-','c-','m-']
-        lines = np.array([np.repeat(CB_color_cycle[jj],len(self.params['inf_pars'])) for jj in range(len(CB_color_cycle))]).flatten()
-
-        results = []
-
-        """
-        sampler_posteriors = {}
-        # Get every other sampler results
-        for i in range(len(self.params['samplers'])):
-            if samplers[i] == 'vitamin': continue
-
-            # load bilby sampler samples
-            samples,time = self.load_test_set(model,sig_test,par_test,normscales,bounds,sampler=samplers[i]+'1') 
-            if samples.shape[0] == self.params['r']**2:
-                samples = samples[:,:,-self.params['n_samples']:]
-            else:
-                samples = samples[:self.params['n_samples'],:]
-            #sampler_posteriors[samplers[i]] = samples
-        """       
-
-        # All in one plot approach
-        for cnt in range(Npp):
-            posterior = dict()
-            injections = dict()
-
-            #x = samples[cnt].T
-
-            
-            # Get Vitamin results
-            y = sig_test[cnt,:].reshape(1,sig_test.shape[1],sig_test.shape[2])
-
-            x, dt, _  = model.run(self.params, y, np.shape(par_test)[1],
-                                                     normscales,
-                                                     "inverse_model_dir_%s/inverse_model.ckpt" % self.params['run_label'])       
-            # Apply mask
-            x = x.T
-            sampset_1 = x
-            del_cnt = 0
-            # iterate over each sample   during inference training
-            for i in range(sampset_1.shape[1]):
-                # iterate over each parameter
-                for k,q in enumerate(self.params['inf_pars']):
-                    # if sample out of range, delete the sample                                              the y data (size changes by factor of  n_filter/(2**n_redsteps) )
-                    if sampset_1[k,i] < 0.0 or sampset_1[k,i] > 1.0:
-                        x = np.delete(x,del_cnt,axis=1)
-                        del_cnt-=1
-                        break
-                    # check m1 > m2
-                    elif q == 'mass_1' or q == 'mass_2':
-                        m1_idx = np.argwhere(self.params['inf_pars']=='mass_1')
-                        m2_idx = np.argwhere(self.params['inf_pars']=='mass_2')
-                        if sampset_1[m1_idx,i] < sampset_1[m2_idx,i]:
-                            x = np.delete(x,del_cnt,axis=1)
-                            del_cnt-=1
-                            break
-                del_cnt+=1
-            
-
-            """
-            # Get every other sampler results
-            for i in range(len(self.params['samplers'])):
-                if samplers[i] == 'vitamin': continue
-
-                samples = sampler_posteriors[samplers[i]]
-
-                x = np.vstack((x,np.transpose(samples[cnt])))
-            """
-
-            dummy_idx = 0
-            #scalar_truths = np.array([pos_test[cnt] for jj in range(len(self.params['samplers']))]).flatten()
-            scalar_truths = pos_test[cnt]
-            for key, prior in priors.items():
-                posterior[key] = x[dummy_idx,:]
-                injections[key] = scalar_truths[dummy_idx]
-                dummy_idx+=1
-
-            posterior = pd.DataFrame(dict(posterior))
-            result = bilby.result.Result(
-                label="test",
-                injection_parameters=injections,
-                posterior=posterior,
-                search_parameter_keys=injections.keys(),
-                priors=priors)
-            results.append(result)
-
-            print()
-            print("Calculated vitamin pp result %d" % cnt)
-            print()
-
-        fig, pvals_bilby = bilby.result.make_pp_plot(results, filename=f"/home/hunter.gabbard/public_html/bilby_generated_pp.png",
-                              confidence_interval=0.9,title=False,color='red',legend_fontsize=6.0)
-        print()
-        print('Made bilby pp plot')
-        print()
-
-        return
-
-    def plot_pp(self,model,sig_test,par_test,i_epoch,normscales,pos_test,bounds):
-        """
-        make p-p plots using in-house methods
+    def plot_pp(self,model,sig_test,par_test,normscales,bounds):
+        """ make p-p plots using in-house methods
         
-        ##########
         Parameters
-        ##########
-        pos_test:
-            True scalar values for GW test parameters
-
+        ----------
+        model: tensorflow object
+            pre-trained tensorflow neural network model
+        sig_test: array_like
+            array of test time series
+        par_test: array_like
+            array of test time series source parameters
+            
 
         """
         matplotlib.rc('text', usetex=True)
@@ -698,8 +433,7 @@ class make_plots:
                 for j in range(len(self.params['inf_pars'])):
                     pp[0,j] = 0.0
                     pp[1,j] = 1.0
-                    pp[cnt+2,j] = self.pp_plot(pos_test[cnt,j],x[j,:])
-#                        pp[cnt+2] = self.pp_plot(pos_test[cnt,j],x[j,int(cnt*self.params['n_samples']):int((cnt+1)*self.params['n_samples'])])
+                    pp[cnt+2,j] = self.pp_plot(par_test[cnt,j],x[j,:])
                     print()
                     print('... Computed param %d p-p plot iteration %d/%d' % (j,int(cnt)+1,int(Npp)))
                     print()
@@ -743,7 +477,7 @@ class make_plots:
                 pp_bilby[1] = 1.0
                 if self.params['load_plot_data'] == False:
                     for cnt in range(self.params['r']):
-                        pp_bilby[cnt+2] = self.pp_plot(pos_test[cnt,j],samples[cnt,:,j].transpose())
+                        pp_bilby[cnt+2] = self.pp_plot(par_test[cnt,j],samples[cnt,:,j].transpose())
                         print()
                         print('... Computed %s, param %d p-p plot iteration %d/%d' % (samplers[i],j,int(cnt)+1,int(self.params['r'])))
                         print()
@@ -840,13 +574,22 @@ class make_plots:
         return
 
     def gen_kl_plots(self,model,sig_test,par_test,normscales,bounds,snrs_test):
-
-
-        """
-        Make kl corner histogram plots. Currently writing such that we 
-        still bootstrap a split between samplers with themselves, but 
-        will rewrite that once I find a way to run condor on 
-        Bilby sampler runs.
+        """  Make kl corner histogram plots.
+        
+        Parameters
+        ----------
+        model: tensorflow object
+            pre-trained tensorflow model
+        sig_test: array_like
+            test sample time series
+        par_test: array_like
+            test sample source parameter values
+        normscales: float
+            arbitrary normalization factor for time series
+        bounds: dict
+            allowed bounds for GW waveform source parameters
+        snrs_test: array_like
+            Optimal SNR values for every test sample
         """
         matplotlib.rc('text', usetex=True)
         def compute_kl(sampset_1,sampset_2,samplers,one_D=False):
