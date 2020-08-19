@@ -121,17 +121,17 @@ n_weights_q = [n_fc,n_fc,n_fc]
 #############################
 # optional tunable variables
 #############################
-run_label = 'demo_%ddet_%dpar_%dHz_test' % (len(det),len(rand_pars),ndata) 
-bilby_results_label = 'test'                                             
+run_label = 'demo_%ddet_%dpar_%dHz_no_test' % (len(det),len(rand_pars),ndata) 
+bilby_results_label = 'all_4_samplers'                                             
 r = 1                                                                           
 pe_test_num = 256                                                               
-tot_dataset_size = int(1e3)                                                     
+tot_dataset_size = int(1e7)                                                     
 tset_split = int(1e3)                                                           
 save_interval = int(1e3)                                                        
 num_iterations=int(1e6)+1                                                       
 #ref_geocent_time=1126259642.5                                                   
 ref_geocent_time=1126259642.5 #+ ((86400.0/2.0))
-load_chunk_size = 1e3                                                           
+load_chunk_size = 1e4                                                           
 samplers=['vitamin','dynesty']                                                  
 
 # Directory variables
@@ -176,7 +176,7 @@ def get_params():
         __definition__load_plot_data='Use plotting data which has already been generated',
         doPE = True,                                                            
         __definition__doPE='if True then do bilby PE when generating new testing samples (not advised to change this)',
-        gpu_num=0,                                                              
+        gpu_num=5,                                                              
         __definition__gpu_num='gpu number run is running on',
         ndata = ndata,                                                          
         __definition__ndata='sampling frequency',
@@ -252,9 +252,9 @@ def get_params():
         __definition__conv_strides_q='size of convolutional stride to use in q network',                                   
         pool_strides_q = pool_strides_q,                                     
         __definition__pool_strides_q='size of max pool stride to use in q network',
-        ramp_start = 1e4,                                                       
+        ramp_start = 5e4,                                                       
         __definition__ramp_start='starting iteration of KL divergence ramp',
-        ramp_end = 1e5,                                                  
+        ramp_end = 1.5e5,                                                  
         __definition__ramp_end='ending iteration of KL divergence ramp',
         save_interval=save_interval, 
         __definition__save_interval='number of iterations to save model',                                           
@@ -304,7 +304,7 @@ def get_params():
         test_set_dir=test_set_dir,
         __definition__test_set_dir='location of test set directory waveforms',
         pe_dir=pe_dir,
-        __definition__pe_dir='location of test set directory Bayesian PE samples',
+        __definition__pe_dir='location of test set directory Bayesian PE samples. Set to None if you do not want to use posterior samples when training.',
         KL_cycles = 1,                                                          
         __definition__KL_cycles=' number of cycles to repeat for the KL approximation',
         samplers=samplers,       
