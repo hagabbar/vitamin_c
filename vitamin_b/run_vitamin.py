@@ -731,110 +731,113 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
     f.close()
 
     # load up the posterior samples (if they exist)
-    # load generated samples back in
-    post_files = []
-    #~/bilby_outputs/bilby_output_dynesty1/multi-modal3_0.h5py
+    if params['pe_dir'] != None:
+        # load generated samples back in
+        post_files = []
+        #~/bilby_outputs/bilby_output_dynesty1/multi-modal3_0.h5py
 
-    # first identify directory with lowest number of total finished posteriors
-    num_finished_post = int(1e8)
-    for i in params['samplers']:
-        if i == 'vitamin':
-            continue
+        # first identify directory with lowest number of total finished posteriors
+        num_finished_post = int(1e8)
+        for i in params['samplers']:
+            if i == 'vitamin':
+                continue
 
-        # remove any remaining resume files
-        resume_files=glob.glob('%s_%s1/*.resume*' % (params['pe_dir'],i))
-        filelist = [resume_files]
-        for file_idx,file_type in enumerate(filelist):
-            for file in file_type:
-                os.remove(file) 
+            # remove any remaining resume files
+            resume_files=glob.glob('%s_%s1/*.resume*' % (params['pe_dir'],i))
+            filelist = [resume_files]
+            for file_idx,file_type in enumerate(filelist):
+                for file in file_type:
+                    os.remove(file) 
 
-        for j in range(1):
-            input_dir = '%s_%s%d/' % (params['pe_dir'],i,j+1)
-            if type("%s" % input_dir) is str:
-                dataLocations = ["%s" % input_dir]
+            for j in range(1):
+                input_dir = '%s_%s%d/' % (params['pe_dir'],i,j+1)
+                if type("%s" % input_dir) is str:
+                    dataLocations = ["%s" % input_dir]
 
-            filenames = sorted(os.listdir(dataLocations[0]), key=lambda x: int(x.split('.')[0].split('_')[-1]))      
-            if len(filenames) < num_finished_post:
-                sampler_loc = i + str(j+1)
-                num_finished_post = len(filenames)
+                filenames = sorted(os.listdir(dataLocations[0]), key=lambda x: int(x.split('.')[0].split('_')[-1]))      
+                if len(filenames) < num_finished_post:
+                    sampler_loc = i + str(j+1)
+                    num_finished_post = len(filenames)
 
 
-    dataLocations_try = '%s_%s' % (params['pe_dir'],sampler_loc)
-    dataLocations = '%s_%s1' % (params['pe_dir'],params['samplers'][1])
+        dataLocations_try = '%s_%s' % (params['pe_dir'],sampler_loc)
+        dataLocations = '%s_%s1' % (params['pe_dir'],params['samplers'][1])
 
-    #for i,filename in enumerate(glob.glob(dataLocations[0])):
-    i_idx = 0
-    i = 0
-    i_idx_use = []
+        i_idx = 0
+        i = 0
+        i_idx_use = []
 
-    # Iterate over requested number of testing samples to use
-    while i_idx < params['r']:
+        # Iterate over requested number of testing samples to use
+        while i_idx < params['r']:
 
-        filename_try = '%s/%s_%d.h5py' % (dataLocations_try,params['bilby_results_label'],i)
-        filename = '%s/%s_%d.h5py' % (dataLocations,params['bilby_results_label'],i)
+            filename_try = '%s/%s_%d.h5py' % (dataLocations_try,params['bilby_results_label'],i)
+            filename = '%s/%s_%d.h5py' % (dataLocations,params['bilby_results_label'],i)
 
-        # Assert user has the minimum number of test samples generated
-        number_of_files_in_dir = len(os.listdir(dataLocations))
-        try:
-            assert number_of_files_in_dir >= params['r']
-        except Exception as e:
-            print(e)
-            print('You are requesting to use more test GW time series than you have made.')
-            print('... Exiting program now')
-            exit()
+            # Assert user has the minimum number of test samples generated
+            number_of_files_in_dir = len(os.listdir(dataLocations))
+            try:
+                assert number_of_files_in_dir >= params['r']
+            except Exception as e:
+                print(e)
+                print('You are requesting to use more test GW time series than you have made.')
+                print('... Exiting program now')
+                exit()
 
-        # If file does not exist, skip to next file
-        try:
-            h5py.File(filename_try, 'r')
-        except Exception as e:
-            i+=1
-            print(e)
-            continue
+            # If file does not exist, skip to next file
+            try:
+                h5py.File(filename_try, 'r')
+            except Exception as e:
+                i+=1
+                print(e)
+                continue
 
-        print()
-        print('... Loading test sample -> ' + filename)
-        post_files.append(filename)
-        data_temp = {} 
-        n = 0
+            print()
+            print('... Loading test sample -> ' + filename)
+            post_files.append(filename)
+            data_temp = {} 
+            n = 0
        
-        # Retrieve all source parameters to do inference on
-        for q in params['inf_pars']:
-             p = q + '_post'
-             par_min = q + '_min'
-             par_max = q + '_max'
-             data_temp[p] = h5py.File(filename, 'r')[p][:]
-             if p == 'psi_post':
-                 data_temp[p] = np.remainder(data_temp[p],np.pi)
-             if p == 'geocent_time_post':
-                 data_temp[p] = data_temp[p] - params['ref_geocent_time']
-             data_temp[p] = (data_temp[p] - bounds[par_min]) / (bounds[par_max] - bounds[par_min])
-             Nsamp = data_temp[p].shape[0]
-             n = n + 1
-        XS = np.zeros((Nsamp,n))
-        j = 0
+            # Retrieve all source parameters to do inference on
+            for q in params['inf_pars']:
+                 p = q + '_post'
+                 par_min = q + '_min'
+                 par_max = q + '_max'
+                 data_temp[p] = h5py.File(filename, 'r')[p][:]
+                 if p == 'psi_post':
+                     data_temp[p] = np.remainder(data_temp[p],np.pi)
+                 if p == 'geocent_time_post':
+                     data_temp[p] = data_temp[p] - params['ref_geocent_time']
+                 data_temp[p] = (data_temp[p] - bounds[par_min]) / (bounds[par_max] - bounds[par_min])
+                 Nsamp = data_temp[p].shape[0]
+                 n = n + 1
+            XS = np.zeros((Nsamp,n))
+            j = 0
 
-        # place retrieved source parameters in numpy array rather than dictionary
-        for p,d in data_temp.items():
-            XS[:,j] = d
-            j += 1
+            # place retrieved source parameters in numpy array rather than dictionary
+            for p,d in data_temp.items():
+                XS[:,j] = d
+                j += 1
 
-        # Append test sample posteriors to existing array of other test sample posteriors
-        if i_idx == 0:
-            XS_all = np.expand_dims(XS[:params['n_samples'],:], axis=0)
-        else:
-            XS_all = np.vstack((XS_all,np.expand_dims(XS[:params['n_samples'],:], axis=0)))
-
-
-        # add index to mark progress through while loop
-        i_idx_use.append(i_idx)
-        i+=1
-        i_idx+=1
+            # Append test sample posteriors to existing array of other test sample posteriors
+            if i_idx == 0:
+                XS_all = np.expand_dims(XS[:params['n_samples'],:], axis=0)
+            else:
+                XS_all = np.vstack((XS_all,np.expand_dims(XS[:params['n_samples'],:], axis=0)))
 
 
-    # Identify test samples that are present accross all Bayesian PE samplers
-    y_data_test = y_data_test[i_idx_use,:]
-    y_data_test_noisefree = y_data_test_noisefree[i_idx_use,:]
-    x_data_test = x_data_test[i_idx_use,:]
+            # add index to mark progress through while loop
+            i_idx_use.append(i_idx)
+            i+=1
+            i_idx+=1
+
+
+        # Identify test samples that are present accross all Bayesian PE samplers
+        y_data_test = y_data_test[i_idx_use,:]
+        y_data_test_noisefree = y_data_test_noisefree[i_idx_use,:]
+        x_data_test = x_data_test[i_idx_use,:]
+    # Set posterior samples to None if posteriors don't exist
+    elif params['pe_dir'] == None:
+        XS_all = None
 
     # reshape y data into channels last format for convolutional approach (if requested)
     if params['n_filters_r1'] != None:
