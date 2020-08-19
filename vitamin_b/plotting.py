@@ -187,7 +187,8 @@ class make_plots:
                         # convert to RA
                         # Iterate over all training samples and convert to hour angle
                         for k in range(VI_pred.shape[0]):
-                            VI_pred[k,ra_idx]=np.mod(GreenwichMeanSiderealTime(float(params['ref_geocent_time']+gps_time_arr[k]))-VI_pred[k,ra_idx], 2.0*np.pi)
+#                            VI_pred[k,ra_idx]=np.mod(GreenwichMeanSiderealTime(float(params['ref_geocent_time']+gps_time_arr[k]))-VI_pred[k,ra_idx], 2.0*np.pi)
+                            VI_pred[k,ra_idx]=np.mod(GreenwichMeanSiderealTime(params['ref_geocent_time'])-VI_pred[k,ra_idx], 2.0*np.pi)
                         # normalize
                         VI_pred[:,ra_idx]=(VI_pred[:,ra_idx] - bounds['ra_min']) / (bounds['ra_max'] - bounds['ra_min'])
                     
@@ -403,7 +404,8 @@ class make_plots:
                     # convert to RA
                     # Iterate over all training samples and convert to hour angle
                     for k in range(x.shape[0]):
-                        x[k,ra_idx]=np.mod(GreenwichMeanSiderealTime(float(self.params['ref_geocent_time']+gps_time_arr[k]))-x[k,ra_idx], 2.0*np.pi)
+                        #x[k,ra_idx]=np.mod(GreenwichMeanSiderealTime(float(self.params['ref_geocent_time']+gps_time_arr[k]))-x[k,ra_idx], 2.0*np.pi)
+                        x[k,ra_idx]=np.mod(GreenwichMeanSiderealTime(self.params['ref_geocent_time'])-x[k,ra_idx], 2.0*np.pi)
                     # normalize
                     x[:,ra_idx]=(x[:,ra_idx] - bounds['ra_min']) / (bounds['ra_max'] - bounds['ra_min'])
 
