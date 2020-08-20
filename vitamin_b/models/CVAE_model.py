@@ -871,14 +871,19 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
                     plot_density=False, plot_datapoints=True,
                     max_n_ticks=3)
 
-                figure = corner.corner(XS,**defaults_kwargs,labels=parnames,
-                       color='tab:red',
-                       fill_contours=True, truths=x_data_test[j,:],
-                       show_titles=True)
-                # Only use Bayesian posterior samples if user has them
-                if posterior_truth_test != None:
-                    corner.corner(posterior_truth_test[j], **defaults_kwargs,labels=parnames,
+                
+                if params['pe_dir']==None:
+                    figure = corner.corner(XS,**defaults_kwargs,labels=parnames,
+                           color='tab:red',
+                           fill_contours=True, truths=x_data_test[j,:],
+                           show_titles=True)
+                else:
+                    figure = corner.corner(posterior_truth_test[j], **defaults_kwargs,labels=parnames,
                            color='tab:blue',
+                           show_titles=True)
+                    corner.corner(XS,**defaults_kwargs,labels=parnames,
+                           color='tab:red',
+                           fill_contours=True, truths=x_data_test[j,:],
                            show_titles=True, fig=figure)
 
 
