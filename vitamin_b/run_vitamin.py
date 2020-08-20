@@ -1374,6 +1374,45 @@ def gen_samples(params=params,bounds=bounds,fixed_vals=fixed_vals,model_loc='mod
                 y_data_test_copy[i,:,j] = y_data_test[i,idx_range]
         y_data_test = y_data_test_copy
     num_timeseries=y_data_test.shape[0]
+    
+
+    """
+    # Daniel Williams waveforms
+    num_timeseries = 1
+    f = open('daniel_williams_BNU_waveforms/hunter-mdc/0.json')
+    data = json.load(f)
+    y_data_test = np.zeros((1,params['ndata'],len(params['det'])))
+    for det_idx,det in enumerate(params['det']):
+        y_data_test[0,-(np.array(data['data'][det]).shape[0]):,det_idx] = np.array(data['data'][det])
+
+    # Get x_data_test
+    x_data_test = []
+    for idx, i in enumerate(params['inf_pars']):
+        if i == data['meta'][i]:
+            x_data_test.append(data['meta'][i])
+    x_data_test = np.array(x_data_test)
+    print(x_data_test)
+    exit()
+
+    # whiten Daniel waveforms
+    # Set up interferometers. These default to their design
+    # sensitivity
+
+    # define the start time of the timeseries
+    start_time = params['ref_geocent_time']-params['duration']/2.0
+
+    ifos = bilby.gw.detector.InterferometerList(params['det'])
+    # set noise to be colored Gaussian noise
+    ifos.set_strain_data_from_power_spectral_densities(
+    sampling_frequency=params['ndata'], duration=params['duration'],
+    start_time=start_time)
+
+    for det_idx,det in enumerate(params['det']):
+        fft_waveform = np.fft.rfft(y_data_test[0,:,det_idx])
+        whitened_signal = fft_waveform / ifos[det_idx].amplitude_spectral_density_array
+        y_data_test[0,:,det_idx] = np.fft.irfft(whitened_signal) + np.random.normal(loc=0,scale=1.0,size=(params['ndata']))
+    """
+
     samples = np.zeros((num_timeseries,num_samples,len(params['inf_pars'])))
     for i in range(num_timeseries):
         samples[i,:], dt, _  = CVAE_model.run(params, np.expand_dims(y_data_test[i],axis=0), len(params['inf_pars']),
