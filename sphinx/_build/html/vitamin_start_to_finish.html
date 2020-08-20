@@ -122,37 +122,27 @@
       
   <div class="section" id="run-your-own-analysis-from-start-to-finish">
 <h1>Run Your Own Analysis from Start to Finish<a class="headerlink" href="#run-your-own-analysis-from-start-to-finish" title="Permalink to this headline">¶</a></h1>
-<ol class="arabic simple">
-<li><p>Start an ipython notebook (or Google Colab)</p></li>
-</ol>
+<p>Start an ipython notebook (or Google Colab)</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> ipython3
 </pre></div>
 </div>
-<ol class="arabic simple" start="2">
-<li><p>import vitamin_b and run_vitamin module</p></li>
-</ol>
+<p>Import vitamin_b and run_vitamin module</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> import vitamin_b
 <span class="gp">$</span> from vitamin_b import run_vitamin
 </pre></div>
 </div>
-<ol class="arabic" start="3">
-<li><p>You will notice that three json files have now appeared in your repository (under dictionary params_files).
+<p>You will notice that three json files have now appeared in your repository (under dictionary params_files).
 These are the default parameter files which vitamin will use to run. Feel
 free to edit these files as you wish. More documentation on customizing your
 run can be found here. (need to provide link to parameters documentation).</p>
 <p>We will now generate some training data using the default hyperparameters.
 The code will generate 1000 timeseries by default, but it is recommended to use
 at least 1 million for ideal convergence.</p>
-</li>
-</ol>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> run_vitamin.gen_train<span class="o">()</span>
 </pre></div>
 </div>
-<dl class="simple">
-<dt></dt><dd><p>You may use your own customized parameter files by inserting full paths
+<p>You may use your own customized parameter files by inserting full paths
 to the text files in any of the run_vitamin function like so:</p>
-</dd>
-</dl>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Time to run gen_train(): ~(30 mins - 1 hr)</p>
@@ -160,12 +150,10 @@ to the text files in any of the run_vitamin function like so:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> run_vitamin.gen_train<span class="o">(</span><span class="nv">params</span><span class="o">=</span><span class="s1">&#39;params.txt&#39;</span>,bounds<span class="o">=</span><span class="s1">&#39;bounds.txt&#39;</span>,fixed_vals<span class="o">=</span><span class="s1">&#39;fixed_vals.txt&#39;</span><span class="o">)</span>
 </pre></div>
 </div>
-<ol class="arabic simple" start="4">
-<li><p>Now generate test timeseries. By default vitamin does not produce Bayesian posteriors for each of these
+<p>Now generate test timeseries. By default vitamin does not produce Bayesian posteriors for each of these
 timeseries, but you may turn this functionality on by setting <cite>do_pe=True</cite> in the params.json file will.
 Vitamin uses the dynesty sampler by default with 1000 live points
-and a dlogz of 0.1.</p></li>
-</ol>
+and a dlogz of 0.1.</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> run_vitamin.gen_test<span class="o">()</span>
 </pre></div>
 </div>
@@ -173,38 +161,28 @@ and a dlogz of 0.1.</p></li>
 <p class="admonition-title">Note</p>
 <p>Time to run gen_test(): A few hours depending on hardware.</p>
 </div>
-<ol class="arabic simple" start="5">
-<li><p>We are ready to start training our network. To do so, simply run the command
-below.</p></li>
-</ol>
+<p>We are ready to start training our network. To do so, simply run the command
+below.</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> run_vitamin.train<span class="o">()</span>
 </pre></div>
 </div>
-<dl class="simple">
-<dt></dt><dd><p>By default, the code will run for 1,000,000 iterations (saving the model and making plots
+<p>By default, the code will run for 1,000,000 iterations (saving the model and making plots
 every 50,000 iterations). It is recommended to have the code run for at least a few 100 thousand
 iterations (depending on you batch size).</p>
-</dd>
-</dl>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Time to run train(): Will take several hours to run all the way through depending on hardware. Estimate is made using an Nvidia V100 GPU.</p>
 </div>
-<ol class="arabic simple" start="6">
-<li><p>To resume training from the last saved checkpoint, simply set the resume_training
-option in train() to True.</p></li>
-</ol>
+<p>To resume training from the last saved checkpoint, simply set the resume_training
+option in train() to True.</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> run_vitamin.train<span class="o">(</span><span class="nv">resume_training</span><span class="o">=</span>True<span class="o">)</span>
 </pre></div>
 </div>
-<ol class="arabic" start="7">
-<li><p>Once your model has been fully trained, we can now produce final results plots. In order
+<p>Once your model has been fully trained, we can now produce final results plots. In order
 to get the most use out of thse plots, it is recommended to produce test samples using more
 than one sampler. However, by default vitamin will only use the Dynesty sampler.</p>
 <p>The VItamin test() function will by default make corner plots (without sky map),
 KL divergence plots between posteriors produced by other samplers and VItamin and PP plots.</p>
-</li>
-</ol>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> run_vitamin.test<span class="o">()</span>
 </pre></div>
 </div>
