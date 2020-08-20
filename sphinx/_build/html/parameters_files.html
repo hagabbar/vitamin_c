@@ -134,23 +134,56 @@ fixed by the user.</p>
 text editor of choice (e.g. vim).</p>
 <p>Details about the customizable values for each file are listed below.</p>
 <p>Bounds file variable descriptions:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">#</span> Prior bounds on <span class="nb">source</span> parameters
-<span class="go">&#39;mass_1_min&#39;:35.0, &#39;mass_1_max&#39;:80.0,                               # m1 range</span>
-<span class="go">&#39;mass_2_min&#39;:35.0, &#39;mass_2_max&#39;:80.0,                               # m2 range</span>
-<span class="go">&#39;M_min&#39;:70.0, &#39;M_max&#39;:160.0,                                        # total mass range</span>
-<span class="go">&#39;geocent_time_min&#39;:0.15,&#39;geocent_time_max&#39;:0.35,                    # time of coalescence range</span>
-<span class="go">&#39;phase_min&#39;:0.0, &#39;phase_max&#39;:2.0*np.pi,                             # phase range</span>
-<span class="go">&#39;ra_min&#39;:0.0, &#39;ra_max&#39;:2.0*np.pi,                                   # right ascension range</span>
-<span class="go">&#39;dec_min&#39;:-0.5*np.pi, &#39;dec_max&#39;:0.5*np.pi,                          # declintation range</span>
-<span class="go">&#39;psi_min&#39;:0.0, &#39;psi_max&#39;:np.pi,                                     # psi range</span>
-<span class="go">&#39;theta_jn_min&#39;:0.0, &#39;theta_jn_max&#39;:np.pi,                           # inclination angle range</span>
-<span class="go">&#39;a_1_min&#39;:0.0, &#39;a_1_max&#39;:0.0,                                       # a1 range</span>
-<span class="go">&#39;a_2_min&#39;:0.0, &#39;a_2_max&#39;:0.0,                                       # a2 range</span>
-<span class="go">&#39;tilt_1_min&#39;:0.0, &#39;tilt_1_max&#39;:0.0,                                 # tilt1 range</span>
-<span class="go">&#39;tilt_2_min&#39;:0.0, &#39;tilt_2_max&#39;:0.0,                                 # tilt2 range</span>
-<span class="go">&#39;phi_12_min&#39;:0.0, &#39;phi_12_max&#39;:0.0,                                 # phi_l2  range</span>
-<span class="go">&#39;phi_jl_min&#39;:0.0, &#39;phi_jl_max&#39;:0.0,                                 # phi_jl range</span>
-<span class="go">&#39;luminosity_distance_min&#39;:1000.0, &#39;luminosity_distance_max&#39;:3000.0  # luminosity distance range</span>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="nt">&quot;mass_1_min&quot;</span><span class="p">:</span> <span class="mf">35.0</span><span class="p">,</span>
+<span class="nt">&quot;mass_1_max&quot;</span><span class="p">:</span> <span class="mf">80.0</span><span class="p">,</span>
+<span class="nt">&quot;__definition__mass_1&quot;</span><span class="p">:</span> <span class="s2">&quot;mass 1 range&quot;</span><span class="p">,</span>
+<span class="nt">&quot;mass_2_min&quot;</span><span class="p">:</span> <span class="mf">35.0</span><span class="p">,</span>
+<span class="nt">&quot;mass_2_max&quot;</span><span class="p">:</span> <span class="mf">80.0</span><span class="p">,</span>
+<span class="nt">&quot;__definition__mass_2&quot;</span><span class="p">:</span> <span class="s2">&quot;mass 2 range&quot;</span><span class="p">,</span>
+<span class="nt">&quot;M_min&quot;</span><span class="p">:</span> <span class="mf">70.0</span><span class="p">,</span>
+<span class="nt">&quot;M_max&quot;</span><span class="p">:</span> <span class="mf">160.0</span><span class="p">,</span>
+<span class="nt">&quot;__definition__M&quot;</span><span class="p">:</span> <span class="s2">&quot;total mass range&quot;</span><span class="p">,</span>
+<span class="nt">&quot;geocent_time_min&quot;</span><span class="p">:</span> <span class="mf">0.15</span><span class="p">,</span>
+<span class="nt">&quot;geocent_time_max&quot;</span><span class="p">:</span> <span class="mf">0.35</span><span class="p">,</span>
+<span class="nt">&quot;__definition__geocent_time&quot;</span><span class="p">:</span> <span class="s2">&quot;time of coalescence range&quot;</span><span class="p">,</span>
+<span class="nt">&quot;phase_min&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+<span class="nt">&quot;phase_max&quot;</span><span class="p">:</span> <span class="mf">6.283185307179586</span><span class="p">,</span>
+<span class="nt">&quot;__definition__phase&quot;</span><span class="p">:</span> <span class="s2">&quot;phase range&quot;</span><span class="p">,</span>
+<span class="nt">&quot;ra_min&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+<span class="nt">&quot;ra_max&quot;</span><span class="p">:</span> <span class="mf">6.283185307179586</span><span class="p">,</span>
+<span class="nt">&quot;__definition__ra&quot;</span><span class="p">:</span> <span class="s2">&quot;right ascension range&quot;</span><span class="p">,</span>
+<span class="nt">&quot;dec_min&quot;</span><span class="p">:</span> <span class="mf">-1.5707963267948966</span><span class="p">,</span>
+<span class="nt">&quot;dec_max&quot;</span><span class="p">:</span> <span class="mf">1.5707963267948966</span><span class="p">,</span>
+<span class="nt">&quot;__definition__dec&quot;</span><span class="p">:</span> <span class="s2">&quot;declination range&quot;</span><span class="p">,</span>
+<span class="nt">&quot;psi_min&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+<span class="nt">&quot;psi_max&quot;</span><span class="p">:</span> <span class="mf">3.141592653589793</span><span class="p">,</span>
+<span class="nt">&quot;__definition__psi&quot;</span><span class="p">:</span> <span class="s2">&quot;psi range&quot;</span><span class="p">,</span>
+<span class="nt">&quot;theta_jn_min&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+<span class="nt">&quot;theta_jn_max&quot;</span><span class="p">:</span> <span class="mf">3.141592653589793</span><span class="p">,</span>
+<span class="nt">&quot;__definition__theta_jn&quot;</span><span class="p">:</span> <span class="s2">&quot;inclination angle range&quot;</span><span class="p">,</span>
+<span class="nt">&quot;a_1_min&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+<span class="nt">&quot;a_1_max&quot;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span>
+<span class="nt">&quot;__definition__a_1&quot;</span><span class="p">:</span> <span class="s2">&quot;a1 range&quot;</span><span class="p">,</span>
+<span class="nt">&quot;a_2_min&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+<span class="nt">&quot;a_2_max&quot;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span>
+<span class="nt">&quot;__definition__a_2&quot;</span><span class="p">:</span> <span class="s2">&quot;a2 range&quot;</span><span class="p">,</span>
+<span class="nt">&quot;tilt_1_min&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+<span class="nt">&quot;tilt_1_max&quot;</span><span class="p">:</span> <span class="mf">3.141592653589793</span><span class="p">,</span>
+<span class="nt">&quot;__definition__tilt1&quot;</span><span class="p">:</span> <span class="s2">&quot;tilt1 range&quot;</span><span class="p">,</span>
+<span class="nt">&quot;tilt_2_min&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+<span class="nt">&quot;tilt_2_max&quot;</span><span class="p">:</span> <span class="mf">3.141592653589793</span><span class="p">,</span>
+<span class="nt">&quot;__definition__tilt2&quot;</span><span class="p">:</span> <span class="s2">&quot;tilt2 range&quot;</span><span class="p">,</span>
+<span class="nt">&quot;phi_12_min&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+<span class="nt">&quot;phi_12_max&quot;</span><span class="p">:</span> <span class="mf">6.283185307179586</span><span class="p">,</span>
+<span class="nt">&quot;__definition__phi12&quot;</span><span class="p">:</span> <span class="s2">&quot;phi12 range&quot;</span><span class="p">,</span>
+<span class="nt">&quot;phi_jl_min&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+<span class="nt">&quot;phi_jl_max&quot;</span><span class="p">:</span> <span class="mf">6.283185307179586</span><span class="p">,</span>
+<span class="nt">&quot;__definition_phijl&quot;</span><span class="p">:</span> <span class="s2">&quot;phijl range&quot;</span><span class="p">,</span>
+<span class="nt">&quot;luminosity_distance_min&quot;</span><span class="p">:</span> <span class="mf">1000.0</span><span class="p">,</span>
+<span class="nt">&quot;luminosity_distance_max&quot;</span><span class="p">:</span> <span class="mf">3000.0</span><span class="p">,</span>
+<span class="nt">&quot;__definition__luminosity_distance&quot;</span><span class="p">:</span> <span class="s2">&quot;luminosity distance range&quot;</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 <p>Fixed values file variable explanations:</p>
