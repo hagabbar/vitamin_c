@@ -136,12 +136,12 @@
 </pre></div>
 </div>
 <ol class="arabic" start="3">
-<li><p>You will notice that three text files have now appeared in your repository (under dictionary params_files).
+<li><p>You will notice that three json files have now appeared in your repository (under dictionary params_files).
 These are the default parameter files which vitamin will use to run. Feel
 free to edit these files as you wish. More documentation on customizing your
 run can be found here. (need to provide link to parameters documentation).</p>
 <p>We will now generate some training data using the default hyperparameters.
-The code will generate 100,000 samples by default, but it is recommended to use
+The code will generate 1000 timeseries by default, but it is recommended to use
 at least 1 million for ideal convergence.</p>
 </li>
 </ol>
@@ -161,8 +161,9 @@ to the text files in any of the run_vitamin function like so:</p>
 </pre></div>
 </div>
 <ol class="arabic simple" start="4">
-<li><p>Now generate test samples with corresponding posteriors. By default vitamin
-will generate 4 test samples using the dynesty sampler using 1000 live points
+<li><p>Now generate test timeseries. By default vitamin does not produce Bayesian posteriors for each of these
+timeseries, but you may turn this functionality on by setting <cite>do_pe=True</cite> in the params.json file will.
+Vitamin uses the dynesty sampler by default with 1000 live points
 and a dlogz of 0.1.</p></li>
 </ol>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> run_vitamin.gen_test<span class="o">()</span>

@@ -16,9 +16,7 @@ Some things to note about the provided black box:
 
 * Does not require a GPU to generate samples, but will be ~1s slower to generate all samples per time series.  
 
-* Small bug with reference gps time (this will be fixed shortly).
-
-* Start an ipython notebook (or Google Colab)
+* Start an ipython notebook (or Google Colab Notebook)
 
 .. code-block:: console
 
@@ -35,7 +33,7 @@ Some things to note about the provided black box:
    should have a directory containing the noisy time series labeled 'y_data_noisy'. 
    'y_data' should be a numpy array of shape (<number of detectors>,<sample rate X duration>) 
 
-* To produce test sample posteriors using VItamin, simply point vitamin to the directory containing your test waveforms (examples provided `here <https://drive.google.com/file/d/15LCJC6UJR34dqXO9BgLK-NsYlsWADpvc/view?usp=sharing>`_), the pre-trained model (`model download <https://drive.google.com/file/d/1khU6PCVhHdLVY4h6RIld9Jgd0L6XD26A/view?usp=sharing>`_) and specify the number of samples per posterior requested.
+* To produce test sample posteriors using VItamin, simply point vitamin to the directory containing your test waveforms (examples provided `here <https://drive.google.com/file/d/15LCJC6UJR34dqXO9BgLK-NsYlsWADpvc/view?usp=sharing>`_), the pre-trained model (`model download <https://drive.google.com/file/d/1Z9y2hr-awpvhRXb_NQ5eT34bxx4v6V9d/view?usp=sharing>`_) and specify the number of samples per posterior requested.
 
 .. code-block:: console
 

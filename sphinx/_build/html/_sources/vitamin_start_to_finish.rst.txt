@@ -15,13 +15,13 @@ Run Your Own Analysis from Start to Finish
    $ import vitamin_b
    $ from vitamin_b import run_vitamin
 
-3. You will notice that three text files have now appeared in your repository (under dictionary params_files).
+3. You will notice that three json files have now appeared in your repository (under dictionary params_files).
    These are the default parameter files which vitamin will use to run. Feel 
    free to edit these files as you wish. More documentation on customizing your 
    run can be found here. (need to provide link to parameters documentation).
 
    We will now generate some training data using the default hyperparameters. 
-   The code will generate 100,000 samples by default, but it is recommended to use 
+   The code will generate 1000 timeseries by default, but it is recommended to use 
    at least 1 million for ideal convergence.
 
 .. code-block:: console
@@ -38,8 +38,9 @@ Run Your Own Analysis from Start to Finish
 
    $ run_vitamin.gen_train(params='params.txt',bounds='bounds.txt',fixed_vals='fixed_vals.txt')
 
-4. Now generate test samples with corresponding posteriors. By default vitamin 
-   will generate 4 test samples using the dynesty sampler using 1000 live points 
+4. Now generate test timeseries. By default vitamin does not produce Bayesian posteriors for each of these 
+   timeseries, but you may turn this functionality on by setting `do_pe=True` in the params.json file will. 
+   Vitamin uses the dynesty sampler by default with 1000 live points 
    and a dlogz of 0.1.
 
 .. code-block:: console

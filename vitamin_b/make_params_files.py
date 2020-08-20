@@ -85,7 +85,7 @@ psd_files=[]
 rand_pars = ['mass_1','mass_2','luminosity_distance','geocent_time','phase',
                  'theta_jn','psi','ra','dec']#,'a_1','a_2','tilt_1','tilt_2','phi_12','phi_jl','ra','dec']                                   
 inf_pars=['mass_1','mass_2','luminosity_distance','geocent_time','theta_jn','ra','dec']#,'a_1','a_2','tilt_1','tilt_2','phi_12','phi_jl','ra','dec'] 
-batch_size = 512                                                                 
+batch_size = 64                                                                 
 weight_init = 'xavier'                                                            
 n_modes=7                                                                      
 initial_training_rate=1e-4                                                     
@@ -121,8 +121,8 @@ n_weights_q = [n_fc,n_fc,n_fc]
 #############################
 # optional tunable variables
 #############################
-run_label = 'demo_%ddet_%dpar_%dHz_no_test' % (len(det),len(rand_pars),ndata) 
-bilby_results_label = 'all_4_samplers'                                             
+run_label = 'demo_%ddet_%dpar_%dHz' % (len(det),len(rand_pars),ndata) 
+bilby_results_label = 'bilby_results'                                             
 r = 1                                                                           
 pe_test_num = 256                                                               
 tot_dataset_size = int(1e7)                                                     
@@ -131,7 +131,7 @@ save_interval = int(1e3)
 num_iterations=int(1e6)+1                                                       
 #ref_geocent_time=1126259642.5                                                   
 ref_geocent_time=1126259642.5 #+ ((86400.0/2.0))
-load_chunk_size = 1e4                                                           
+load_chunk_size = 1e3                                                           
 samplers=['vitamin','dynesty']                                                  
 
 # Directory variables
@@ -139,6 +139,7 @@ plot_dir="./results/%s" % run_label
 #train_set_dir='/home/hunter.gabbard/CBC/VItamin/training_sets_second_sub_3det_9par_256Hz/tset_tot-10000000_split-1000/'#'./training_sets_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(det),len(rand_pars),ndata,tot_dataset_size,tset_split) 
 #test_set_dir='/home/hunter.gabbard/CBC/public_VItamin/testing_directory/test_sets/all_4_samplers/test_waveforms'#'./test_sets/%s/test_waveforms' % bilby_results_label                                                           
 #pe_dir='/home/hunter.gabbard/CBC/public_VItamin/testing_directory/test_sets/all_4_samplers/test'#'./test_sets/%s/test' % bilby_results_label                                                                            
+#test_set_dir='./daniel_williams_BNU_waveforms/hunter-mdc'
 train_set_dir='./training_sets_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(det),len(rand_pars),ndata,tot_dataset_size,tset_split)
 test_set_dir='./test_sets/%s/test_waveforms' % bilby_results_label
 pe_dir='./test_sets/%s/test' % bilby_results_label
@@ -174,9 +175,9 @@ def get_params():
         __definition__by_channel='if True, do convolutions as seperate 1-D channels, if False, stack training samples as 2-D images (n_detectors,(duration*sampling_frequency))',
         load_plot_data=False,                                                   
         __definition__load_plot_data='Use plotting data which has already been generated',
-        doPE = True,                                                            
-        __definition__doPE='if True then do bilby PE when generating new testing samples (not advised to change this)',
-        gpu_num=5,                                                              
+        doPE = False,                                                            
+        __definition__doPE='if True then do bilby PE when generating new testing samples',
+        gpu_num=0,                                                              
         __definition__gpu_num='gpu number run is running on',
         ndata = ndata,                                                          
         __definition__ndata='sampling frequency',
@@ -252,9 +253,9 @@ def get_params():
         __definition__conv_strides_q='size of convolutional stride to use in q network',                                   
         pool_strides_q = pool_strides_q,                                     
         __definition__pool_strides_q='size of max pool stride to use in q network',
-        ramp_start = 5e4,                                                       
+        ramp_start = 1e4,                                                       
         __definition__ramp_start='starting iteration of KL divergence ramp',
-        ramp_end = 1.5e5,                                                  
+        ramp_end = 1e5,                                                  
         __definition__ramp_end='ending iteration of KL divergence ramp',
         save_interval=save_interval, 
         __definition__save_interval='number of iterations to save model',                                           
