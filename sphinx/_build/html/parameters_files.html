@@ -132,8 +132,8 @@ value at which source parameters are fixed if they are chosen to be
 fixed by the user.</p>
 <p>To change the default values for each of these values, use your
 text editor of choice (e.g. vim).</p>
-<p>Details about the customizable values for each file are listed below.</p>
-<p>Bounds file variable descriptions:</p>
+<p>Example json parameters files are provided below..</p>
+<p>Bounds json file example:</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
 <span class="nt">&quot;mass_1_min&quot;</span><span class="p">:</span> <span class="mf">35.0</span><span class="p">,</span>
 <span class="nt">&quot;mass_1_max&quot;</span><span class="p">:</span> <span class="mf">80.0</span><span class="p">,</span>
@@ -186,83 +186,348 @@ text editor of choice (e.g. vim).</p>
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>Fixed values file variable explanations:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">&#39;mass_1&#39;:50.0,                                                      # m1 default fixed value</span>
-<span class="go">&#39;mass_2&#39;:50.0,                                                      # m2 default fixed value</span>
-<span class="go">&#39;mc&#39;:None,                                                          # chirp mass default fixed value</span>
-<span class="go">&#39;geocent_time&#39;:0.0,                                                 # time of coalescence default fixed value</span>
-<span class="go">&#39;phase&#39;:0.0,                                                        # phase default fixed value</span>
-<span class="go">&#39;ra&#39;:1.375,                                                         # right ascension default fixed value</span>
-<span class="go">&#39;dec&#39;:-1.2108,                                                      # declination default fixed value</span>
-<span class="go">&#39;psi&#39;:0.0,                                                          # psi default fixed value</span>
-<span class="go">&#39;theta_jn&#39;:0.0,                                                     # inclination angle default fixed value</span>
-<span class="go">&#39;luminosity_distance&#39;:2000.0,                                       # luminosity distance default fixed value</span>
-<span class="go">&#39;a_1&#39;:0.0,                                                          # a1 default fixed value</span>
-<span class="go">&#39;a_2&#39;:0.0,                                                          # a2 default fixed value</span>
-<span class="go">&#39;tilt_1&#39;:0.0,                                                       # tilt1 default fixed value</span>
-<span class="go">&#39;tilt_2&#39;:0.0,                                                       # tilt2 default fixed value</span>
-<span class="go">&#39;phi_12&#39;:0.0,                                                       # phi_l2 default fixed value</span>
-<span class="go">&#39;phi_jl&#39;:0.0,                                                       # phi_jl default fixed value</span>
-<span class="go">&#39;det&#39;:[&#39;H1&#39;,&#39;L1&#39;,&#39;V1&#39;]                                              # Edit this if more or less detectors wanted</span>
+<p>Fixed values json file:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="nt">&quot;mass_1&quot;</span><span class="p">:</span> <span class="mf">50.0</span><span class="p">,</span>
+<span class="nt">&quot;__definition__mass_1&quot;</span><span class="p">:</span> <span class="s2">&quot;m1 fixed value&quot;</span><span class="p">,</span>
+<span class="nt">&quot;mass_2&quot;</span><span class="p">:</span> <span class="mf">50.0</span><span class="p">,</span>
+<span class="nt">&quot;__definition__mass_2&quot;</span><span class="p">:</span> <span class="s2">&quot;m2 fixed value&quot;</span><span class="p">,</span>
+<span class="nt">&quot;mc&quot;</span><span class="p">:</span> <span class="kc">null</span><span class="p">,</span>
+<span class="nt">&quot;__definition__mc&quot;</span><span class="p">:</span> <span class="s2">&quot;chirp mass fixed value&quot;</span><span class="p">,</span>
+<span class="nt">&quot;geocent_time&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+<span class="nt">&quot;__definition__geocent_time&quot;</span><span class="p">:</span> <span class="s2">&quot;time of coalescence fixed value&quot;</span><span class="p">,</span>
+<span class="nt">&quot;phase&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+<span class="nt">&quot;__definition__phase&quot;</span><span class="p">:</span> <span class="s2">&quot;phase fixed value&quot;</span><span class="p">,</span>
+<span class="nt">&quot;ra&quot;</span><span class="p">:</span> <span class="mf">1.375</span><span class="p">,</span>
+<span class="nt">&quot;__definition__ra&quot;</span><span class="p">:</span> <span class="s2">&quot;right ascension fixed value&quot;</span><span class="p">,</span>
+<span class="nt">&quot;dec&quot;</span><span class="p">:</span> <span class="mf">-1.2108</span><span class="p">,</span>
+<span class="nt">&quot;__definition__dec&quot;</span><span class="p">:</span> <span class="s2">&quot;declination fixed value&quot;</span><span class="p">,</span>
+<span class="nt">&quot;psi&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+<span class="nt">&quot;__definition__psi&quot;</span><span class="p">:</span> <span class="s2">&quot;psi fixed value&quot;</span><span class="p">,</span>
+<span class="nt">&quot;theta_jn&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+<span class="nt">&quot;__definition__theta_jn&quot;</span><span class="p">:</span> <span class="s2">&quot;inclination angle fixed value&quot;</span><span class="p">,</span>
+<span class="nt">&quot;luminosity_distance&quot;</span><span class="p">:</span> <span class="mf">2000.0</span><span class="p">,</span>
+<span class="nt">&quot;__definition__luminosity_distance&quot;</span><span class="p">:</span> <span class="s2">&quot;luminosity distance fixed value&quot;</span><span class="p">,</span>
+<span class="nt">&quot;a_1&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+<span class="nt">&quot;__definition__a1&quot;</span><span class="p">:</span> <span class="s2">&quot;a1 fixed value&quot;</span><span class="p">,</span>
+<span class="nt">&quot;a_2&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+<span class="nt">&quot;__definition__a2&quot;</span><span class="p">:</span> <span class="s2">&quot;a2 fixed value&quot;</span><span class="p">,</span>
+<span class="nt">&quot;tilt_1&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+<span class="nt">&quot;__definition__tilt1&quot;</span><span class="p">:</span> <span class="s2">&quot;tilt_1 fixed value&quot;</span><span class="p">,</span>
+<span class="nt">&quot;tilt_2&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+<span class="nt">&quot;__definition__tilt_2&quot;</span><span class="p">:</span> <span class="s2">&quot;tilt_2 fixed value&quot;</span><span class="p">,</span>
+<span class="nt">&quot;phi_12&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+<span class="nt">&quot;__definition__phi_12&quot;</span><span class="p">:</span> <span class="s2">&quot;phi_12 fixed value&quot;</span><span class="p">,</span>
+<span class="nt">&quot;phi_jl&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+<span class="nt">&quot;__definition__phi_jl&quot;</span><span class="p">:</span> <span class="s2">&quot;phi_jl fixed value&quot;</span>
+<span class="p">}</span>
 </pre></div>
 </div>
-<p>Run parameters file variable explanations:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">make_corner_plots = True,                                               # if True, make corner plots</span>
-<span class="go">make_kl_plot = True,                                                    # If True, go through kl plotting function</span>
-<span class="go">make_pp_plot = True,                                                    # If True, go through pp plotting function</span>
-<span class="go">make_loss_plot = False,                                                 # If True, generate loss plot from previous plot data</span>
-<span class="go">Make_sky_plot=False,                                                    # If True, generate sky plots on corner plots</span>
-<span class="go">resume_training=False,                                                  # if True, resume training of a model from saved checkpoint</span>
-<span class="go">gpu_num=0,                                                              # gpu number run is running on</span>
-<span class="go">ndata = 256,                                                            # sampling frequency</span>
-<span class="go">run_label = &#39;demo_%ddet_%dpar_%dHz_run1&#39; % (len(fixed_vals[&#39;det&#39;]),len(rand_pars),ndata), # label of run</span>
-<span class="go">bilby_results_label = &#39;all_4_samplers&#39;,                                  # label given to bilby results directory</span>
-<span class="go">tot_dataset_size = int(1e5),                                             # total number of training samples available to use</span>
-<span class="go">plot_dir=&quot;./results/%s&quot; % run_label,                                     # output directory to save results plots</span>
-
-<span class="go">n_samples = 100,                                                        # number of posterior samples to save per reconstruction upon inference (default 3000)</span>
-<span class="go">num_iterations=int(1e6)+1,                                              # total number of iterations before ending training of model</span>
-<span class="go">initial_training_rate=1e-4,                                              # initial training rate for ADAM optimiser inference model (inverse reconstruction)</span>
-<span class="go">batch_size = 64,                                                         # Number training samples shown to neural network per iteration</span>
-<span class="go">batch_norm=True,                                                         # if true, do batch normalization in all layers of neural network</span>
-<span class="go">n_modes=7,                                                               # number of modes in Gaussian mixture model (ideal 7, but may go higher/lower)</span>
-
-<span class="gp">#</span> Each item in lists below correspond to each layer in networks <span class="o">(</span>i.e. first item first layer<span class="o">)</span>
-<span class="gp">#</span> pool size and pool stride should be same number in each layer
-<span class="go">n_filters_r1 = [33, 33],                                                 # number of convolutional filters to use in r1 network</span>
-<span class="go">n_filters_r2 = [33, 33],                                                 # number of convolutional filters to use in r2 network</span>
-<span class="go">n_filters_q = [33, 33],                                                  # number of convolutional filters to use in q network</span>
-<span class="go">filter_size_r1 = [7,7],                                                  # size of convolutional fitlers in r1 network</span>
-<span class="go">filter_size_r2 = [7,7],                                                  # size of convolutional filters in r2 network</span>
-<span class="go">filter_size_q = [7,7],                                                   # size of convolutional filters in q network</span>
-<span class="go">drate = 0.5,                                                             # dropout rate to use in fully-connected layers</span>
-<span class="go">maxpool_r1 = [1,2],                                                      # size of maxpooling to use in r1 network</span>
-<span class="go">conv_strides_r1 = [1,1],                                                 # size of convolutional stride to use in r1 network</span>
-<span class="go">pool_strides_r1 = [1,2],                                                 # size of max pool stride to use in r1 network</span>
-<span class="go">maxpool_r2 = [1,2],                                                      # size of max pooling to use in r2 network</span>
-<span class="go">conv_strides_r2 = [1,1],                                                 # size of convolutional stride in r2 network</span>
-<span class="go">pool_strides_r2 = [1,2],                                                 # size of max pool stride in r2 network</span>
-<span class="go">maxpool_q = [1,2],                                                       # size of max pooling to use in q network</span>
-<span class="go">conv_strides_q = [1,1],                                                  # size of convolutional stride to use in q network</span>
-<span class="go">pool_strides_q = [1,2],                                                  # size of max pool stride to use in q network</span>
-<span class="go">ramp_end = 1e5,                                                         # ending iteration of KL divergence ramp (if using)</span>
-<span class="go">save_interval = int(2.5e4),                                                # number of iterations to save model and plot validation results corner plots</span>
-<span class="go">plot_interval=int(2.5e4),                                                 # interval over which to generate plots during training</span>
-<span class="go">z_dimension=10,                                                          # number of latent space dimensions of model</span>
-<span class="go">n_weights_r1 = [2048,2048,2048],                                         # number fully-connected layers of encoders and decoders in the r1 model (inverse reconstruction)</span>
-<span class="go">n_weights_r2 = [2048,2048,2048],                                         # number fully-connected layers of encoders and decoders in the r2 model (inverse reconstruction)</span>
-<span class="go">n_weights_q = [2048,2048,2048],                                          # number fully-connected layers of encoders and decoders q model</span>
-<span class="go">duration = 1.0,                                                         # length of training/validation/test sample time series in seconds (haven&#39;t tried using at any other value than 1s)</span>
-<span class="go">r = 2,                                                                   # number (to the power of 2) of test samples to use for testing. r = 2 means you want to use 2^2 (i.e 4) test samples</span>
-<span class="go">rand_pars = [&#39;mass_1&#39;,&#39;mass_2&#39;,&#39;luminosity_distance&#39;,&#39;geocent_time&#39;,&#39;phase&#39;,</span>
-<span class="go">              &#39;theta_jn&#39;,&#39;psi&#39;,&#39;ra&#39;,&#39;dec&#39;],                              # parameters to randomize (those not listed here  are fixed otherwise)</span>
-<span class="go">inf_pars=[&#39;mass_1&#39;,&#39;mass_2&#39;,&#39;luminosity_distance&#39;,&#39;geocent_time&#39;,&#39;theta_jn&#39;,&#39;ra&#39;,&#39;dec&#39;],  # parameters to infer</span>
-<span class="go">train_set_dir=&#39;./training_sets_%ddet_%dpar_%dHz/tset_tot-%d_split-%d&#39; % (len(fixed_vals[&#39;det&#39;]),len(rand_pars),ndata,tot_dataset_size,tset_split),  # location of training set</span>
-<span class="go">test_set_dir=&#39;./test_sets/%s/test_waveforms&#39; % bilby_results_label,      # location of test set directory waveforms</span>
-<span class="go">pe_dir=&#39;./test_sets/%s/test&#39; % bilby_results_label,                      # location of test set directory Bayesian PE samples</span>
-
-<span class="go">samplers=[&#39;vitamin&#39;,&#39;dynesty&#39;],                                          # Bayesian samplers to use when comparing ML results (vitamin is ML approach) dynesty,ptemcee,cpnest,emcee</span>
-<span class="go">figure_sampler_names = [&#39;VItamin&#39;,&#39;Dynesty&#39;],                           # Labels for samplers in figures</span>
+<p>General run parameters json file:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="nt">&quot;make_corner_plots&quot;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+<span class="nt">&quot;__definition__make_corner_plots&quot;</span><span class="p">:</span> <span class="s2">&quot;if True, make corner plots&quot;</span><span class="p">,</span>
+<span class="nt">&quot;make_kl_plot&quot;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+<span class="nt">&quot;__definition__make_kl_plot&quot;</span><span class="p">:</span> <span class="s2">&quot;If True, go through kl plotting function&quot;</span><span class="p">,</span>
+<span class="nt">&quot;make_pp_plot&quot;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+<span class="nt">&quot;__definition__make_pp_plot&quot;</span><span class="p">:</span> <span class="s2">&quot;If True, go through pp plotting function&quot;</span><span class="p">,</span>
+<span class="nt">&quot;make_loss_plot&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+<span class="nt">&quot;__definition__make_loss_plot&quot;</span><span class="p">:</span> <span class="s2">&quot;If True, generate loss plot from previous plot data&quot;</span><span class="p">,</span>
+<span class="nt">&quot;Make_sky_plot&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+<span class="nt">&quot;__definition__make_sky_plot&quot;</span><span class="p">:</span> <span class="s2">&quot;If True, generate sky plots on corner plots&quot;</span><span class="p">,</span>
+<span class="nt">&quot;hyperparam_optim&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+<span class="nt">&quot;__definition__hyperparam_optim&quot;</span><span class="p">:</span> <span class="s2">&quot;optimize hyperparameters for model during training using gaussian process minimization&quot;</span><span class="p">,</span>
+<span class="nt">&quot;resume_training&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+<span class="nt">&quot;__definition___resume_training&quot;</span><span class="p">:</span> <span class="s2">&quot;if True, resume training of a model from saved checkpoint&quot;</span><span class="p">,</span>
+<span class="nt">&quot;load_by_chunks&quot;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+<span class="nt">&quot;__definition__load_by_chunks&quot;</span><span class="p">:</span> <span class="s2">&quot;if True, load training samples by a predefined chunk size rather than all at once&quot;</span><span class="p">,</span>
+<span class="nt">&quot;ramp&quot;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+<span class="nt">&quot;__definition__ramp&quot;</span><span class="p">:</span> <span class="s2">&quot;# if true, apply linear ramp to KL loss&quot;</span><span class="p">,</span>
+<span class="nt">&quot;print_values&quot;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+<span class="nt">&quot;__definition__print_values&quot;</span><span class="p">:</span> <span class="s2">&quot;# optionally print loss values every report interval&quot;</span><span class="p">,</span>
+<span class="nt">&quot;by_channel&quot;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+<span class="nt">&quot;__definition__by_channel&quot;</span><span class="p">:</span> <span class="s2">&quot;if True, do convolutions as seperate 1-D channels, if False, stack training samples as 2-D images (n_detectors,(duration*sampling_frequency))&quot;</span><span class="p">,</span>
+<span class="nt">&quot;load_plot_data&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+<span class="nt">&quot;__definition__load_plot_data&quot;</span><span class="p">:</span> <span class="s2">&quot;Use plotting data which has already been generated&quot;</span><span class="p">,</span>
+<span class="nt">&quot;doPE&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+<span class="nt">&quot;__definition__doPE&quot;</span><span class="p">:</span> <span class="s2">&quot;if True then do bilby PE when generating new testing samples&quot;</span><span class="p">,</span>
+<span class="nt">&quot;gpu_num&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+<span class="nt">&quot;__definition__gpu_num&quot;</span><span class="p">:</span> <span class="s2">&quot;gpu number run is running on&quot;</span><span class="p">,</span>
+<span class="nt">&quot;ndata&quot;</span><span class="p">:</span> <span class="mi">256</span><span class="p">,</span>
+<span class="nt">&quot;__definition__ndata&quot;</span><span class="p">:</span> <span class="s2">&quot;sampling frequency&quot;</span><span class="p">,</span>
+<span class="nt">&quot;run_label&quot;</span><span class="p">:</span> <span class="s2">&quot;demo_3det_9par_256Hz&quot;</span><span class="p">,</span>
+<span class="nt">&quot;__definition__run_label&quot;</span><span class="p">:</span> <span class="s2">&quot;label of run&quot;</span><span class="p">,</span>
+<span class="nt">&quot;bilby_results_label&quot;</span><span class="p">:</span> <span class="s2">&quot;bilby_results&quot;</span><span class="p">,</span>
+<span class="nt">&quot;__definition__bilby_result_label&quot;</span><span class="p">:</span> <span class="s2">&quot;label given to bilby results directory&quot;</span><span class="p">,</span>
+<span class="nt">&quot;tot_dataset_size&quot;</span><span class="p">:</span> <span class="mi">10000000</span><span class="p">,</span>
+<span class="nt">&quot;__definition__tot_dataset_size&quot;</span><span class="p">:</span> <span class="s2">&quot;total number of training samples available to use&quot;</span><span class="p">,</span>
+<span class="nt">&quot;tset_split&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span>
+<span class="nt">&quot;__definition__tset_split&quot;</span><span class="p">:</span> <span class="s2">&quot;number of training samples in each training data file&quot;</span><span class="p">,</span>
+<span class="nt">&quot;plot_dir&quot;</span><span class="p">:</span> <span class="s2">&quot;./results/demo_3det_9par_256Hz&quot;</span><span class="p">,</span>
+<span class="nt">&quot;__definition__plot_dir&quot;</span><span class="p">:</span> <span class="s2">&quot;output directory to save results plots&quot;</span><span class="p">,</span>
+<span class="nt">&quot;hyperparam_optim_stop&quot;</span><span class="p">:</span> <span class="mi">1500000</span><span class="p">,</span>
+<span class="nt">&quot;__definition__hyperparam_optim_stop&quot;</span><span class="p">:</span> <span class="s2">&quot;stopping iteration of hyperparameter optimizer per call (ideally 1.5 million)&quot;</span><span class="p">,</span>
+<span class="nt">&quot;hyperparam_n_call&quot;</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span>
+<span class="nt">&quot;__definition__hyperparam_n_call&quot;</span><span class="p">:</span> <span class="s2">&quot;number of hyperparameter optimization calls (ideally 30)&quot;</span><span class="p">,</span>
+<span class="nt">&quot;load_chunk_size&quot;</span><span class="p">:</span> <span class="mf">1000.0</span><span class="p">,</span>
+<span class="nt">&quot;__definition__load_chunk_size&quot;</span><span class="p">:</span> <span class="s2">&quot;Number of training samples to load in at a time.&quot;</span><span class="p">,</span>
+<span class="nt">&quot;load_iteration&quot;</span><span class="p">:</span> <span class="mi">390</span><span class="p">,</span>
+<span class="nt">&quot;__definition__load_iteration&quot;</span><span class="p">:</span> <span class="s2">&quot;How often to load another chunk of training samples&quot;</span><span class="p">,</span>
+<span class="nt">&quot;weight_init&quot;</span><span class="p">:</span> <span class="s2">&quot;xavier&quot;</span><span class="p">,</span>
+<span class="nt">&quot;__definition__weight_init&quot;</span><span class="p">:</span> <span class="s2">&quot;[xavier,VarianceScaling,Orthogonal]. Network model weight initialization (default is xavier)&quot;</span><span class="p">,</span>
+<span class="nt">&quot;n_samples&quot;</span><span class="p">:</span> <span class="mi">10000</span><span class="p">,</span>
+<span class="nt">&quot;__definition__n_samples&quot;</span><span class="p">:</span> <span class="s2">&quot;number of posterior samples to save per reconstruction upon inference (default 3000)&quot;</span><span class="p">,</span>
+<span class="nt">&quot;num_iterations&quot;</span><span class="p">:</span> <span class="mi">1000001</span><span class="p">,</span>
+<span class="nt">&quot;__definition__num_iterations&quot;</span><span class="p">:</span> <span class="s2">&quot;total number of iterations before ending training of model&quot;</span><span class="p">,</span>
+<span class="nt">&quot;initial_training_rate&quot;</span><span class="p">:</span> <span class="mf">0.0001</span><span class="p">,</span>
+<span class="nt">&quot;__definition__initial_training_rate&quot;</span><span class="p">:</span> <span class="s2">&quot;initial training rate for ADAM optimiser inference model (inverse reconstruction)&quot;</span><span class="p">,</span>
+<span class="nt">&quot;batch_size&quot;</span><span class="p">:</span> <span class="mi">64</span><span class="p">,</span>
+<span class="nt">&quot;__definition__batch_size&quot;</span><span class="p">:</span> <span class="s2">&quot; Number training samples shown to neural network per iteration&quot;</span><span class="p">,</span>
+<span class="nt">&quot;batch_norm&quot;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+<span class="nt">&quot;__definition__batch_norm&quot;</span><span class="p">:</span> <span class="s2">&quot;if true, do batch normalization in all layers of neural network&quot;</span><span class="p">,</span>
+<span class="nt">&quot;report_interval&quot;</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span>
+<span class="nt">&quot;__definition__report_interval&quot;</span><span class="p">:</span> <span class="s2">&quot;interval at which to save objective function values and optionally print info during training&quot;</span><span class="p">,</span>
+<span class="nt">&quot;n_modes&quot;</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span>
+<span class="nt">&quot;__definition__n_modes&quot;</span><span class="p">:</span> <span class="s2">&quot;number of modes in Gaussian mixture model (ideal 7, but may go higher/lower)&quot;</span><span class="p">,</span>
+<span class="nt">&quot;n_filters_r1&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="mi">33</span><span class="p">,</span>
+    <span class="mi">33</span><span class="p">,</span>
+    <span class="mi">33</span><span class="p">,</span>
+    <span class="mi">33</span><span class="p">,</span>
+    <span class="mi">33</span>
+<span class="p">],</span>
+<span class="nt">&quot;__definition__n_filters_r1&quot;</span><span class="p">:</span> <span class="s2">&quot;number of convolutional filters to use in r1 network (must be divisible by 3)&quot;</span><span class="p">,</span>
+<span class="nt">&quot;n_filters_r2&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="mi">33</span><span class="p">,</span>
+    <span class="mi">33</span><span class="p">,</span>
+    <span class="mi">33</span>
+<span class="p">],</span>
+<span class="nt">&quot;__definition__n_filters_r2&quot;</span><span class="p">:</span> <span class="s2">&quot;number of convolutional filters to use in r2 network (must be divisible by 3)&quot;</span><span class="p">,</span>
+<span class="nt">&quot;n_filters_q&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="mi">33</span><span class="p">,</span>
+    <span class="mi">33</span><span class="p">,</span>
+    <span class="mi">33</span>
+<span class="p">],</span>
+<span class="nt">&quot;__definition__n_filters_q&quot;</span><span class="p">:</span> <span class="s2">&quot;number of convolutional filters to use in q network  (must be divisible by 3)&quot;</span><span class="p">,</span>
+<span class="nt">&quot;filter_size_r1&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="mi">5</span><span class="p">,</span>
+    <span class="mi">8</span><span class="p">,</span>
+    <span class="mi">11</span><span class="p">,</span>
+    <span class="mi">10</span><span class="p">,</span>
+    <span class="mi">10</span>
+<span class="p">],</span>
+<span class="nt">&quot;__definition__filter_size_r1&quot;</span><span class="p">:</span> <span class="s2">&quot;size of convolutional fitlers in r1 network&quot;</span><span class="p">,</span>
+<span class="nt">&quot;filter_size_r2&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="mi">5</span><span class="p">,</span>
+    <span class="mi">8</span><span class="p">,</span>
+    <span class="mi">11</span>
+<span class="p">],</span>
+<span class="nt">&quot;__definition__filter_size_r2&quot;</span><span class="p">:</span> <span class="s2">&quot;size of convolutional filters in r2 network&quot;</span><span class="p">,</span>
+<span class="nt">&quot;filter_size_q&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="mi">5</span><span class="p">,</span>
+    <span class="mi">8</span><span class="p">,</span>
+    <span class="mi">11</span>
+<span class="p">],</span>
+<span class="nt">&quot;__definition__filter_size_q&quot;</span><span class="p">:</span> <span class="s2">&quot;size of convolutional filters in q network&quot;</span><span class="p">,</span>
+<span class="nt">&quot;drate&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+<span class="nt">&quot;__definition__drate&quot;</span><span class="p">:</span> <span class="s2">&quot;dropout rate to use in fully-connected layers&quot;</span><span class="p">,</span>
+<span class="nt">&quot;maxpool_r1&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="mi">1</span><span class="p">,</span>
+    <span class="mi">2</span><span class="p">,</span>
+    <span class="mi">1</span><span class="p">,</span>
+    <span class="mi">2</span><span class="p">,</span>
+    <span class="mi">1</span>
+<span class="p">],</span>
+<span class="nt">&quot;__definition__maxpool_r1&quot;</span><span class="p">:</span> <span class="s2">&quot;size of maxpooling to use in r1 network&quot;</span><span class="p">,</span>
+<span class="nt">&quot;conv_strides_r1&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="mi">1</span><span class="p">,</span>
+    <span class="mi">1</span><span class="p">,</span>
+    <span class="mi">1</span><span class="p">,</span>
+    <span class="mi">1</span><span class="p">,</span>
+    <span class="mi">1</span>
+<span class="p">],</span>
+<span class="nt">&quot;__definition__conv_strides_r1&quot;</span><span class="p">:</span> <span class="s2">&quot;size of convolutional stride to use in r1 network&quot;</span><span class="p">,</span>
+<span class="nt">&quot;pool_strides_r1&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="mi">1</span><span class="p">,</span>
+    <span class="mi">2</span><span class="p">,</span>
+    <span class="mi">1</span><span class="p">,</span>
+    <span class="mi">2</span><span class="p">,</span>
+    <span class="mi">1</span>
+<span class="p">],</span>
+<span class="nt">&quot;__definition_pool_strides_r1&quot;</span><span class="p">:</span> <span class="s2">&quot;size of max pool stride to use in r1 network&quot;</span><span class="p">,</span>
+<span class="nt">&quot;maxpool_r2&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="mi">1</span><span class="p">,</span>
+    <span class="mi">2</span><span class="p">,</span>
+    <span class="mi">1</span>
+<span class="p">],</span>
+<span class="nt">&quot;__definition_maxpool_r2&quot;</span><span class="p">:</span> <span class="s2">&quot;size of max pooling to use in r2 network&quot;</span><span class="p">,</span>
+<span class="nt">&quot;conv_strides_r2&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="mi">1</span><span class="p">,</span>
+    <span class="mi">1</span><span class="p">,</span>
+    <span class="mi">1</span>
+<span class="p">],</span>
+<span class="nt">&quot;__definition__conv_strides_r2&quot;</span><span class="p">:</span> <span class="s2">&quot;size of convolutional stride in r2 network&quot;</span><span class="p">,</span>
+<span class="nt">&quot;pool_strides_r2&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="mi">1</span><span class="p">,</span>
+    <span class="mi">2</span><span class="p">,</span>
+    <span class="mi">1</span>
+<span class="p">],</span>
+<span class="nt">&quot;__definition__pool_strides_r2&quot;</span><span class="p">:</span> <span class="s2">&quot;size of max pool stride in r2 network&quot;</span><span class="p">,</span>
+<span class="nt">&quot;maxpool_q&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="mi">1</span><span class="p">,</span>
+    <span class="mi">2</span><span class="p">,</span>
+    <span class="mi">1</span>
+<span class="p">],</span>
+<span class="nt">&quot;__definition__maxpool_q&quot;</span><span class="p">:</span> <span class="s2">&quot;size of max pooling to use in q network&quot;</span><span class="p">,</span>
+<span class="nt">&quot;conv_strides_q&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="mi">1</span><span class="p">,</span>
+    <span class="mi">1</span><span class="p">,</span>
+    <span class="mi">1</span>
+<span class="p">],</span>
+<span class="nt">&quot;__definition__conv_strides_q&quot;</span><span class="p">:</span> <span class="s2">&quot;size of convolutional stride to use in q network&quot;</span><span class="p">,</span>
+<span class="nt">&quot;pool_strides_q&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="mi">1</span><span class="p">,</span>
+    <span class="mi">2</span><span class="p">,</span>
+    <span class="mi">1</span>
+<span class="p">],</span>
+<span class="nt">&quot;__definition__pool_strides_q&quot;</span><span class="p">:</span> <span class="s2">&quot;size of max pool stride to use in q network&quot;</span><span class="p">,</span>
+<span class="nt">&quot;ramp_start&quot;</span><span class="p">:</span> <span class="mf">10000.0</span><span class="p">,</span>
+<span class="nt">&quot;__definition__ramp_start&quot;</span><span class="p">:</span> <span class="s2">&quot;starting iteration of KL divergence ramp&quot;</span><span class="p">,</span>
+<span class="nt">&quot;ramp_end&quot;</span><span class="p">:</span> <span class="mf">100000.0</span><span class="p">,</span>
+<span class="nt">&quot;__definition__ramp_end&quot;</span><span class="p">:</span> <span class="s2">&quot;ending iteration of KL divergence ramp&quot;</span><span class="p">,</span>
+<span class="nt">&quot;save_interval&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span>
+<span class="nt">&quot;__definition__save_interval&quot;</span><span class="p">:</span> <span class="s2">&quot;number of iterations to save model&quot;</span><span class="p">,</span>
+<span class="nt">&quot;plot_interval&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span>
+<span class="nt">&quot;__definition__plot_interval&quot;</span><span class="p">:</span> <span class="s2">&quot;number of iterations to plot validation results corner plots&quot;</span><span class="p">,</span>
+<span class="nt">&quot;z_dimension&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+<span class="nt">&quot;__definition__z_dimension&quot;</span><span class="p">:</span> <span class="s2">&quot;number of latent space dimensions of model&quot;</span><span class="p">,</span>
+<span class="nt">&quot;n_weights_r1&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="mi">2048</span><span class="p">,</span>
+    <span class="mi">2048</span><span class="p">,</span>
+    <span class="mi">2048</span>
+<span class="p">],</span>
+<span class="nt">&quot;__definition__n_weights_r1&quot;</span><span class="p">:</span> <span class="s2">&quot;number fully-connected neurons in layers of encoders and decoders in the r1 model&quot;</span><span class="p">,</span>
+<span class="nt">&quot;n_weights_r2&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="mi">2048</span><span class="p">,</span>
+    <span class="mi">2048</span><span class="p">,</span>
+    <span class="mi">2048</span>
+<span class="p">],</span>
+<span class="nt">&quot;__definition__n_weights_r2&quot;</span><span class="p">:</span> <span class="s2">&quot;number fully-connected neurons in layers of encoders and decoders in the r2 model&quot;</span><span class="p">,</span>
+<span class="nt">&quot;n_weights_q&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="mi">2048</span><span class="p">,</span>
+    <span class="mi">2048</span><span class="p">,</span>
+    <span class="mi">2048</span>
+<span class="p">],</span>
+<span class="nt">&quot;__definition__n_weights_q&quot;</span><span class="p">:</span> <span class="s2">&quot;number fully-connected neurons in layers of encoders and decoders in the q model&quot;</span><span class="p">,</span>
+<span class="nt">&quot;duration&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+<span class="nt">&quot;__definition__duration&quot;</span><span class="p">:</span> <span class="s2">&quot;length of training/validation/test sample time series in seconds&quot;</span><span class="p">,</span>
+<span class="nt">&quot;r&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+<span class="nt">&quot;__definition__r&quot;</span><span class="p">:</span> <span class="s2">&quot;number of GW timeseries to use for testing.&quot;</span><span class="p">,</span>
+<span class="nt">&quot;rand_pars&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="s2">&quot;mass_1&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;mass_2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;luminosity_distance&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;geocent_time&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;phase&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;theta_jn&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;psi&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ra&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;dec&quot;</span>
+<span class="p">],</span>
+<span class="nt">&quot;__definition__rand_pars&quot;</span><span class="p">:</span> <span class="s2">&quot;parameters to randomize (those not listed here are fixed otherwise)&quot;</span><span class="p">,</span>
+<span class="nt">&quot;corner_labels&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&quot;mass_1&quot;</span><span class="p">:</span> <span class="s2">&quot;$m_{1}\\,(\\mathrm{M}_{\\odot})$&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;mass_2&quot;</span><span class="p">:</span> <span class="s2">&quot;$m_{2}\\,(\\mathrm{M}_{\\odot})$&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;luminosity_distance&quot;</span><span class="p">:</span> <span class="s2">&quot;$d_{\\mathrm{L}}\\,(\\mathrm{Mpc})$&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;geocent_time&quot;</span><span class="p">:</span> <span class="s2">&quot;$t_{0}\\,(\\mathrm{seconds})$&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;phase&quot;</span><span class="p">:</span> <span class="s2">&quot;${\\phi}$&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;theta_jn&quot;</span><span class="p">:</span> <span class="s2">&quot;$\\Theta_{jn}\\,(\\mathrm{rad})$&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;psi&quot;</span><span class="p">:</span> <span class="s2">&quot;${\\psi}$&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;ra&quot;</span><span class="p">:</span> <span class="s2">&quot;${\\alpha}\\,(\\mathrm{rad})$&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;dec&quot;</span><span class="p">:</span> <span class="s2">&quot;${\\delta}\\,(\\mathrm{rad})$&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;a_1&quot;</span><span class="p">:</span> <span class="s2">&quot;${a_1}$&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;a_2&quot;</span><span class="p">:</span> <span class="s2">&quot;${a_2}$&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;tilt_1&quot;</span><span class="p">:</span> <span class="s2">&quot;${\\Theta_{1}}$&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;tilt_2&quot;</span><span class="p">:</span> <span class="s2">&quot;${\\Theta_{2}}$&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;phi_12&quot;</span><span class="p">:</span> <span class="s2">&quot;${\\phi_{12}}$&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;phi_jl&quot;</span><span class="p">:</span> <span class="s2">&quot;${\\phi_{jl}}$&quot;</span>
+<span class="p">},</span>
+<span class="nt">&quot;__definition__corner_labels&quot;</span><span class="p">:</span> <span class="s2">&quot;latex source parameter labels for plotting&quot;</span><span class="p">,</span>
+<span class="nt">&quot;ref_geocent_time&quot;</span><span class="p">:</span> <span class="mf">1126259642.5</span><span class="p">,</span>
+<span class="nt">&quot;__definition__ref_geocent_time&quot;</span><span class="p">:</span> <span class="s2">&quot;reference gps time (not advised to change this)&quot;</span><span class="p">,</span>
+<span class="nt">&quot;training_data_seed&quot;</span><span class="p">:</span> <span class="mi">43</span><span class="p">,</span>
+<span class="nt">&quot;__definition__training_data_seed&quot;</span><span class="p">:</span> <span class="s2">&quot;tensorflow training random seed number&quot;</span><span class="p">,</span>
+<span class="nt">&quot;testing_data_seed&quot;</span><span class="p">:</span> <span class="mi">44</span><span class="p">,</span>
+<span class="nt">&quot;__definition__testing_data_seed&quot;</span><span class="p">:</span> <span class="s2">&quot; tensorflow testing random seed number&quot;</span><span class="p">,</span>
+<span class="nt">&quot;inf_pars&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="s2">&quot;mass_1&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;mass_2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;luminosity_distance&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;geocent_time&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;theta_jn&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ra&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;dec&quot;</span>
+<span class="p">],</span>
+<span class="nt">&quot;__definition__inf_pars&quot;</span><span class="p">:</span> <span class="s2">&quot;parameters to infer&quot;</span><span class="p">,</span>
+<span class="nt">&quot;train_set_dir&quot;</span><span class="p">:</span> <span class="s2">&quot;./training_sets_3det_9par_256Hz/tset_tot-10000000_split-1000&quot;</span><span class="p">,</span>
+<span class="nt">&quot;__definition__train_set_dir&quot;</span><span class="p">:</span> <span class="s2">&quot;location of training set directory&quot;</span><span class="p">,</span>
+<span class="nt">&quot;test_set_dir&quot;</span><span class="p">:</span> <span class="s2">&quot;./test_sets/bilby_results/test_waveforms&quot;</span><span class="p">,</span>
+<span class="nt">&quot;__definition__test_set_dir&quot;</span><span class="p">:</span> <span class="s2">&quot;location of test set directory waveforms&quot;</span><span class="p">,</span>
+<span class="nt">&quot;pe_dir&quot;</span><span class="p">:</span> <span class="s2">&quot;./test_sets/bilby_results/test&quot;</span><span class="p">,</span>
+<span class="nt">&quot;__definition__pe_dir&quot;</span><span class="p">:</span> <span class="s2">&quot;location of test set directory Bayesian PE samples. Set to None if you do not want to use posterior samples when training.&quot;</span><span class="p">,</span>
+<span class="nt">&quot;KL_cycles&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+<span class="nt">&quot;__definition__KL_cycles&quot;</span><span class="p">:</span> <span class="s2">&quot; number of cycles to repeat for the KL approximation&quot;</span><span class="p">,</span>
+<span class="nt">&quot;samplers&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="s2">&quot;vitamin&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;dynesty&quot;</span>
+<span class="p">],</span>
+<span class="nt">&quot;__definition__samplers&quot;</span><span class="p">:</span> <span class="s2">&quot;Samplers to use when comparing ML results (vitamin is ML approach) dynesty,ptemcee,cpnest,emcee&quot;</span><span class="p">,</span>
+<span class="nt">&quot;figure_sampler_names&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="s2">&quot;VItamin&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Dynesty&quot;</span>
+<span class="p">],</span>
+<span class="nt">&quot;__definition__figure_sampler_names&quot;</span><span class="p">:</span> <span class="s2">&quot;matplotlib figure sampler labels (e.g. [ptemcee,CPNest,emcee])&quot;</span><span class="p">,</span>
+<span class="nt">&quot;y_normscale&quot;</span><span class="p">:</span> <span class="mf">36.0</span><span class="p">,</span>
+<span class="nt">&quot;__definition__y_normscale&quot;</span><span class="p">:</span> <span class="s2">&quot;arbitrary normalization factor on all time series waveforms (helps convergence in training)&quot;</span><span class="p">,</span>
+<span class="nt">&quot;boost_pars&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="s2">&quot;ra&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;dec&quot;</span>
+<span class="p">],</span>
+<span class="nt">&quot;__definition__boost_pars&quot;</span><span class="p">:</span> <span class="s2">&quot;parameters to boost during training (by default this is off)&quot;</span><span class="p">,</span>
+<span class="nt">&quot;gauss_pars&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="s2">&quot;luminosity_distance&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;geocent_time&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;theta_jn&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;a_1&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;a_2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;tilt_1&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;tilt_2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;phi_12&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;phi_jl&quot;</span>
+<span class="p">],</span>
+<span class="nt">&quot;__definition__gauss_pars&quot;</span><span class="p">:</span> <span class="s2">&quot;parameters that require a truncated gaussian distribution&quot;</span><span class="p">,</span>
+<span class="nt">&quot;vonmise_pars&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="s2">&quot;phase&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;psi&quot;</span>
+<span class="p">],</span>
+<span class="nt">&quot;__definition__vonmises_pars&quot;</span><span class="p">:</span> <span class="s2">&quot;parameters that get wrapped on the 1D parameter&quot;</span><span class="p">,</span>
+<span class="nt">&quot;sky_pars&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="s2">&quot;ra&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;dec&quot;</span>
+<span class="p">],</span>
+<span class="nt">&quot;__definition__sky_pars&quot;</span><span class="p">:</span> <span class="s2">&quot;sky parameters&quot;</span><span class="p">,</span>
+<span class="nt">&quot;det&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="s2">&quot;H1&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;L1&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;V1&quot;</span>
+<span class="p">],</span>
+<span class="nt">&quot;__definition__det&quot;</span><span class="p">:</span> <span class="s2">&quot;LIGO detectors to perform analysis on (default is 3detector H1,L1,V1)&quot;</span><span class="p">,</span>
+<span class="nt">&quot;psd_files&quot;</span><span class="p">:</span> <span class="p">[],</span>
+<span class="nt">&quot;__definition__psd_files&quot;</span><span class="p">:</span> <span class="s2">&quot;User may specficy their own psd files for each detector. Must be bilby compatible .txt files. If specifying your own files, do so for each detector. If list is empty, default Bilby PSD values will be used for each detector. &quot;</span><span class="p">,</span>    <span class="nt">&quot;weighted_pars&quot;</span><span class="p">:</span> <span class="kc">null</span><span class="p">,</span>
+<span class="nt">&quot;__definition__weighted_pars&quot;</span><span class="p">:</span> <span class="s2">&quot;set to None if not using, parameters to weight during training&quot;</span><span class="p">,</span>
+<span class="nt">&quot;weighted_pars_factor&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+<span class="nt">&quot;__definition__weighted_pars_factor&quot;</span><span class="p">:</span> <span class="s2">&quot;factor by which to weight weighted parameters&quot;</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 </div>
