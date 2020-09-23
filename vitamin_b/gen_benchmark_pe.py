@@ -632,18 +632,18 @@ def run(sampling_frequency=256.0,
             hf.close()
 
         # look for dynesty sampler option
-        if np.any([r=='dynesty' for r in samplers]):
+        if np.any([r=='dynesty1' for r in samplers]) or np.any([r=='dynesty2' for r in samplers]):
 
             run_startt = time.time()
             # Run sampler dynesty 1 sampler
-            result = bilby.run_sampler(#conversion_function=bilby.gw.conversion.generate_all_bbh_parameters,
-                likelihood=likelihood, priors=priors, sampler='dynesty', npoints=2048,
-                injection_parameters=injection_parameters, outdir=out_dir+'_dynesty1', label=label, dlogz=0.1,
+            result = bilby.run_sampler(
+                likelihood=likelihood, priors=priors, sampler='dynesty', npoints=1000, nact=50, npool=8,
+                injection_parameters=injection_parameters, outdir=out_dir+'_'+samplers[-1], label=label,
                 save='hdf5', plot=True)
             run_endt = time.time()
 
             # save test sample waveform
-            hf = h5py.File('%s/%s.h5py' % (out_dir+'_dynesty1',label), 'w')
+            hf = h5py.File('%s_%s/%s.h5py' % (out_dir,samplers[-1],label), 'w')
             hf.create_dataset('noisy_waveform', data=test_samples_noisy)
             hf.create_dataset('noisefree_waveform', data=test_samples_noisefree)
 
@@ -676,19 +676,19 @@ def run(sampling_frequency=256.0,
             run_startt = time.time()
 
         # look for cpnest sampler option
-        if np.any([r=='cpnest' for r in samplers]):
+        if np.any([r=='cpnest1' for r in samplers]) or np.any([r=='cpnest2' for r in samplers]):
 
             # run cpnest sampler 1 
             run_startt = time.time()
             result = bilby.run_sampler(
                 likelihood=likelihood, priors=priors, sampler='cpnest',
-                nlive=5000,maxmcmc=1000, seed=1994,
-                injection_parameters=injection_parameters, outdir=out_dir+'_cpnest1', label=label,
+                nlive=2048,maxmcmc=1000, seed=1994, nthread=10,
+                injection_parameters=injection_parameters, outdir=out_dir+'_'+samplers[-1], label=label,
                 save='hdf5', plot=True)
             run_endt = time.time()
 
             # save test sample waveform
-            hf = h5py.File('%s/%s.h5py' % (out_dir+'_cpnest1',label), 'w')
+            hf = h5py.File('%s_%s/%s.h5py' % (out_dir,samplers[-1],label), 'w')
             hf.create_dataset('noisy_waveform', data=test_samples_noisy)
             hf.create_dataset('noisefree_waveform', data=test_samples_noisefree)
 
@@ -723,31 +723,32 @@ def run(sampling_frequency=256.0,
         n_ptemcee_steps = 5000
         n_ptemcee_burnin = 4000
         # look for ptemcee sampler option
-        if np.any([r=='ptemcee' for r in samplers]):
+        if np.any([r=='ptemcee1' for r in samplers]) or np.any([r=='ptemcee2' for r in samplers]):
 
             # run ptemcee sampler 1
             run_startt = time.time()
             result = bilby.run_sampler(
                 likelihood=likelihood, priors=priors, sampler='ptemcee',
-                nwalkers=n_ptemcee_walkers, nsteps=n_ptemcee_steps, nburn=n_ptemcee_burnin, plot=True, ntemps=8,
-                injection_parameters=injection_parameters, outdir=out_dir+'_ptemcee1', label=label,
+#                nwalkers=n_ptemcee_walkers, nsteps=n_ptemcee_steps, nburn=n_ptemcee_burnin, plot=True, ntemps=8,
+                nsamples=10000, nwalkers=n_ptemcee_walkers, ntemps=8, plot=True, threads=10,
+                injection_parameters=injection_parameters, outdir=out_dir+'_'+samplers[-1], label=label,
                 save=False)
             run_endt = time.time()
 
             # save test sample waveform
-            os.mkdir('%s_h5py_files' % (out_dir+'_ptemcee1'))
-            hf = h5py.File('%s_h5py_files/%s.h5py' % ((out_dir+'_ptemcee1'),label), 'w')
+            os.mkdir('%s_%s_h5py_files' % (out_dir,samplers[-1]))
+            hf = h5py.File('%s_%s_h5py_files/%s.h5py' % (out_dir,samplers[-1],label), 'w')
             hf.create_dataset('noisy_waveform', data=test_samples_noisy)
             hf.create_dataset('noisefree_waveform', data=test_samples_noisefree)
 
             # throw away samples with "bad" liklihood values
             all_lnp = result.log_likelihood_evaluations
             hf.create_dataset('log_like_eval', data=all_lnp) # save log likelihood evaluations
-            max_lnp = np.max(all_lnp)
+#            max_lnp = np.max(all_lnp)
 #            idx_keep = np.argwhere(all_lnp>max_lnp-12.0).squeeze()
-            all_lnp = all_lnp.reshape((n_ptemcee_steps - n_ptemcee_burnin,n_ptemcee_walkers)) 
+#            all_lnp = all_lnp.reshape((n_ptemcee_steps - n_ptemcee_burnin,n_ptemcee_walkers)) 
 
-            print('Identified bad liklihood points')
+#            print('Identified bad liklihood points')
 
             # loop over randomised params and save samples
             for p in inf_pars:
@@ -755,12 +756,12 @@ def run(sampling_frequency=256.0,
                     if p==q:
                         name = p + '_post'
                         print('saving PE samples for parameter {}'.format(q))
-                        old_samples = np.array(qi).reshape((n_ptemcee_steps - n_ptemcee_burnin,n_ptemcee_walkers))
-                        new_samples = np.array([])
-                        for m in range(old_samples.shape[0]):
-                            new_samples = np.append(new_samples,old_samples[m,np.argwhere(all_lnp[m,:]>max_lnp-12.0).squeeze()])
+#                        old_samples = np.array(qi).reshape((n_ptemcee_steps - n_ptemcee_burnin,n_ptemcee_walkers))
+#                        new_samples = np.array([])
+#                        for m in range(old_samples.shape[0]):
+#                            new_samples = np.append(new_samples,old_samples[m,np.argwhere(all_lnp[m,:]>max_lnp-12.0).squeeze()])
                         hf.create_dataset(name, data=np.array(qi))
-                        hf.create_dataset(name+'_with_cut', data=np.array(new_samples))
+#                        hf.create_dataset(name+'_with_cut', data=np.array(new_samples))
             hf.create_dataset('runtime', data=(run_endt - run_startt))
             hf.close()
 
@@ -782,10 +783,10 @@ def run(sampling_frequency=256.0,
                 return test_samples_noisy,test_samples_noisefree,np.array([temp]),snr
 
         n_emcee_walkers = 250
-        n_emcee_steps = 5000
-        n_emcee_burnin = 4000
+        n_emcee_steps = 28000
+        n_emcee_burnin = 18000
         # look for emcee sampler option
-        if np.any([r=='emcee' for r in samplers]):
+        if np.any([r=='emcee1' for r in samplers]) or np.any([r=='emcee2' for r in samplers]):
 
             # run emcee sampler 1
             run_startt = time.time()
