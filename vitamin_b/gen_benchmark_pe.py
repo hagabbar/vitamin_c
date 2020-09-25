@@ -522,6 +522,8 @@ def run(sampling_frequency=256.0,
         # distance, which means those are the parameters that will be included in the
         # sampler.  If we do nothing, then the default priors get used.
         priors = bilby.gw.prior.BBHPriorDict()
+        priors.pop('chirp_mass')
+        priors['mass_ratio'] = bilby.gw.prior.Constraint(minimum=0.125, maximum=1, name='mass_ratio', latex_label='$q$', unit=None)
         if np.any([r=='geocent_time' for r in inf_pars]):
             priors['geocent_time'] = bilby.core.prior.Uniform(
                 minimum=ref_geocent_time + bounds['geocent_time_min'],
@@ -682,7 +684,7 @@ def run(sampling_frequency=256.0,
             run_startt = time.time()
             result = bilby.run_sampler(
                 likelihood=likelihood, priors=priors, sampler='cpnest',
-                nlive=2048,maxmcmc=1000, seed=1994, nthread=10,
+                nlive=2048,maxmcmc=5000, seed=1994, nthread=10,
                 injection_parameters=injection_parameters, outdir=out_dir+'_'+samplers[-1], label=label,
                 save='hdf5', plot=True)
             run_endt = time.time()
