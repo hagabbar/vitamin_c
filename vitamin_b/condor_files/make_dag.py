@@ -5,7 +5,7 @@ import numpy as np
 def get_params():
     ndata = 1024
     rand_pars='mass_1,mass_2,luminosity_distance,geocent_time,phase,ra,dec,theta_jn,psi,a_1,a_2,tilt_1,tilt_2,phi_12,phi_jl'
-    r = 2 # total number of samples to make
+    r = 256 # total number of samples to make
     bilby_results_label = '1024Hz_full_15par'
     ref_geocent_time=1126259642.5   # reference gps time
     params = dict(
