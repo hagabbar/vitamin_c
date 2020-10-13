@@ -176,7 +176,7 @@ setup(
                       'soupsieve==1.9.3',
                       'tables==3.5.2',
                       'tensorboard==2.1.1',
-                      'tensorflow==2.1.0',
+                      'tensorflow==2.1.2',
                       'tensorflow-estimator==2.1.0',
                       'tensorflow-probability==0.9.0',
                       'termcolor==1.1.0',
