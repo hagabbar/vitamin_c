@@ -634,7 +634,7 @@ def run(sampling_frequency=256.0,
             hf.close()
 
         # look for dynesty sampler option
-        if np.any([r=='dynesty1' for r in samplers]) or np.any([r=='dynesty2' for r in samplers]):
+        if np.any([r=='dynesty1' for r in samplers]) or np.any([r=='dynesty2' for r in samplers]) or np.any([r=='dynesty' for r in samplers]):
 
             run_startt = time.time()
             # Run sampler dynesty 1 sampler
@@ -678,7 +678,7 @@ def run(sampling_frequency=256.0,
             run_startt = time.time()
 
         # look for cpnest sampler option
-        if np.any([r=='cpnest1' for r in samplers]) or np.any([r=='cpnest2' for r in samplers]):
+        if np.any([r=='cpnest1' for r in samplers]) or np.any([r=='cpnest2' for r in samplers]) or np.any([r=='cpnest' for r in samplers]):
 
             # run cpnest sampler 1 
             run_startt = time.time()
@@ -725,7 +725,7 @@ def run(sampling_frequency=256.0,
         n_ptemcee_steps = 5000
         n_ptemcee_burnin = 4000
         # look for ptemcee sampler option
-        if np.any([r=='ptemcee1' for r in samplers]) or np.any([r=='ptemcee2' for r in samplers]):
+        if np.any([r=='ptemcee1' for r in samplers]) or np.any([r=='ptemcee2' for r in samplers]) or np.any([r=='ptemcee' for r in samplers]):
 
             # run ptemcee sampler 1
             run_startt = time.time()
@@ -788,7 +788,7 @@ def run(sampling_frequency=256.0,
         n_emcee_steps = 28000
         n_emcee_burnin = 18000
         # look for emcee sampler option
-        if np.any([r=='emcee1' for r in samplers]) or np.any([r=='emcee2' for r in samplers]):
+        if np.any([r=='emcee1' for r in samplers]) or np.any([r=='emcee2' for r in samplers]) or np.any([r=='emcee' for r in samplers]):
 
             # run emcee sampler 1
             run_startt = time.time()
