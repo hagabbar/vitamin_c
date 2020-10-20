@@ -553,12 +553,14 @@ def run(sampling_frequency=256.0,
             priors['a_2'] = fixed_vals['a_2']
 
         if np.any([r=='tilt_1' for r in inf_pars]):
-            priors['tilt_1'] = bilby.gw.prior.Uniform(name='tilt_1', minimum=bounds['tilt_1_min'], maximum=bounds['tilt_1_max'])
+#            priors['tilt_1'] = bilby.gw.prior.Uniform(name='tilt_1', minimum=bounds['tilt_1_min'], maximum=bounds['tilt_1_max'])
+            pass
         else:
             priors['tilt_1'] = fixed_vals['tilt_1']
 
         if np.any([r=='tilt_2' for r in inf_pars]):
-            priors['tilt_2'] = bilby.gw.prior.Uniform(name='tilt_2', minimum=bounds['tilt_2_min'], maximum=bounds['tilt_2_max'])
+#            priors['tilt_2'] = bilby.gw.prior.Uniform(name='tilt_2', minimum=bounds['tilt_2_min'], maximum=bounds['tilt_2_max'])
+            pass
         else:
             priors['tilt_2'] = fixed_vals['tilt_2']
 
@@ -605,7 +607,7 @@ def run(sampling_frequency=256.0,
         # Initialise the likelihood by passing in the interferometer data (ifos) and
         # the waveform generator
         likelihood = bilby.gw.GravitationalWaveTransient(
-            interferometers=ifos, waveform_generator=waveform_generator, phase_marginalization=False,
+            interferometers=ifos, waveform_generator=waveform_generator, phase_marginalization=True,
             priors=priors)
 
         # save test waveform information
@@ -684,7 +686,7 @@ def run(sampling_frequency=256.0,
             run_startt = time.time()
             result = bilby.run_sampler(
                 likelihood=likelihood, priors=priors, sampler='cpnest',
-                nlive=2048,maxmcmc=5000, seed=1994, nthread=10,
+                nlive=2048,maxmcmc=1000, seed=1994, nthreads=10,
                 injection_parameters=injection_parameters, outdir=out_dir+'_'+samplers[-1], label=label,
                 save='hdf5', plot=True)
             run_endt = time.time()
@@ -785,15 +787,15 @@ def run(sampling_frequency=256.0,
                 return test_samples_noisy,test_samples_noisefree,np.array([temp]),snr
 
         n_emcee_walkers = 250
-        n_emcee_steps = 28000
-        n_emcee_burnin = 18000
+        n_emcee_steps = 14000
+        n_emcee_burnin = 4000
         # look for emcee sampler option
         if np.any([r=='emcee1' for r in samplers]) or np.any([r=='emcee2' for r in samplers]) or np.any([r=='emcee' for r in samplers]):
 
             # run emcee sampler 1
             run_startt = time.time()
             result = bilby.run_sampler(
-            likelihood=likelihood, priors=priors, sampler='emcee',
+            likelihood=likelihood, priors=priors, sampler='emcee', a=1.4, thin_by=10, store=False,
             nwalkers=n_emcee_walkers, nsteps=n_emcee_steps, nburn=n_emcee_burnin,
             injection_parameters=injection_parameters, outdir=out_dir+'_emcee1', label=label,
             save=False,plot=True)
