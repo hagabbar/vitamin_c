@@ -795,7 +795,7 @@ def run(sampling_frequency=256.0,
             # run emcee sampler 1
             run_startt = time.time()
             result = bilby.run_sampler(
-            likelihood=likelihood, priors=priors, sampler='emcee', a=1.4, thing_by=10, store=False,
+            likelihood=likelihood, priors=priors, sampler='emcee', a=1.4, thin_by=10, store=False,
             nwalkers=n_emcee_walkers, nsteps=n_emcee_steps, nburn=n_emcee_burnin,
             injection_parameters=injection_parameters, outdir=out_dir+'_emcee1', label=label,
             save=False,plot=True)
