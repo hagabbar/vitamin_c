@@ -124,12 +124,12 @@ n_weights_q = [n_fc,n_fc]
 #############################
 # optional tunable variables
 #############################
-run_label = '1kHz_fullpar_hourangleTesting'#'demo_%ddet_%dpar_%dHz_hour_angle_with_late_kl_start' % (len(det),len(rand_pars),ndata) 
+run_label = 'public_model'#'demo_%ddet_%dpar_%dHz_hour_angle_with_late_kl_start' % (len(det),len(rand_pars),ndata) 
 
 # 1024 Hz label
 #bilby_results_label = 'weichangfeng_theta_jn_issue'                                             
 # 256 Hz label
-bilby_results_label = '256Hz_7par_hourangleTesting'
+bilby_results_label = 'all_4_samplers'
 
 r = 1                                                          
 pe_test_num = 256                                                               
@@ -137,8 +137,7 @@ tot_dataset_size = int(1e7)
 tset_split = int(1e3)                                                           
 save_interval = int(2e4)                                                        
 num_iterations=int(1e6)+1                                                       
-#ref_geocent_time=1126259642.5                                                   
-ref_geocent_time=1126259642.5 + ((86400.0/2.0))
+ref_geocent_time=1126259642.5                                                   
 load_chunk_size = 2e5                                                           
 samplers=['vitamin','dynesty']                                                  
 
@@ -152,8 +151,8 @@ plot_dir="./results/%s" % run_label
 
 # training/testing for 256 Hz case
 train_set_dir = '/home/hunter.gabbard/CBC/VItamin/training_sets_second_sub_3det_9par_256Hz/tset_tot-10000000_split-1000/'
-test_set_dir = './test_sets/256Hz_7par_hourangleTesting/test_waveforms'
-pe_dir='./test_sets/256Hz_7par_hourangleTesting/test'
+test_set_dir = './test_sets/all_4_samplers/test_waveforms'
+pe_dir='./test_sets/all_4_samplers/test'
 #############################
 # optional tunable variables
 

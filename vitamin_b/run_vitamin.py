@@ -1625,8 +1625,6 @@ def gen_samples(params=params,bounds=bounds,fixed_vals=fixed_vals,model_loc='mod
         # Convert hour angle back to RA
         samples[i,:] = convert_ra_to_hour_angle(samples[i,:], params, rand_pars=False)
 
-        print(samples[0,:,3])
-        exit()
         # plot results
         if plot_corner==True:
             # Get infered parameter latex labels for corner plot
