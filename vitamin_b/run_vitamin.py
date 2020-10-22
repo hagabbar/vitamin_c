@@ -801,6 +801,11 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
     with open(fixed_vals, 'r') as fp:
         fixed_vals = json.load(fp)
 
+    # if doing hour angle, use hour angle bounds on RA
+    if params['convert_to_hour_angle']:
+        bounds['ra_min'] = params['hour_angle_range'][0]
+        bounds['ra_max'] = params['hour_angle_range'][1]
+
     # define which gpu to use during training
     gpu_num = str(params['gpu_num'])                                            # first GPU used by default
     os.environ["CUDA_VISIBLE_DEVICES"]=gpu_num
@@ -1095,6 +1100,11 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
     with open(fixed_vals, 'r') as fp:
         fixed_vals = json.load(fp)
 
+    # if doing hour angle, use hour angle bounds on RA
+    if params['convert_to_hour_angle']:
+        bounds['ra_min'] = params['hour_angle_range'][0]
+        bounds['ra_max'] = params['hour_angle_range'][1]
+
     if use_gpu == True:
         print("... GPU found")
         os.environ["CUDA_VISIBLE_DEVICES"]=str(params['gpu_num'])
@@ -1329,6 +1339,7 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
         for q_idx,q in enumerate(params['inf_pars']):
                 par_min = q + '_min'
                 par_max = q + '_max'
+
                 VI_pred[:,q_idx] = (VI_pred[:,q_idx] * (bounds[par_max] - bounds[par_min])) + bounds[par_min]
 
         # Convert hour angle back to RA
@@ -1507,6 +1518,11 @@ def gen_samples(params=params,bounds=bounds,fixed_vals=fixed_vals,model_loc='mod
         bounds = json.load(fp)
     with open(fixed_vals, 'r') as fp:
         fixed_vals = json.load(fp)
+
+    # if doing hour angle, use hour angle bounds on RA
+    if params['convert_to_hour_angle']:
+        bounds['ra_min'] = params['hour_angle_range'][0]
+        bounds['ra_max'] = params['hour_angle_range'][1]
 
     if use_gpu == True:
         print('GPU found')

@@ -50,7 +50,7 @@ bounds = {'mass_1_min':35.0, 'mass_1_max':80.0,
         '__definition__geocent_time': 'time of coalescence range',
         'phase_min':0.0, 'phase_max':2.0*np.pi,
         '__definition__phase': 'phase range',
-        'ra_min':-3.813467684252483, 'ra_max':2.469671758574231,
+        'ra_min':0.0, 'ra_max':2.0*np.pi,
         '__definition__ra': 'right ascension range',
         'dec_min':-0.5*np.pi, 'dec_max':0.5*np.pi,
         '__definition__dec': 'declination range',
@@ -161,6 +161,8 @@ def get_params():
 
     # Define dictionary to store values used in rest of code 
     params = dict(
+        hour_angle_range=[-3.813467684252483,2.469671758574231],
+        __definition__hour_angle_range='min and max range of hour angle space',
         use_real_det_noise=False,
         __definition__use_real_det_noise='If True, use real detector noise around reference time',
         use_real_events=[], # e.g. 'GW150914'
