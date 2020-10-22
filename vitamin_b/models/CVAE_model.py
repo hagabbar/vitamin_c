@@ -631,8 +631,8 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
         var_list_VICI = [var for var in tf.trainable_variables() if var.name.startswith("VI")]
         
         # DEFINE OPTIMISER (using ADAM here)
-#        optimizer = tf.train.AdamOptimizer(params['initial_training_rate']) 
-        optimizer = tf.train.AdadeltaOptimizer()
+        optimizer = tf.train.AdamOptimizer(params['initial_training_rate']) 
+#        optimizer = tf.train.AdadeltaOptimizer()
 #        optimizer = tf.train.RMSPropOptimizer(params['initial_training_rate'])
         minimize = optimizer.minimize(COST,var_list = var_list_VICI)
         
