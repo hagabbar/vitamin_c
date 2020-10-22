@@ -1,4 +1,9 @@
 {
+    "hour_angle_range": [
+        -3.813467684252483,
+        2.469671758574231
+    ],
+    "__definition__hour_angle_range": "min and max range of hour angle space",
     "use_real_det_noise": false,
     "__definition__use_real_det_noise": "If True, use real detector noise around reference time",
     "use_real_events": [],
