@@ -24,6 +24,11 @@ from matplotlib.ticker import (MultipleLocator, FormatStrFormatter, FixedLocator
 import matplotlib.ticker as ticker
 from lal import GreenwichMeanSiderealTime
 
+try:
+    from .models.neural_networks.vae_utils import convert_ra_to_hour_angle
+except:
+    from models.neural_networks.vae_utils import convert_ra_to_hour_angle
+
 def prune_samples(chain_file_loc,params):
     """ Function to remove bad likelihood emcee chains 
    
@@ -171,6 +176,8 @@ class make_plots:
                     VI_pred,dt,_  = model.run(params, np.expand_dims(sig_test[i],axis=0), np.shape(par_test)[1],
                                                              y_normscale,
                                                              "inverse_model_dir_%s/inverse_model.ckpt" % params['run_label'])
+
+                    """
                     # convert RA to hour angle for test set validation cost if both ra and geo time present
                     if np.isin('ra', params['inf_pars']) and  np.isin('geocent_time', params['inf_pars']):
                         # get geocenttime index
@@ -191,7 +198,8 @@ class make_plots:
                             VI_pred[k,ra_idx]=np.mod(GreenwichMeanSiderealTime(params['ref_geocent_time'])-VI_pred[k,ra_idx], 2.0*np.pi)
                         # normalize
                         VI_pred[:,ra_idx]=(VI_pred[:,ra_idx] - bounds['ra_min']) / (bounds['ra_max'] - bounds['ra_min'])
-                    
+                    """                    
+
                     VI_pred_all.append(VI_pred)
 
                     print('Generated vitamin preds %d/%d' % (int(i),int(params['r'])))
@@ -231,15 +239,36 @@ class make_plots:
             dt = []
             while i_idx < self.params['r']:
 
-                filename_try = '%s/%s_%d.h5py' % (dataLocations_try,self.params['bilby_results_label'],i)
+#                filename_try = '%s/%s_%d.h5py' % (dataLocations_try,self.params['bilby_results_label'],i)
                 filename = '%s/%s_%d.h5py' % (dataLocations,self.params['bilby_results_label'],i)
 
-                # If file does not exist, skip to next file
-                try:
-                    h5py.File(filename_try, 'r')
-                except Exception as e:
+                for samp_idx_inner in params['samplers'][1:]:
+                    inner_file_existance = True
+                    if samp_idx_inner == sampler+'1':
+                        inner_file_existance = os.path.isfile(filename)
+                        if inner_file_existance == False:
+                            break
+                        else:
+                            continue
+
+                    dataLocations_inner = '%s_%s' % (params['pe_dir'],samp_idx_inner+'1')
+                    filename_inner = '%s/%s_%d.h5py' % (dataLocations_inner,params['bilby_results_label'],i)
+                    # If file does not exist, skip to next file
+                    inner_file_existance = os.path.isfile(filename_inner)
+                    if inner_file_existance == False:
+                        break
+
+                if inner_file_existance == False:
                     i+=1
+                    print('File does not exist for one of the samplers')
                     continue
+
+                # If file does not exist, skip to next file
+#                try:
+#                    h5py.File(filename_try, 'r')
+#                except Exception as e:
+#                    i+=1
+#                    continue
 
                 print(filename)
                 dt.append(np.array(h5py.File(filename, 'r')['runtime']))
@@ -271,16 +300,17 @@ class make_plots:
                     XS[:,j] = d
                     j += 1
 
-                #rand_idx_posterior = np.random.choice(np.linspace(0,XS.shape[0]-1,dtype=np.int),self.params['n_samples'])
-                #rand_idx_posterior = np.random.choice(np.linspace(0,10000,dtype=np.int),self.params['n_samples']) 
+                rand_idx_posterior = np.linspace(0,XS.shape[0]-1,num=self.params['n_samples'],dtype=np.int)
+                np.random.shuffle(rand_idx_posterior)
+                rand_idx_posterior = rand_idx_posterior[:self.params['n_samples']]
                 if i_idx == 0:
-                    #XS_all = np.expand_dims(XS[rand_idx_posterior,:], axis=0)
-                    XS_all = np.expand_dims(XS[:self.params['n_samples'],:], axis=0)
+                    XS_all = np.expand_dims(XS[rand_idx_posterior,:], axis=0)
+                    #XS_all = np.expand_dims(XS[:self.params['n_samples'],:], axis=0)
                 else:
                     # save all posteriors in array
-                    max_allow_idx = np.min([XS_all.shape[1],np.expand_dims(XS[:self.params['n_samples'],:], axis=0).shape[1]])
-                    #XS_all = np.vstack((XS_all[:,:max_allow_idx,:],np.expand_dims(XS[rand_idx_posterior,:], axis=0)[:,:max_allow_idx,:]))
-                    XS_all = np.vstack((XS_all[:,:max_allow_idx,:],np.expand_dims(XS[:self.params['n_samples'],:], axis=0)[:,:max_allow_idx,:]))
+                    max_allow_idx = np.min([XS_all.shape[1],np.expand_dims(XS[rand_idx_posterior,:], axis=0).shape[1]])
+                    XS_all = np.vstack((XS_all[:,:max_allow_idx,:],np.expand_dims(XS[rand_idx_posterior,:], axis=0)[:,:max_allow_idx,:]))
+                    #XS_all = np.vstack((XS_all[:,:max_allow_idx,:],np.expand_dims(XS[:self.params['n_samples'],:], axis=0)[:,:max_allow_idx,:]))
 
                 i_idx_use.append(i)
                 i+=1
@@ -388,6 +418,8 @@ class make_plots:
                                                      normscales,
                                                      "inverse_model_dir_%s/inverse_model.ckpt" % self.params['run_label'])
 
+              
+                """ 
                 # convert RA to hour angle for test set validation cost if both ra and geo time present
                 if np.isin('ra', self.params['inf_pars']) and  np.isin('geocent_time', self.params['inf_pars']):
                     # get geocenttime index
@@ -408,6 +440,7 @@ class make_plots:
                         x[k,ra_idx]=np.mod(GreenwichMeanSiderealTime(self.params['ref_geocent_time'])-x[k,ra_idx], 2.0*np.pi)
                     # normalize
                     x[:,ra_idx]=(x[:,ra_idx] - bounds['ra_min']) / (bounds['ra_max'] - bounds['ra_min'])
+                """
 
                 # Apply mask
                 x = x.T
@@ -507,7 +540,7 @@ class make_plots:
         x_values = np.linspace(0, 1, 1001)
         N = int(self.params['r'])
 
-        """
+        
         # Add credibility interals
         for ci,j in zip(confidence,range(len(confidence))):
             edge_of_bound = (1. - ci) / 2.
@@ -518,7 +551,7 @@ class make_plots:
             lower[0] = 0
             upper[0] = 0
             axis.fill_between(x_values, lower, upper, facecolor=conf_color_wheel[j],alpha=0.5)
-        """
+        
         axis.set_xlim([0,1])
         axis.set_ylim([0,1])
         #axis.set_ylabel(r'$\textrm{Empirical Cumulative Distribution}$',fontsize=14)
@@ -744,14 +777,6 @@ class make_plots:
 
         
         if params['load_plot_data'] == False:
-            # Create dataset to save KL divergence results for later plotting
-            try:
-                os.mkdir('plotting_data_%s' % params['run_label']) 
-            except:
-                print()
-                print('... Plotting directory already exists')
-                print()
-
             try:
                 hf = h5py.File('plotting_data_%s/KL_plot_data.h5' % params['run_label'], 'w')
             except:
