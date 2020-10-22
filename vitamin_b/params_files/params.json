@@ -23,7 +23,7 @@
     "__definition__by_channel": "if True, do convolutions as seperate 1-D channels, if False, stack training samples as 2-D images (n_detectors,(duration*sampling_frequency))",
     "load_plot_data": false,
     "__definition__load_plot_data": "Use plotting data which has already been generated",
-    "doPE": false,
+    "doPE": true,
     "__definition__doPE": "if True then do bilby PE when generating new testing samples",
     "gpu_num": 0,
     "__definition__gpu_num": "gpu number run is running on",

@@ -193,7 +193,7 @@ def get_params():
         load_plotmartin_shape_error_data=False,                                                   
         load_plot_data = False,
         __definition__load_plot_data='Use plotting data which has already been generated',
-        doPE = False,                                                            
+        doPE = True,                                                            
         __definition__doPE='if True then do bilby PE when generating new testing samples',
         gpu_num=5,                                                              
         __definition__gpu_num='gpu number run is running on',
@@ -360,22 +360,23 @@ try:
     os.mkdir('params_files')
 except FileExistsError:
     print("directory 'params_files' already exists")
+    print("Overwriting .json files in directory ...")
 
 # Generate params files
-if not os.path.isfile('./params_files/params.json'):
+#if not os.path.isfile('./params_files/params.json'):
     
-    # save params json file
-    with open('params_files/params.json', 'w') as fp:
-        json.dump(params, fp, sort_keys=False, indent=4)
+# save params json file
+with open('params_files/params.json', 'w') as fp:
+    json.dump(params, fp, sort_keys=False, indent=4)
 
-if not os.path.isfile('./params_files/bounds.json'):
+#if not os.path.isfile('./params_files/bounds.json'):
 
-    # save bounds json file
-    with open('params_files/bounds.json', 'w') as fp:
-        json.dump(bounds, fp, sort_keys=False, indent=4)
+# save bounds json file
+with open('params_files/bounds.json', 'w') as fp:
+    json.dump(bounds, fp, sort_keys=False, indent=4)
 
-if not os.path.isfile('./params_files/fixed_vals.json'):
+#if not os.path.isfile('./params_files/fixed_vals.json'):
 
-    # save fixed vals json file
-    with open('params_files/fixed_vals.json', 'w') as fp:
-        json.dump(fixed_vals, fp, sort_keys=False, indent=4)
+# save fixed vals json file
+with open('params_files/fixed_vals.json', 'w') as fp:
+    json.dump(fixed_vals, fp, sort_keys=False, indent=4)
