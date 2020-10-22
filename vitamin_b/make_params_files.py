@@ -145,12 +145,12 @@ samplers=['vitamin','dynesty']
 plot_dir="./results/%s" % run_label  
 
 # Training/testing for 1024 Hz full par case
-#train_set_dir='./training_sets_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(det),len(rand_pars),ndata,1000000,tset_split)
+train_set_dir='./training_sets_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(det),len(rand_pars),ndata,1000000,tset_split)
 #test_set_dir = './test_sets/1024_khz_spins_included_15par/test_waveforms'
 #pe_dir='./test_sets/1024_khz_spins_included_15par/test'
 
 # training/testing for 256 Hz case
-train_set_dir = '/home/hunter.gabbard/CBC/VItamin/training_sets_second_sub_3det_9par_256Hz/tset_tot-10000000_split-1000/'
+#train_set_dir = '/home/hunter.gabbard/CBC/VItamin/training_sets_second_sub_3det_9par_256Hz/tset_tot-10000000_split-1000/'
 test_set_dir = './test_sets/all_4_samplers/test_waveforms'
 pe_dir='./test_sets/all_4_samplers/test'
 #############################

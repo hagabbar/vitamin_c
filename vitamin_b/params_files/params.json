@@ -242,7 +242,7 @@
         "dec"
     ],
     "__definition__inf_pars": "parameters to infer",
-    "train_set_dir": "/home/hunter.gabbard/CBC/VItamin/training_sets_second_sub_3det_9par_256Hz/tset_tot-10000000_split-1000/",
+    "train_set_dir": "./training_sets_3det_9par_256Hz/tset_tot-1000000_split-1000",
     "__definition__train_set_dir": "location of training set directory",
     "test_set_dir": "./test_sets/all_4_samplers/test_waveforms",
     "__definition__test_set_dir": "location of test set directory waveforms",
