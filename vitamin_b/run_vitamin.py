@@ -1361,6 +1361,7 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
                     max_min_samplers['max'][0,par_idx] = np.min(VI_pred[:,par_idx])
                     max_min_samplers['min'][0,par_idx] = np.max(VI_pred[:,par_idx])
         corner_range = [ (np.min(max_min_samplers['min'][:,par_idx]), np.max(max_min_samplers['max'][:,par_idx]) ) for par_idx in range(len(params['inf_pars']))]
+#        corner_range=None
 
         # Iterate over all Bayesian PE samplers and plot results
         custom_lines = []
