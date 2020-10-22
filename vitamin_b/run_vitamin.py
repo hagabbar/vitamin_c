@@ -8,6 +8,7 @@
 import warnings
 warnings.filterwarnings("ignore")
 import os
+from os import path
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 import argparse
 import numpy as np
@@ -46,11 +47,15 @@ try:
     from .gen_benchmark_pe import run
     from . import plotting
     from .plotting import prune_samples
+    from .models.neural_networks.vae_utils import convert_ra_to_hour_angle
+    from .gen_benchmark_pe import importance_sampling
 except ModuleNotFoundError:
     from models import CVAE_model
     from gen_benchmark_pe import run
     import plotting
     from plotting import prune_samples
+    from models.neural_networks.vae_utils import convert_ra_to_hour_angle
+    from gen_benchmark_pe import importance_sampling
 
 # Check for optional basemap installation
 try:
@@ -67,12 +72,13 @@ else:
     except:
         from skyplotting import plot_sky
 
-""" Script has 4 main functions:
+""" Script has several main functions:
 1.) Generate training data
 2.) Generate testing data
 3.) Train model
 4.) Test model
 5.) Generate samples only given model and timeseries
+6.) Apply importance sampling to VItamin results
 """
 
 parser = argparse.ArgumentParser(description='VItamin: A user friendly Bayesian inference machine learning library.')
@@ -89,6 +95,7 @@ parser.add_argument("--test_set_loc", default=None, type=str, help="directory co
 parser.add_argument("--gen_samples", default=False, help="If True, generate samples only (no plotting)")
 parser.add_argument("--num_samples", type=int, default=10000, help="number of posterior samples to generate")
 parser.add_argument("--use_gpu", default=False, help="if True, use gpu")
+parser.add_argument("--importance_sampling", default=False, help="Apply importance sampling to VItamin posterior samples")
 args = parser.parse_args()
 
 global params; global bounds; global fixed_vals
@@ -107,35 +114,46 @@ if args.fixed_vals_file != None:
     fixed_vals = args.fixed_vals_file
 
 # Ranges over which hyperparameter optimization parameters are allowed to vary
-kernel_1 = Integer(low=3, high=12, name='kernel_1')
+kernel_1 = Integer(low=3, high=11, name='kernel_1')
 strides_1 = Integer(low=1, high=2, name='strides_1')
 pool_1 = Integer(low=1, high=2, name='pool_1')
-kernel_2 = Integer(low=3, high=12, name='kernel_2')
+kernel_2 = Integer(low=3, high=11, name='kernel_2')
 strides_2 = Integer(low=1, high=2, name='strides_2')
 pool_2 = Integer(low=1, high=2, name='pool_2')
-kernel_3 = Integer(low=3, high=12, name='kernel_3')
+kernel_3 = Integer(low=3, high=11, name='kernel_3')
 strides_3 = Integer(low=1, high=2, name='strides_3')
 pool_3 = Integer(low=1, high=2, name='pool_3')
-kernel_4 = Integer(low=3, high=12, name='kernel_4')
+kernel_4 = Integer(low=3, high=11, name='kernel_4')
 strides_4 = Integer(low=1, high=2, name='strides_4')
 pool_4 = Integer(low=1, high=2, name='pool_4')
+kernel_5 = Integer(low=3, high=11, name='kernel_5')
+strides_5 = Integer(low=1, high=2, name='strides_5')
+pool_5 = Integer(low=1, high=2, name='pool_5')
 
-z_dimension = Integer(low=7, high=100, name='z_dimension')
-n_modes = Integer(low=7, high=12, name='n_modes')
-n_filters_1 = Integer(low=32, high=33, name='n_filters_1')
-n_filters_2 = Integer(low=32, high=33, name='n_filters_2')
-n_filters_3 = Integer(low=32, high=33, name='n_filters_3')
-n_filters_4 = Integer(low=32, high=33, name='n_filters_4')
-batch_size = Integer(low=511, high=512, name='batch_size')
-n_weights_fc_1 = Integer(low=2047, high=2048, name='n_weights_fc_1')
-n_weights_fc_2 = Integer(low=2047, high=2048, name='n_weights_fc_2')
-n_weights_fc_3 = Integer(low=2047, high=2048, name='n_weights_fc_3')
+z_dimension = Integer(low=16, high=100, name='z_dimension')
+n_modes = Integer(low=2, high=50, name='n_modes')
+n_filters_1 = Integer(low=3, high=33, name='n_filters_1')
+n_filters_2 = Integer(low=3, high=33, name='n_filters_2')
+n_filters_3 = Integer(low=3, high=33, name='n_filters_3')
+n_filters_4 = Integer(low=3, high=33, name='n_filters_4')
+n_filters_5 = Integer(low=3, high=33, name='n_filters_5')
+batch_size = Integer(low=32, high=33, name='batch_size')
+n_weights_fc_1 = Integer(low=8, high=2048, name='n_weights_fc_1')
+n_weights_fc_2 = Integer(low=8, high=2048, name='n_weights_fc_2')
+n_weights_fc_3 = Integer(low=8, high=2048, name='n_weights_fc_3')
+
+num_r1_conv = Integer(low=1, high=5, name='num_r1_conv')
+num_r2_conv = Integer(low=1, high=5, name='num_r2_conv')
+num_q_conv = Integer(low=1, high=5, name='num_q_conv')
+num_r1_hidden = Integer(low=1, high=3, name='num_r1_hidden')
+num_r2_hidden = Integer(low=1, high=3, name='num_r2_hidden')
+num_q_hidden = Integer(low=1, high=3, name='num_q_hidden')
 
 # putting defined hyperparameter optimization ranges into a list
-dimensions = [kernel_1, 
+dimensions = [kernel_1,
               strides_1,
               pool_1,
-              kernel_2, 
+              kernel_2,
               strides_2,
               pool_2,
               kernel_3,
@@ -144,46 +162,29 @@ dimensions = [kernel_1,
               kernel_4,
               strides_4,
               pool_4,
+              kernel_5,
+              strides_5,
+              pool_5,
               z_dimension,
               n_modes,
               n_filters_1,
               n_filters_2,
               n_filters_3,
               n_filters_4,
+              n_filters_5,
               batch_size,
               n_weights_fc_1,
               n_weights_fc_2,
-              n_weights_fc_3]
-
-"""
-# list of initial default hyperparameters to use for GP hyperparameter optimization
-default_hyperparams = [params['filter_size_r1'][0],
-                       params['conv_strides_r1'][0],
-                       params['maxpool_r1'][0],
-                       params['filter_size_r1'][1],
-                       params['conv_strides_r1'][1],
-                       params['maxpool_r1'][1],
-                       params['filter_size_r1'][2],
-                       params['conv_strides_r1'][2],
-                       params['maxpool_r1'][2],
-                       params['filter_size_r1'][3],
-                       params['conv_strides_r1'][3],
-                       params['maxpool_r1'][3],
-                       params['z_dimension'],
-                       params['n_modes'],
-                       params['n_filters_r1'][0],
-                       params['n_filters_r1'][1],
-                       params['n_filters_r1'][2],
-                       params['n_filters_r1'][3],
-                       params['batch_size'],
-                       params['n_weights_r1'][0],
-                       params['n_weights_r1'][1],
-                       params['n_weights_r1'][2],
-                      ]
-"""
+              n_weights_fc_3,
+              num_r1_conv,
+              num_r2_conv,
+              num_q_conv,
+              num_r1_hidden,
+              num_r2_hidden,
+              num_q_hidden]
 
 # dummy value for initial hyperparameter best KL (to be minimized). Doesn't need to be changed.
-best_loss = int(1e6)
+best_loss = int(1994)
 
 @contextmanager
 def suppress_stdout():
@@ -228,7 +229,7 @@ def load_data(params,bounds,fixed_vals,input_dir,inf_pars,load_condor=False):
     """
 
     train_files = []
-    
+
     # Get list of all training/testing files and define dictionary to store values in files
     if type("%s" % input_dir) is str:
         dataLocations = ["%s" % input_dir]
@@ -257,7 +258,24 @@ def load_data(params,bounds,fixed_vals,input_dir,inf_pars,load_condor=False):
         train_files = np.array(train_files)[train_files_idx]
 
     # Iterate over all training/testing files and store source parameters, time series and SNR info in dictionary
+    file_IDs = []
     for filename in train_files:
+
+        if load_condor == True:
+            # Don't load files which are not consistent between samplers
+            for samp_idx_inner in params['samplers'][1:]:
+                inner_file_existance = True
+                dataLocations_inner = '%s_%s' % (params['pe_dir'],samp_idx_inner+'1')
+                filename_inner = '%s/%s_%d.h5py' % (dataLocations_inner,params['bilby_results_label'],int(filename.split('_')[-1].split('.')[0]))
+                # If file does not exist, skip to next file
+                inner_file_existance = os.path.isfile(filename_inner) 
+                if inner_file_existance == False:
+                    break
+
+            if inner_file_existance == False:
+                print('File not consistent beetween samplers')
+                continue
+
         try:
             data_temp={'x_data': h5py.File(dataLocations[0]+'/'+filename, 'r')['x_data'][:],
                   'y_data_noisefree': h5py.File(dataLocations[0]+'/'+filename, 'r')['y_data_noisefree'][:],
@@ -268,6 +286,8 @@ def load_data(params,bounds,fixed_vals,input_dir,inf_pars,load_condor=False):
             data['x_data'].append(data_temp['x_data'])
             data['y_data_noisy'].append(np.expand_dims(data_temp['y_data_noisy'], axis=0))
             data['rand_pars'] = data_temp['rand_pars']
+            if load_condor==True:
+                file_IDs.append(int(filename.split('_')[-1].split('.')[0]) + int(params['testing_data_seed'])) # Save file number
             print('... Loaded file ' + filename)
         except OSError:
             print('Could not load requested file')
@@ -283,34 +303,18 @@ def load_data(params,bounds,fixed_vals,input_dir,inf_pars,load_condor=False):
     if data['x_data'].ndim == 1:
         data['x_data'] = np.expand_dims(data['x_data'],axis=0)
 
-    # only convert to sidereal for training data    
+    # Save all unnormalized values prior to RA conversion
+    all_par = np.copy(data['x_data'])
+
+    # convert ra to hour angle for training data only
     if load_condor==False:
-        # get geocenttime and ra index
-        for i,k in enumerate(data_temp['rand_pars']):
-            k = k.decode('utf-8')
-            if k == 'geocent_time':
-                geo_idx = i
-            elif k == 'ra':
-                ra_idx = i 
-        # Check if both geocentime and RA exist
-        try:
-            geo_idx; ra_idx
-        except NameError:
-            print('Either time or RA is fixed. Not converting RA to hour angle.')
-        else:
-            # Iterate over all training samples and convert to hour angle
-            for i in range(data['x_data'].shape[0]):
-#                data['x_data'][i,ra_idx]=np.mod(GreenwichMeanSiderealTime(float(params['ref_geocent_time']+data['x_data'][i,geo_idx])) - data['x_data'][i,ra_idx], 2.0*np.pi)
-                data['x_data'][i,ra_idx]=np.mod(GreenwichMeanSiderealTime(params['ref_geocent_time']) - data['x_data'][i,ra_idx], 2.0*np.pi)
+        data['x_data'] = convert_ra_to_hour_angle(data['x_data'], params, rand_pars=True)
+
 
     # Normalise the source parameters np.remainder(blah,np.pi)
     for i,k in enumerate(data_temp['rand_pars']):
         par_min = k.decode('utf-8') + '_min'
         par_max = k.decode('utf-8') + '_max'
-
-        # ensure psi is 0 to pi
-        if par_min == 'psi_min':
-            data['x_data'][:,i]=np.remainder(data['x_data'][:,i],np.pi)
 
         # normalize by bounds
         data['x_data'][:,i]=(data['x_data'][:,i] - bounds[par_min]) / (bounds[par_max] - bounds[par_min])
@@ -334,17 +338,37 @@ def load_data(params,bounds,fixed_vals,input_dir,inf_pars,load_condor=False):
                 idx.append(i)
     x_data = x_data[:,idx]
 
-    return x_data, y_data, y_data_noisy, y_normscale, snrs
+    # Order all source parameter values
+    idx = []
+    print()
+    for k in params['rand_pars']:
+        if load_condor == False:
+            print('... ' + k + ' will be inferred')
+        for i,q in enumerate(data['rand_pars']):
+            m = q.decode('utf-8')
+            if k==m:
+                idx.append(i)
+    all_par = all_par[:,idx]
+
+    importance_sampling_info = dict(all_par = all_par,
+                                    file_IDs = file_IDs
+                                   )
+
+    return x_data, y_data, y_data_noisy, y_normscale, snrs, importance_sampling_info
 
 @use_named_args(dimensions=dimensions)
 def hyperparam_fitness(kernel_1, strides_1, pool_1,
                        kernel_2, strides_2, pool_2,
                        kernel_3, strides_3, pool_3,
                        kernel_4, strides_4, pool_4,
+                       kernel_5, strides_5, pool_5,
                        z_dimension,n_modes,
-                       n_filters_1,n_filters_2,n_filters_3,n_filters_4,
+                       n_filters_1,n_filters_2,n_filters_3,n_filters_4,n_filters_5,
                        batch_size,
-                       n_weights_fc_1,n_weights_fc_2,n_weights_fc_3):
+                       n_weights_fc_1,n_weights_fc_2,n_weights_fc_3,
+                       num_r1_conv,num_r2_conv,num_q_conv,
+                       num_r1_hidden,num_r2_hidden,num_q_hidden):
+
     """ Fitness function used in Gaussian Process hyperparameter optimization 
     Returns a value to be minimized (in this case, the total loss of the 
     neural network during training.
@@ -402,38 +426,48 @@ def hyperparam_fitness(kernel_1, strides_1, pool_1,
         Total loss of the current optimized network
     """
 
+    global params, bounds, fixed_vals
+    global x_data_train, y_data_train, x_data_test, y_data_test, y_normscale, y_data_test_noisefree, XS_all
+    global cur_hyperparam_iter
+
+    # Check for requried parameters files
+    if params == None or bounds == None or fixed_vals == None:
+        print('Missing either params file, bounds file or fixed vals file')
+        exit()
+
+    try :
+        # Load parameters files
+        with open(params, 'r') as fp:
+            params = json.load(fp)
+        with open(bounds, 'r') as fp:
+            bounds = json.load(fp)
+        with open(fixed_vals, 'r') as fp:
+            fixed_vals = json.load(fp)
+    except TypeError:
+        print('Already loaded params files. Skipping ...')
+
     # set tunable hyper-parameters
-    params['filter_size_r1'] = [kernel_1,kernel_2,kernel_3,kernel_4]
-    params['filter_size_r2'] = [kernel_1,kernel_2,kernel_3,kernel_4]
-    params['filter_size_q'] = [kernel_1,kernel_2,kernel_3,kernel_4]
-    params['n_filters_r1'] = [n_filters_1,n_filters_2,n_filters_3,n_filters_4]
-    params['n_filters_r2'] = [n_filters_1,n_filters_2,n_filters_3,n_filters_4]
-    params['n_filters_q'] = [n_filters_1,n_filters_2,n_filters_3,n_filters_4]
-
-    # number of filters has to be odd for some reason (this ensures that this is the case)
-    for filt_idx in range(len(params['n_filters_r1'])):
-        if (params['n_filters_r1'][filt_idx] % 3) != 0:
-
-            # keep adding 1 until filter size is divisible by 3
-            while (params['n_filters_r1'][filt_idx] % 3) != 0:
-                params['n_filters_r1'][filt_idx] += 1
-                params['n_filters_r2'][filt_idx] += 1
-                params['n_filters_q'][filt_idx] += 1
-    params['conv_strides_r1'] = [strides_1,strides_2,strides_3,strides_4]
-    params['conv_strides_r2'] = [strides_1,strides_2,strides_3,strides_4] 
-    params['conv_strides_q'] = [strides_1,strides_2,strides_3,strides_4] 
-    params['maxpool_r1'] = [pool_1,pool_2,pool_3,pool_4]
-    params['maxpool_r2'] = [pool_1,pool_2,pool_3,pool_4]
-    params['maxpool_q'] = [pool_1,pool_2,pool_3,pool_4]
-    params['pool_strides_r1'] = [pool_1,pool_2,pool_3,pool_4]
-    params['pool_strides_r2'] = [pool_1,pool_2,pool_3,pool_4]
-    params['pool_strides_q'] = [pool_1,pool_2,pool_3,pool_4]
+    params['filter_size_r1'] = [kernel_1,kernel_2,kernel_3,kernel_4,kernel_5][:num_r1_conv]
+    params['filter_size_r2'] = [kernel_1,kernel_2,kernel_3,kernel_4,kernel_5][:num_r2_conv]
+    params['filter_size_q'] = [kernel_1,kernel_2,kernel_3,kernel_4,kernel_5][:num_q_conv]
+    params['n_filters_r1'] = [n_filters_1,n_filters_2,n_filters_3,n_filters_4,n_filters_5][:num_r1_conv]
+    params['n_filters_r2'] = [n_filters_1,n_filters_2,n_filters_3,n_filters_4,n_filters_5][:num_r2_conv]
+    params['n_filters_q'] = [n_filters_1,n_filters_2,n_filters_3,n_filters_4,n_filters_5][:num_q_conv]
+    params['conv_strides_r1'] = [strides_1,strides_2,strides_3,strides_4,strides_5][:num_r1_conv]
+    params['conv_strides_r2'] = [strides_1,strides_2,strides_3,strides_4,strides_5][:num_r2_conv] 
+    params['conv_strides_q'] = [strides_1,strides_2,strides_3,strides_4,strides_5][:num_q_conv] 
+    params['maxpool_r1'] = [pool_1,pool_2,pool_3,pool_4,pool_5][:num_r1_conv]
+    params['maxpool_r2'] = [pool_1,pool_2,pool_3,pool_4,pool_5][:num_r2_conv]
+    params['maxpool_q'] = [pool_1,pool_2,pool_3,pool_4,pool_5][:num_q_conv]
+    params['pool_strides_r1'] = [pool_1,pool_2,pool_3,pool_4,pool_5][:num_r1_conv]
+    params['pool_strides_r2'] = [pool_1,pool_2,pool_3,pool_4,pool_5][:num_r2_conv]
+    params['pool_strides_q'] = [pool_1,pool_2,pool_3,pool_4,pool_5][:num_q_conv]
     params['z_dimension'] = z_dimension
     params['n_modes'] = n_modes
     params['batch_size'] = batch_size
-    params['n_weights_r1'] = [n_weights_fc_1,n_weights_fc_2,n_weights_fc_3]
-    params['n_weights_r2'] = [n_weights_fc_1,n_weights_fc_2,n_weights_fc_3]
-    params['n_weights_q'] = [n_weights_fc_1,n_weights_fc_2,n_weights_fc_3]
+    params['n_weights_r1'] = [n_weights_fc_1,n_weights_fc_2,n_weights_fc_3][:num_r1_hidden]
+    params['n_weights_r2'] = [n_weights_fc_1,n_weights_fc_2,n_weights_fc_3][:num_r2_hidden]
+    params['n_weights_q'] = [n_weights_fc_1,n_weights_fc_2,n_weights_fc_3][:num_q_hidden]
 
     # Print the hyper-parameters.
     print('kernel_1: {}'.format(kernel_1))
@@ -450,73 +484,138 @@ def hyperparam_fitness(kernel_1, strides_1, pool_1,
     print('pool_4: {}'.format(pool_4))
     print('z_dimension: {}'.format(z_dimension))
     print('n_modes: {}'.format(n_modes))
-    print('n_filters_1: {}'.format(params['n_filters_r1'][0]))
-    print('n_filters_2: {}'.format(params['n_filters_r1'][1]))
-    print('n_filters_3: {}'.format(params['n_filters_r1'][2]))
-    print('n_filters_4: {}'.format(params['n_filters_r1'][3]))
+    print('n_filters: {}'.format(params['n_filters_r1']))
     print('batch_size: {}'.format(batch_size))
     print('n_weights_r1_1: {}'.format(n_weights_fc_1))
     print('n_weights_r1_2: {}'.format(n_weights_fc_2))
     print('n_weights_r1_3: {}'.format(n_weights_fc_3))
+    print('num_r1_conv: {}'.format(num_r1_conv))
+    print('num_r2_conv: {}'.format(num_r2_conv))
+    print('num_q_conv: {}'.format(num_q_conv))
+    print('num_r1_hidden: {}'.format(num_r1_hidden))
+    print('num_r2_hidden: {}'.format(num_r2_hidden))
+    print('num_q_hidden: {}'.format(num_q_hidden))
     print()
+
+    # Update load iteration accoring to new batch size
+    params['load_iteration'] = int((params['load_chunk_size'] * 25)/params['batch_size'])
+    params['plot_interval'] = 5e6 
 
     start_time = time.time()
     print('start time: {}'.format(strftime('%X %x %Z'))) 
-    # Train model with given hyperparameters
-    VICI_loss, VICI_session, VICI_saver, VICI_savedir = VICI_inverse_model.train(params, x_data_train, y_data_train,
-                             x_data_test, y_data_test, y_data_test_noisefree,
-                             y_normscale,
-                             "inverse_model_dir_%s/inverse_model.ckpt" % params['run_label'],
-                             x_data_test, bounds, fixed_vals,
-                             XS_all)
+
+     # Make best run directory if it does not already exist
+    if not path.exists("inverse_model_dir_%s/best_model" % (params['run_label'])):
+        os.mkdir("inverse_model_dir_%s" % (params['run_label']))
+        os.mkdir("inverse_model_dir_%s/best_model" % (params['run_label']))
+    else:
+        pass
+
+    # Make run directory
+    if not path.exists("inverse_model_dir_%s/run_%d/" % (params['run_label'],cur_hyperparam_iter)):
+        os.mkdir("inverse_model_dir_%s/run_%d/" % (params['run_label'],cur_hyperparam_iter))
+    else:
+        pass
+
+    # Perform training
+    try:
+        CVAE_loss, CVAE_session, CVAE_saver, CVAE_savedir, nan_flag, plotdata = CVAE_model.train(params, x_data_train, y_data_train,
+                                 x_data_test, y_data_test, y_data_test_noisefree,
+                                 y_normscale,
+                                 "inverse_model_dir_%s/run_%d/inverse_model.ckpt" % (params['run_label'],cur_hyperparam_iter),
+                                 x_data_test, bounds, fixed_vals,
+                                 XS_all)
+    except Exception as e:
+
+        if e == 'KeyboardInterrupt':
+            exit()
+
+        print('There was an exception. Returning large loss.')
+        print()
+        print(e)
+        CVAE_loss = 1994
+
+        # Add 1 to hyperparam iteration counter
+        cur_hyperparam_iter += 1
+
+        return CVAE_loss
 
     end_time = time.time()
     print('Run time : {} h'.format((end_time-start_time)/3600))
 
     # Print the loss.
     print()
-    print("Total loss: {0:.2}".format(VICI_loss))
+    print("Total loss: {0:.2}".format(CVAE_loss))
     print()
 
     # update variable outside of this function using global keyword
     global best_loss
 
-    # save model if new best model
-    if VICI_loss < best_loss:
-
+    if nan_flag == False:
         # Save model 
-        save_path = VICI_saver.save(VICI_session,VICI_savedir)
+        save_path = CVAE_saver.save(CVAE_session,CVAE_savedir)
 
-        # save hyperparameters
-        converged_hyperpar_dict = dict(filter_size = params['filter_size_r1'],
-                                       conv_strides = params['conv_strides_r1'],
-                                       maxpool = params['maxpool_r1'],
-                                       pool_strides = params['pool_strides_r1'],
-                                       z_dimension = params['z_dimension'],
-                                       n_modes = params['n_modes'],
-                                       n_filters = params['n_filters_r1'],
-                                       batch_size = params['batch_size'],
-                                       n_weights_fc = params['n_weights_r1'],
-                                       best_loss = best_loss)
-                                       #n_weights_r2 = params['n_weights_r2'],
-                                       #n_weights_q = params['n_weights_q'])
+    # save hyperparameters
+    converged_hyperpar_dict = dict(filter_size = [kernel_1,kernel_2,kernel_3,kernel_4,kernel_5],
+                                   conv_strides = [strides_1,strides_2,strides_3,strides_4,strides_5],
+                                   maxpool = [pool_1,pool_2,pool_3,pool_4,pool_5],
+                                   pool_strides = [pool_1,pool_2,pool_3,pool_4,pool_5],
+                                   z_dimension = params['z_dimension'],
+                                   n_modes = params['n_modes'],
+                                   n_filters = [n_filters_1,n_filters_2,n_filters_3,n_filters_4,n_filters_5],
+                                   batch_size = params['batch_size'],
+                                   n_weights_fc = [n_weights_fc_1,n_weights_fc_2,n_weights_fc_3],
+                                   loss = CVAE_loss,
+                                   runtime = (end_time-start_time)/3600,
+                                   num_r1_conv = num_r1_conv,
+                                   num_r2_conv = num_r2_conv,
+                                   num_q_conv = num_q_conv,
+                                   num_r1_hidden = num_r1_hidden,
+                                   num_r2_hidden = num_r2_hidden,
+                                   num_q_hidden = num_q_hidden,
+                                   run_ID = cur_hyperparam_iter)
 
-        f = open("inverse_model_dir_%s/converged_hyperparams.txt" % params['run_label'],"w")
-        f.write( str(converged_hyperpar_dict) )
-        f.close()
+    # Save current run hyperparameters
+    f = open("inverse_model_dir_%s/run_%d/hyperparams.txt" % (params['run_label'],cur_hyperparam_iter),"w")
+    f.write( str(converged_hyperpar_dict) )
+    f.close()
+
+    # Save loss plot data
+    try:
+        np.savetxt('inverse_model_dir_%s/run_%d/loss_data.txt' % (params['run_label'],cur_hyperparam_iter), np.array(plotdata))
+    except FileNotFoundError as err:
+        pass 
+
+    # save best model to seperate best model directory
+    if CVAE_loss < best_loss:
 
         # update the best loss
-        best_loss = VICI_loss
+        best_loss = CVAE_loss
         
-        # Print the loss.
+        # Save best model
+        best_model_savedir = "inverse_model_dir_%s/best_model/inverse_model.ckpt" % (params['run_label']) 
+        try:
+            shutil.copytree("inverse_model_dir_%s/run_%d/" % (params['run_label'],cur_hyperparam_iter),
+                            "inverse_model_dir_%s/best_model/" % (params['run_label']))
+        except FileExistsError:
+            shutil.rmtree("inverse_model_dir_%s/best_model/" % (params['run_label']))
+            shutil.copytree("inverse_model_dir_%s/run_%d/" % (params['run_label'],cur_hyperparam_iter),
+                            "inverse_model_dir_%s/best_model/" % (params['run_label']))
+        if nan_flag == False:
+            save_path = CVAE_saver.save(CVAE_session,best_model_savedir)
+
+        # Print best loss.
         print()
         print("New best loss: {0:.2}".format(best_loss))
         print()
 
     # clear tensorflow session
-    VICI_session.close()
+    CVAE_session.close()
 
-    return VICI_loss
+    # Add 1 to hyperparam iteration counter
+    cur_hyperparam_iter += 1
+
+    return CVAE_loss
 
 def gen_train(params=params,bounds=bounds,fixed_vals=fixed_vals):
     """ Generate training samples
@@ -573,7 +672,8 @@ def gen_train(params=params,bounds=bounds,fixed_vals=fixed_vals):
                                                           seed=params['training_data_seed']+i,
                                                           label=params['run_label'],
                                                           training=True,det=params['det'],
-                                                          psd_files=params['psd_files'])
+                                                          psd_files=params['psd_files'],
+                                                          use_real_det_noise=params['use_real_det_noise'])
         logging.config.dictConfig({
         'version': 1,
         'disable_existing_loggers': False,
@@ -642,17 +742,20 @@ def gen_test(params=params,bounds=bounds,fixed_vals=fixed_vals):
                                                       training=False,
                                                       seed=params['testing_data_seed']+i,
                                                       do_pe=params['doPE'],det=params['det'],
-                                                      psd_files=params['psd_files'])
+                                                      psd_files=params['psd_files'],
+                                                      use_real_det_noise=params['use_real_det_noise'],
+                                                      use_real_events=params['use_real_events'],
+                                                      samp_idx=i)
 
         signal_test_noisy = temp_noisy
         signal_test_noisefree = temp_noisefree
         signal_test_pars = temp_pars
         signal_test_snr = temp_snr
 
-        print("Generated: %s/data_%s.h5py ..." % (params['test_set_dir'],params['run_label']))
+        print("Generated: %s/%s_%s.h5py ..." % (params['test_set_dir'],params['bilby_results_label'],params['run_label']))
 
         # Save generated testing samples in h5py format
-        hf = h5py.File('%s/data_%d.h5py' % (params['test_set_dir'],i),'w')
+        hf = h5py.File('%s/%s_%d.h5py' % (params['test_set_dir'],params['bilby_results_label'],i),'w')
         for k, v in params.items():
             try:
                 hf.create_dataset(k,data=v)
@@ -682,6 +785,8 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
     resume_training: bool
         If True, continue training a pre-trained model.
     """
+    
+    global x_data_train, y_data_train, x_data_test, y_data_test, y_normscale, y_data_test_noisefree, XS_all
 
     # Check for requried parameters files
     if params == None or bounds == None or fixed_vals == None:
@@ -706,15 +811,17 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
     session = tf.compat.v1.Session(config=config)
 
     # If resuming training, set KL ramp off
-    if resume_training:
+    if resume_training or params['resume_training']:
         params['resume_training'] = True
         params['ramp'] = False
 
+    global x_data_train
+
     # load the noisefree training data back in
-    x_data_train, y_data_train, _, y_normscale, snrs_train = load_data(params,bounds,fixed_vals,params['train_set_dir'],params['inf_pars'])
+    x_data_train, y_data_train, _, y_normscale, snrs_train, _ = load_data(params,bounds,fixed_vals,params['train_set_dir'],params['inf_pars'], load_condor=False)
 
     # load the noisy testing data back in
-    x_data_test, y_data_test_noisefree, y_data_test,_,snrs_test = load_data(params,bounds,fixed_vals,params['test_set_dir'],params['inf_pars'],load_condor=True)
+    x_data_test, y_data_test_noisefree, y_data_test, _, snrs_test, _ = load_data(params,bounds,fixed_vals,params['test_set_dir'],params['inf_pars'], load_condor=True)
 
     # reshape time series arrays for single channel ( N_samples,fs*duration,n_detectors -> (N_samples,fs*duration*n_detectors) )
     y_data_train = y_data_train.reshape(y_data_train.shape[0]*y_data_train.shape[1],y_data_train.shape[2]*y_data_train.shape[3])
@@ -770,7 +877,7 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
         # Iterate over requested number of testing samples to use
         while i_idx < params['r']:
 
-            filename_try = '%s/%s_%d.h5py' % (dataLocations_try,params['bilby_results_label'],i)
+#            filename_try = '%s/%s_%d.h5py' % (dataLocations_try,params['bilby_results_label'],i)
             filename = '%s/%s_%d.h5py' % (dataLocations,params['bilby_results_label'],i)
 
             # Assert user has the minimum number of test samples generated
@@ -783,13 +890,35 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
                 print('... Exiting program now')
                 exit()
 
-            # If file does not exist, skip to next file
-            try:
-                h5py.File(filename_try, 'r')
-            except Exception as e:
+            # Check files are present accross all samplers
+            for samp_idx_inner in params['samplers'][1:]:
+                inner_file_existance = True
+                if samp_idx_inner == params['samplers'][1]:
+                    inner_file_existance = os.path.isfile(filename)
+                    if inner_file_existance == False:
+                        break
+                    else:
+                        continue
+
+                dataLocations_inner = '%s_%s' % (params['pe_dir'],samp_idx_inner+'1')
+                filename_inner = '%s/%s_%d.h5py' % (dataLocations_inner,params['bilby_results_label'],i)
+                # If file does not exist, skip to next file
+                inner_file_existance = os.path.isfile(filename_inner)
+                if inner_file_existance == False:
+                    break
+
+            if inner_file_existance == False:
                 i+=1
-                print(e)
+                print('File does not exist for one of the samplers')
                 continue
+ 
+           # If file does not exist, skip to next file
+ #           try:
+ #               h5py.File(filename_try, 'r')
+ #           except Exception as e:
+ #               i+=1
+ #               print(e)
+ #               continue
 
             print()
             print('... Loading test sample -> ' + filename)
@@ -819,11 +948,15 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
                 j += 1
 
             # Append test sample posteriors to existing array of other test sample posteriors
+            rand_idx_posterior = np.linspace(0,XS.shape[0]-1,num=params['n_samples'],dtype=np.int)
+            np.random.shuffle(rand_idx_posterior)
+            rand_idx_posterior = rand_idx_posterior[:params['n_samples']]
             if i_idx == 0:
-                XS_all = np.expand_dims(XS[:params['n_samples'],:], axis=0)
+                #XS_all = np.expand_dims(XS[:params['n_samples'],:], axis=0)
+                XS_all = np.expand_dims(XS[rand_idx_posterior,:], axis=0)
             else:
-                XS_all = np.vstack((XS_all,np.expand_dims(XS[:params['n_samples'],:], axis=0)))
-
+                #XS_all = np.vstack((XS_all,np.expand_dims(XS[:params['n_samples'],:], axis=0)))
+                XS_all = np.vstack((XS_all,np.expand_dims(XS[rand_idx_posterior,:], axis=0)))
 
             # add index to mark progress through while loop
             i_idx_use.append(i_idx)
@@ -832,9 +965,10 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
 
 
         # Identify test samples that are present accross all Bayesian PE samplers
-        y_data_test = y_data_test[i_idx_use,:]
-        y_data_test_noisefree = y_data_test_noisefree[i_idx_use,:]
-        x_data_test = x_data_test[i_idx_use,:]
+#        y_data_test = y_data_test[i_idx_use,:]
+#        y_data_test_noisefree = y_data_test_noisefree[i_idx_use,:]
+#        x_data_test = x_data_test[i_idx_use,:]
+
     # Set posterior samples to None if posteriors don't exist
     elif params['pe_dir'] == None:
         XS_all = None
@@ -861,6 +995,47 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
     # run hyperparameter optimization
     if params['hyperparam_optim'] == True:
 
+        # list of initial default hyperparameters to use for GP hyperparameter optimization
+        default_hyperparams = [5,
+                       1,
+                       1,
+                       8,
+                       1,
+                       2,
+                       11,
+                       1,
+                       1,
+                       10,
+                       1,
+                       2,
+                       10,
+                       1,
+                       1,
+                       16,
+                       16,
+                       33,
+                       33,
+                       33,
+                       33,
+                       33,
+                       32,
+                       2048,
+                       2048,
+                       2048,
+                       5,
+                       3,
+                       3,
+                       3,
+                       2,
+                       2,
+                      ]
+
+        # Define hyperparam iteration counter
+        global cur_hyperparam_iter
+        cur_hyperparam_iter = 0
+
+        params['plot_interval'] = 50000
+
         # Run optimization
         search_result = gp_minimize(func=hyperparam_fitness,
                             dimensions=dimensions,
@@ -877,6 +1052,7 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
         plt.savefig('%s/latest_%s/hyperpar_convergence.png' % (params['plot_dir'],params['run_label']))
         print('... Saved hyperparameter convergence loss to -> %s/latest_%s/hyperpar_convergence.png' % (params['plot_dir'],params['run_label']))
         print('... Did a hyperparameter search') 
+        exit()
 
     # train using user defined params
     else:
@@ -934,7 +1110,7 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
     y_normscale = params['y_normscale']
 
     # load the testing data time series and source parameter truths
-    x_data_test, y_data_test_noisefree, y_data_test,_,snrs_test = load_data(params,bounds,fixed_vals,params['test_set_dir'],params['inf_pars'],load_condor=True)
+    x_data_test, y_data_test_noisefree, y_data_test,_,snrs_test,imp_info = load_data(params,bounds,fixed_vals,params['test_set_dir'],params['inf_pars'],load_condor=True)
 
     # Make directory to store plots
     os.system('mkdir -p %s/latest_%s' % (params['plot_dir'],params['run_label']))
@@ -998,16 +1174,27 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
         # Iterate over all requested testing samples
         while i_idx < params['r']:
 
-
-            filename_try = '%s/%s_%d.h5py' % (dataLocations_try,params['bilby_results_label'],i)
             filename = '%s/%s_%d.h5py' % (dataLocations,params['bilby_results_label'],i)
 
-            # If file does not exist, skip to next file
-            try:
-                h5py.File(filename_try, 'r')
-            except Exception as e:
+            for samp_idx_inner in params['samplers'][1:]:
+                inner_file_existance = True
+                if samp_idx_inner == samp_idx:
+                    inner_file_existance = os.path.isfile(filename)
+                    if inner_file_existance == False:
+                        break
+                    else:
+                        continue
+
+                dataLocations_inner = '%s_%s' % (params['pe_dir'],samp_idx_inner+'1')
+                filename_inner = '%s/%s_%d.h5py' % (dataLocations_inner,params['bilby_results_label'],i)
+                # If file does not exist, skip to next file
+                inner_file_existance = os.path.isfile(filename_inner)                
+                if inner_file_existance == False:
+                    break
+
+            if inner_file_existance == False:
                 i+=1
-                print(e)
+                print('File does not exist for one of the samplers')
                 continue
 
             print('... Loading test sample file -> ' + filename)
@@ -1045,15 +1232,17 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
                 XS[:,j] = d
                 j += 1
 
-            rand_idx_posterior = np.random.choice(np.linspace(0,XS.shape[0]-1,dtype=np.int),params['n_samples'])
+            rand_idx_posterior = np.linspace(0,XS.shape[0]-1,num=params['n_samples'],dtype=np.int)
+            np.random.shuffle(rand_idx_posterior)
+            rand_idx_posterior = rand_idx_posterior[:params['n_samples']]
             # Append test sample posterior to existing array of test sample posteriors
             if i_idx == 0:
-                #XS_all = np.expand_dims(XS[rand_idx_posterior,:], axis=0)
-                XS_all = np.expand_dims(XS[:params['n_samples'],:], axis=0)
+                XS_all = np.expand_dims(XS[rand_idx_posterior,:], axis=0)
+                #XS_all = np.expand_dims(XS[:params['n_samples'],:], axis=0)
             else:
                 try:
-                    #XS_all = np.vstack((XS_all,np.expand_dims(XS[rand_idx_posterior,:], axis=0)))
-                    XS_all = np.vstack((XS_all,np.expand_dims(XS[:params['n_samples'],:], axis=0)))
+                    XS_all = np.vstack((XS_all,np.expand_dims(XS[rand_idx_posterior,:], axis=0)))
+                    #XS_all = np.vstack((XS_all,np.expand_dims(XS[:params['n_samples'],:], axis=0)))
                 except ValueError as error: # If not enough posterior samples, exit with ValueError
                     print('Not enough samples from the posterior generated')
                     print(error)
@@ -1073,12 +1262,6 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
 
         # Add all testing samples for current Bayesian PE sampler to dictionary of all other Bayesian PE sampler test samples
         samp_posteriors[samp_idx+'1'] = XS_all
-
-    # Ensure no failed test sample Bayesian PE runs are used
-    x_data_test = x_data_test[i_idx_use,:]
-    x_data_test_unnorm = x_data_test_unnorm[i_idx_use,:]
-    y_data_test = y_data_test[i_idx_use,:]
-    y_data_test_noisefree = y_data_test_noisefree[i_idx_use,:]
 
     # reshape y data into channels last format for convolutional approach
     y_data_test_copy = np.zeros((y_data_test.shape[0],params['ndata'],len(params['det'])))
@@ -1128,7 +1311,7 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
                     bins=bins, smooth=0.9, label_kwargs=dict(fontsize=16),
                     title_kwargs=dict(fontsize=16), show_titles=False,
                     truth_color='black', quantiles=None,#[0.16, 0.84],
-                    levels=(0.50,0.90), density=True, stacked=True,
+                    levels=(0.50,0.90), density=True,
                     plot_density=False, plot_datapoints=True,
                     max_n_ticks=3)
 
@@ -1148,22 +1331,25 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
                 par_max = q + '_max'
                 VI_pred[:,q_idx] = (VI_pred[:,q_idx] * (bounds[par_max] - bounds[par_min])) + bounds[par_min]
 
-        # Convert hour angle to right ascension
-        if np.isin('ra', params['inf_pars']) and  np.isin('geocent_time', params['inf_pars']):
-            for k_idx, k in enumerate(params['inf_pars']):
-                if k == 'geocent_time':
-                    geo_idx = k_idx
-                elif k=='ra':
-                    ra_idx=k_idx
-            # Check if both geocentime and RA exist
-            try:
-                geo_idx; ra_idx
-            except NameError:
-                print('Either time or RA is fixed. Not converting RA to hour angle.')
-            else:
-                for k_idx in range(VI_pred.shape[0]):
-                    VI_pred[k_idx,ra_idx]=np.mod(GreenwichMeanSiderealTime(float(params['ref_geocent_time']+VI_pred[k_idx,geo_idx])) - VI_pred[k_idx,ra_idx], 2.0*np.pi)
+        # Convert hour angle back to RA
+        VI_pred = convert_ra_to_hour_angle(VI_pred, params, rand_pars=False)
 
+        # Apply importance sampling if wanted by user
+        if args.importance_sampling:
+            VI_pred = importance_sampling(fixed_vals, params, VI_pred, imp_info['all_par'][i], imp_info['file_IDs'][i])
+
+        # Get allowed range values for all posterior samples
+        max_min_samplers = dict(max = np.zeros((len(params['samplers']),len(params['inf_pars']))),
+                                min = np.zeros((len(params['samplers']),len(params['inf_pars'])))
+                                )
+        for samp_idx,samp in enumerate(params['samplers'][1:]):
+            for par_idx in range(len(params['inf_pars'])):
+                max_min_samplers['max'][samp_idx+1,par_idx] = np.max(samp_posteriors[samp+'1'][i][:,par_idx])
+                max_min_samplers['min'][samp_idx+1,par_idx] = np.min(samp_posteriors[samp+'1'][i][:,par_idx])
+                if samp_idx == 0:
+                    max_min_samplers['max'][0,par_idx] = np.min(VI_pred[:,par_idx])
+                    max_min_samplers['min'][0,par_idx] = np.max(VI_pred[:,par_idx])
+        corner_range = [ (np.min(max_min_samplers['min'][:,par_idx]), np.max(max_min_samplers['max'][:,par_idx]) ) for par_idx in range(len(params['inf_pars']))]
 
         # Iterate over all Bayesian PE samplers and plot results
         custom_lines = []
@@ -1173,23 +1359,24 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
             bilby_pred = samp_posteriors[samp+'1'][i]
 
             # compute weights, otherwise the 1d histograms will be different scales, could remove this
-            weights = np.ones(len(VI_pred)) * (len(samp_posteriors[samp+'1'][i]) / len(VI_pred))
+#            weights = np.ones(len(VI_pred)) * (len(samp_posteriors[samp+'1'][i]) / len(VI_pred))
+            weights = np.ones(len(VI_pred)) / len(VI_pred)
             if samp_idx == 0:
                 figure = corner.corner(bilby_pred,**defaults_kwargs,labels=parnames,
                                color=color_cycle[samp_idx],
-                               truths=truths
+                               truths=truths, range=corner_range
                                )
             else:
                 figure = corner.corner(bilby_pred,**defaults_kwargs,labels=parnames,
                                color=color_cycle[samp_idx],
                                truths=truths,
-                               fig=figure)
+                               fig=figure, range=corner_range)
             custom_lines.append(Line2D([0], [0], color=legend_color_cycle[samp_idx], lw=4))
 
         # plot predicted ML results
         corner.corner(VI_pred, **defaults_kwargs, labels=parnames,
                            color='tab:red', fill_contours=True,
-                           fig=figure)
+                           fig=figure, range=corner_range)
         custom_lines.append(Line2D([0], [0], color='red', lw=4))
 
         if params['Make_sky_plot'] == True:
@@ -1235,7 +1422,8 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
         ax2.margins(x=0,y=0)
 
         # Save corner plot to latest public_html directory
-        figure.legend(handles=custom_lines, labels=['Dynesty', 'ptemcee', 'VItamin'],
+        corner_names = params['figure_sampler_names'][1:] + ['VItamin']
+        figure.legend(handles=custom_lines, labels=corner_names,
                       loc=(0.86,0.22), fontsize=20)
         plt.savefig('%s/latest_%s/corner_plot_%s_%d.png' % (params['plot_dir'],params['run_label'],params['run_label'],i))
         plt.close()
@@ -1254,6 +1442,21 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
 #    XS_all = None; x_data_test = None; y_data_test = None; y_normscale = None; snrs_test = None
     plotter = plotting.make_plots(params,XS_all,VI_pred_all,x_data_test)
 
+    # Create dataset to save KL divergence results for later plotting
+    try:
+        os.mkdir('plotting_data_%s' % params['run_label'])
+    except:
+        print()
+        print('... Plotting directory already exists')
+        print()
+
+    if params['make_loss_plot'] == True:
+        plotter.plot_loss()
+
+    if params['make_pp_plot'] == True:
+        # Make pp plot
+        plotter.plot_pp(CVAE_model,y_data_test,x_data_test,y_normscale,bounds)
+
     if params['make_kl_plot'] == True:    
         # Make KL plots
         plotter.gen_kl_plots(CVAE_model,y_data_test,x_data_test,y_normscale,bounds,snrs_test)
@@ -1261,13 +1464,6 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
     # Make bilby pp plot
 #    plotter.plot_bilby_pp(VICI_inverse_model,y_data_test,x_data_test,0,y_normscale,x_data_test,bounds)
 #    exit()
-
-    if params['make_pp_plot'] == True:
-        # Make pp plot
-        plotter.plot_pp(CVAE_model,y_data_test,x_data_test,y_normscale,bounds)
-
-    if params['make_loss_plot'] == True:
-        plotter.plot_loss()
 
     return
 
@@ -1420,32 +1616,17 @@ def gen_samples(params=params,bounds=bounds,fixed_vals=fixed_vals,model_loc='mod
                                                               model_loc)
         print('... Runtime to generate samples is: ' + str(dt))
 
-        # convert RA to hour angle for test set validation cost if both ra and geo time present
-        if np.isin('ra', params['inf_pars']) and  np.isin('geocent_time', params['inf_pars']):     
-            # get geocenttime index
-            for k_idx,k in enumerate(params['inf_pars']):
-                if k == 'geocent_time':
-                    geo_idx = k_idx
-                elif k == 'ra':
-                    ra_idx = k_idx
-
-            # unnormalize and get gps time
-            samples[i,:][:,ra_idx] = (samples[i,:][:,ra_idx] * (bounds['ra_max'] - bounds['ra_min'])) + bounds['ra_min']
-
-            gps_time_arr = (samples[i,:][:,geo_idx] * (bounds['geocent_time_max'] - bounds['geocent_time_min'])) + bounds['geocent_time_min']
-            # convert to RA
-            # Iterate over all training samples and convert to hour angle
-            for k in range(samples[i,:].shape[0]):
-                samples[i,:][k,ra_idx]=np.mod(GreenwichMeanSiderealTime(float(params['ref_geocent_time']+gps_time_arr[k]))-samples[i,:][k,ra_idx], 2.0*np.pi)
-            # normalize
-            samples[i,:][:,ra_idx]=(samples[i,:][:,ra_idx] - bounds['ra_min']) / (bounds['ra_max'] - bounds['ra_min'])
-
         # unnormalize predictions
         for q_idx,q in enumerate(params['inf_pars']):
             par_min = q + '_min'
             par_max = q + '_max'
             samples[i,:,q_idx] = (samples[i,:,q_idx] * (bounds[par_max] - bounds[par_min])) + bounds[par_min]
 
+        # Convert hour angle back to RA
+        samples[i,:] = convert_ra_to_hour_angle(samples[i,:], params, rand_pars=False)
+
+        print(samples[0,:,3])
+        exit()
         # plot results
         if plot_corner==True:
             # Get infered parameter latex labels for corner plot
@@ -1453,7 +1634,15 @@ def gen_samples(params=params,bounds=bounds,fixed_vals=fixed_vals,model_loc='mod
             for k_idx,k in enumerate(params['rand_pars']):
                 if np.isin(k, params['inf_pars']):
                     parnames.append(params['corner_labels'][k])
-            figure = corner.corner(samples[i,:,:],labels=parnames)
+            # Define default corner plot arguments
+            defaults_kwargs = dict(
+                    bins=50, smooth=0.9, label_kwargs=dict(fontsize=16),
+                    title_kwargs=dict(fontsize=16), show_titles=False,
+                    truth_color='black', quantiles=None,#[0.16, 0.84],
+                    levels=(0.50,0.90), density=True,
+                    plot_density=False, plot_datapoints=True,
+                    max_n_ticks=3)
+            figure = corner.corner(samples[i,:,:],**defaults_kwargs,labels=parnames)
             plt.savefig('./vitamin_corner_timeseries-%d.png' % i)
             plt.close()
             print('... Saved corner plot to -> ./vitamin_corner_timeseries-%d.png' % i)
@@ -1474,4 +1663,3 @@ if args.test:
 if args.gen_samples:
     gen_samples(params,bounds,fixed_vals,model_loc=args.pretrained_loc,
                 test_set=args.test_set_loc,num_samples=args.num_samples,use_gpu=bool(args.use_gpu))
-

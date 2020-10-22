@@ -50,7 +50,7 @@ bounds = {'mass_1_min':35.0, 'mass_1_max':80.0,
         '__definition__geocent_time': 'time of coalescence range',
         'phase_min':0.0, 'phase_max':2.0*np.pi,
         '__definition__phase': 'phase range',
-        'ra_min':0.0, 'ra_max':2.0*np.pi,
+        'ra_min':-3.813467684252483, 'ra_max':2.469671758574231,
         '__definition__ra': 'right ascension range',
         'dec_min':-0.5*np.pi, 'dec_max':0.5*np.pi,
         '__definition__dec': 'declination range',
@@ -82,38 +82,41 @@ y_normscale = 36.0
 ndata = 256                                                                     
 det=['H1','L1','V1']                                                            
 psd_files=[] 
+#rand_pars = ['mass_1','mass_2','luminosity_distance','geocent_time','phase',
+#                 'theta_jn','psi','a_1','a_2','tilt_1','tilt_2','phi_12','phi_jl','ra','dec']                                   
+#inf_pars=['mass_1','mass_2','luminosity_distance','geocent_time','theta_jn','a_1','a_2','tilt_1','tilt_2','phi_12','phi_jl','ra','dec'] 
 rand_pars = ['mass_1','mass_2','luminosity_distance','geocent_time','phase',
-                 'theta_jn','psi','ra','dec']#,'a_1','a_2','tilt_1','tilt_2','phi_12','phi_jl','ra','dec']                                   
-inf_pars=['mass_1','mass_2','luminosity_distance','geocent_time','theta_jn','ra','dec']#,'a_1','a_2','tilt_1','tilt_2','phi_12','phi_jl','ra','dec'] 
-batch_size = 64                                                                 
+                 'theta_jn','psi','ra','dec']
+inf_pars=['mass_1','mass_2','luminosity_distance','geocent_time','theta_jn','ra','dec']
+batch_size = 512                                                                 
 weight_init = 'xavier'                                                            
-n_modes=7                                                                      
+n_modes=16                                                                      
 initial_training_rate=1e-4                                                     
 batch_norm=True                                                                
 
 # FYI, each item in lists below correspond to each layer in networks (i.e. first item first layer)
 # pool size and pool stride should be same number in each layer
-n_filters_r1 = [33, 33, 33, 33, 33]                                                        
+n_filters_r1 = [33, 33, 33]                                                        
 n_filters_r2 = [33, 33, 33]                                                        
 n_filters_q = [33, 33, 33]                                                         
-filter_size_r1 = [5,8,11,10,10]                                                         
+filter_size_r1 = [5,8,11]                                                         
 filter_size_r2 = [5,8,11]                                                        
 filter_size_q = [5,8,11]                                                          
-drate = 0.5                                                                    
-maxpool_r1 = [1,2,1,2,1]                                                             
-conv_strides_r1 = [1,1,1,1,1]                                                        
-pool_strides_r1 = [1,2,1,2,1]                                                        
+drate = 0.2                                                                    
+maxpool_r1 = [1,2,1]                                                             
+conv_strides_r1 = [1,1,1]                                                        
+pool_strides_r1 = [1,2,1]                                                        
 maxpool_r2 = [1,2,1]                                                             
 conv_strides_r2 = [1,1,1]                                                        
 pool_strides_r2 = [1,2,1]                                                        
 maxpool_q = [1,2,1]                                                              
 conv_strides_q = [1,1,1]                                                         
 pool_strides_q = [1,2,1]                                                         
-n_fc = 2048                                                                      
+n_fc = 1024                                                                      
 z_dimension=10                                                                  
-n_weights_r1 = [n_fc,n_fc,n_fc]                                                     
-n_weights_r2 = [n_fc,n_fc,n_fc]                                                     
-n_weights_q = [n_fc,n_fc,n_fc]                                                      
+n_weights_r1 = [n_fc,n_fc]                                                     
+n_weights_r2 = [n_fc,n_fc]                                                     
+n_weights_q = [n_fc,n_fc]                                                      
 ##########################
 # Main tunable variables
 ##########################
@@ -121,28 +124,36 @@ n_weights_q = [n_fc,n_fc,n_fc]
 #############################
 # optional tunable variables
 #############################
-run_label = 'demo_%ddet_%dpar_%dHz' % (len(det),len(rand_pars),ndata) 
-bilby_results_label = 'bilby_results'                                             
-r = 1                                                                           
+run_label = '1kHz_fullpar_hourangleTesting'#'demo_%ddet_%dpar_%dHz_hour_angle_with_late_kl_start' % (len(det),len(rand_pars),ndata) 
+
+# 1024 Hz label
+#bilby_results_label = 'weichangfeng_theta_jn_issue'                                             
+# 256 Hz label
+bilby_results_label = '256Hz_7par_hourangleTesting'
+
+r = 1                                                          
 pe_test_num = 256                                                               
 tot_dataset_size = int(1e7)                                                     
 tset_split = int(1e3)                                                           
-save_interval = int(1e3)                                                        
+save_interval = int(2e4)                                                        
 num_iterations=int(1e6)+1                                                       
 #ref_geocent_time=1126259642.5                                                   
-ref_geocent_time=1126259642.5 #+ ((86400.0/2.0))
-load_chunk_size = 1e3                                                           
+ref_geocent_time=1126259642.5 + ((86400.0/2.0))
+load_chunk_size = 2e5                                                           
 samplers=['vitamin','dynesty']                                                  
 
 # Directory variables
 plot_dir="./results/%s" % run_label  
-#train_set_dir='/home/hunter.gabbard/CBC/VItamin/training_sets_second_sub_3det_9par_256Hz/tset_tot-10000000_split-1000/'#'./training_sets_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(det),len(rand_pars),ndata,tot_dataset_size,tset_split) 
-#test_set_dir='/home/hunter.gabbard/CBC/public_VItamin/testing_directory/test_sets/all_4_samplers/test_waveforms'#'./test_sets/%s/test_waveforms' % bilby_results_label                                                           
-#pe_dir='/home/hunter.gabbard/CBC/public_VItamin/testing_directory/test_sets/all_4_samplers/test'#'./test_sets/%s/test' % bilby_results_label                                                                            
-#test_set_dir='./daniel_williams_BNU_waveforms/hunter-mdc'
-train_set_dir='./training_sets_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(det),len(rand_pars),ndata,tot_dataset_size,tset_split)
-test_set_dir='./test_sets/%s/test_waveforms' % bilby_results_label
-pe_dir='./test_sets/%s/test' % bilby_results_label
+
+# Training/testing for 1024 Hz full par case
+#train_set_dir='./training_sets_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(det),len(rand_pars),ndata,1000000,tset_split)
+#test_set_dir = './test_sets/1024_khz_spins_included_15par/test_waveforms'
+#pe_dir='./test_sets/1024_khz_spins_included_15par/test'
+
+# training/testing for 256 Hz case
+train_set_dir = '/home/hunter.gabbard/CBC/VItamin/training_sets_second_sub_3det_9par_256Hz/tset_tot-10000000_split-1000/'
+test_set_dir = './test_sets/256Hz_7par_hourangleTesting/test_waveforms'
+pe_dir='./test_sets/256Hz_7par_hourangleTesting/test'
 #############################
 # optional tunable variables
 
@@ -151,13 +162,19 @@ def get_params():
 
     # Define dictionary to store values used in rest of code 
     params = dict(
+        use_real_det_noise=False,
+        __definition__use_real_det_noise='If True, use real detector noise around reference time',
+        use_real_events=[], # e.g. 'GW150914'
+        __definition__use_real_events='list containing real ligo events to be analyzed',
+        convert_to_hour_angle = True,
+        __definition__convert_to_hour_angle='If True, convert RA to hour angle during trianing and testing',
         make_corner_plots = True,                                               
         __definition__make_corner_plots='if True, make corner plots',
-        make_kl_plot = True,                                                    
+        make_kl_plot = False,                                                    
         __definition__make_kl_plot='If True, go through kl plotting function',
-        make_pp_plot = True,                                                    
+        make_pp_plot = False,                                                    
         __definition__make_pp_plot='If True, go through pp plotting function',
-        make_loss_plot = False,                                                 
+        make_loss_plot = True,                                                 
         __definition__make_loss_plot='If True, generate loss plot from previous plot data',
         Make_sky_plot=False,                                                    
         __definition__make_sky_plot='If True, generate sky plots on corner plots',
@@ -173,11 +190,12 @@ def get_params():
         __definition__print_values='# optionally print loss values every report interval',
         by_channel = True,                                                      
         __definition__by_channel='if True, do convolutions as seperate 1-D channels, if False, stack training samples as 2-D images (n_detectors,(duration*sampling_frequency))',
-        load_plot_data=False,                                                   
+        load_plotmartin_shape_error_data=False,                                                   
+        load_plot_data = False,
         __definition__load_plot_data='Use plotting data which has already been generated',
         doPE = True,                                                            
         __definition__doPE='if True then do bilby PE when generating new testing samples',
-        gpu_num=0,                                                              
+        gpu_num=5,                                                              
         __definition__gpu_num='gpu number run is running on',
         ndata = ndata,                                                          
         __definition__ndata='sampling frequency',
@@ -193,10 +211,10 @@ def get_params():
         __definition__plot_dir='output directory to save results plots',
 
         # Gaussian Process automated hyperparameter tunning variables
-        hyperparam_optim_stop = int(1.5e6),                                     
-        __definition__hyperparam_optim_stop='stopping iteration of hyperparameter optimizer per call (ideally 1.5 million)', 
+        hyperparam_optim_stop = int(5e5),                                     
+        __definition__hyperparam_optim_stop='stopping iteration of hyperparameter optimizer per call', 
         hyperparam_n_call = 30,                                                 
-        __definition__hyperparam_n_call='number of hyperparameter optimization calls (ideally 30)',
+        __definition__hyperparam_n_call='number of hyperparameter optimization calls',
         
         load_chunk_size = load_chunk_size,
         __definition__load_chunk_size='Number of training samples to load in at a time.',                                      
@@ -204,7 +222,7 @@ def get_params():
         __definition__load_iteration='How often to load another chunk of training samples',
         weight_init = weight_init,
         __definition__weight_init='[xavier,VarianceScaling,Orthogonal]. Network model weight initialization (default is xavier)',                                           
-        n_samples = 10000,                                                        
+        n_samples = 9000,                                                        
         __definition__n_samples='number of posterior samples to save per reconstruction upon inference (default 3000)',
         num_iterations=num_iterations,                                              
         __definition__num_iterations='total number of iterations before ending training of model',
@@ -310,15 +328,15 @@ def get_params():
         __definition__KL_cycles=' number of cycles to repeat for the KL approximation',
         samplers=samplers,       
         __definition__samplers='Samplers to use when comparing ML results (vitamin is ML approach) dynesty,ptemcee,cpnest,emcee',                                               
-        figure_sampler_names = ['VItamin','Dynesty'],
+        figure_sampler_names = ['VItamin', 'Dynesty'],
         __definition__figure_sampler_names='matplotlib figure sampler labels (e.g. [ptemcee,CPNest,emcee])',
         y_normscale = y_normscale,
         __definition__y_normscale='arbitrary normalization factor on all time series waveforms (helps convergence in training)',
         boost_pars=['ra','dec'],
         __definition__boost_pars='parameters to boost during training (by default this is off)',
-        gauss_pars=['luminosity_distance','geocent_time','theta_jn','a_1','a_2','tilt_1','tilt_2','phi_12','phi_jl'],         
+        gauss_pars=['luminosity_distance','geocent_time','theta_jn','a_1','a_2','tilt_1','tilt_2'],         
         __definition__gauss_pars='parameters that require a truncated gaussian distribution',
-        vonmise_pars=['phase','psi'],                                        
+        vonmise_pars=['phase','psi','phi_12','phi_jl'],                                        
         __definition__vonmises_pars='parameters that get wrapped on the 1D parameter', 
         sky_pars=['ra','dec'],                                              
         __definition__sky_pars='sky parameters',

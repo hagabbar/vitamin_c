@@ -2,8 +2,75 @@ import numpy as np
 #import tensorflow as tf
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
+from lal import GreenwichMeanSiderealTime
+import bilby
 
-# https://github.com/tensorflow/models/blob/master/autoencoder/Utils.py
+def convert_ra_to_hour_angle(data, params, rand_pars=False, to_ra=False):
+    """
+    Converts right ascension to hour angle and back again
+
+    Parameters
+    ----------
+    data: array-like
+        array containing training/testing data source parameter values
+    params: dict
+        general parameters of run
+    rand_pars: bool
+        if True, base ra idx on randomized paramters list
+    to_ra: bool
+        if True, convert from hour angle to RA
+
+    Returns
+    -------
+    data: array-like
+        converted array of source parameter values
+    """
+
+    # ignore hour angle conversion if requested by user
+    if not params['convert_to_hour_angle']:
+        print()
+        print('... NOT using hour angle conversion')
+        print()
+        return data
+
+    print()
+    print('... Using hour angle conversion')
+    print()
+    from astropy.time import Time
+    from astropy import coordinates as coord
+    from astropy.coordinates import SkyCoord, Angle
+    from astropy import units as u
+    greenwich = coord.EarthLocation.of_site('greenwich')
+    t = Time(params['ref_geocent_time'], format='gps', location=greenwich)
+    t = t.sidereal_time('mean', 'greenwich').radian
+   
+    # get ra index
+    if rand_pars == True:
+        enume_pars = params['rand_pars']
+    else:
+        enume_pars = params['inf_pars']
+
+    for i,k in enumerate(enume_pars):
+        if k == 'ra':
+            ra_idx = i 
+
+    # Check if RA exist
+    try:
+        ra_idx
+    except NameError:
+        print('Either time or RA is fixed. Not converting RA to hour angle.')
+    else:
+        # Iterate over all training samples and convert to hour angle
+        for i in range(data.shape[0]):
+#            if to_ra:
+#                conver_result = (t - data[i,ra_idx])
+#                data[i,ra_idx] = conver_result / 2*np.pi # why is this factor needed??
+#            else:
+            conver_result = (t - data[i,ra_idx])
+            data[i,ra_idx] = conver_result
+
+#            data[i,ra_idx]=np.mod(GreenwichMeanSiderealTime(params['ref_geocent_time']), 2*np.pi) - data[i,ra_idx]
+    return data
 
 def xavier_init(fan_in, fan_out, constant = 1):
     """ xavier weight initialization
