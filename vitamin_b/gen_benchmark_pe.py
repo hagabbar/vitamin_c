@@ -836,7 +836,7 @@ def run(sampling_frequency=256.0,
 
         # Initialise the likelihood by passing in the interferometer data (ifos) and
         # the waveform generator
-        if not use_real_events:
+        if not use_real_events and np.any([r=='phase' for r in inf_pars]):
             phase_marginalization=True
         else:
             phase_marginalization=False
@@ -877,7 +877,7 @@ def run(sampling_frequency=256.0,
             # Run sampler dynesty 1 sampler
 
             result = bilby.run_sampler(
-                likelihood=likelihood, priors=priors, sampler='dynesty', npoints=1000, nact=50, npool=8,
+                likelihood=likelihood, priors=priors, sampler='dynesty', npoints=1000, nact=50, npool=8, dlogz=0.1,
                 injection_parameters=injection_parameters, outdir=out_dir+'_'+samplers[-1], label=label,
                 save='hdf5', plot=True)
             run_endt = time.time()
