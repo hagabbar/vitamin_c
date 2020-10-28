@@ -121,6 +121,11 @@ def make_dirs(params,out_dir):
 
     return
 
+def factorial(n):
+   if n == 1: #base case
+       return n
+   else:
+       return n*factorial(n-1) # recursive case
 
 class make_plots:
     """ Class to generate a suite of testing plots
@@ -260,7 +265,7 @@ class make_plots:
 
                 if inner_file_existance == False:
                     i+=1
-                    print('File does not exist for one of the samplers')
+#                    print('File does not exist for one of the samplers')
                     continue
 
                 # If file does not exist, skip to next file
@@ -631,7 +636,7 @@ class make_plots:
             """
             Compute KL for one test case.
             """
-            
+
             # Remove samples outside of the prior mass distribution           
             cur_max = self.params['n_samples']
             
@@ -803,14 +808,24 @@ class make_plots:
             tot_kl_grey = np.array([])
             for i in range(len(usesamps)):
                 for j in range(tmp_idx):
-                    # Load appropriate test sets
-                    if samplers[i] == samplers[::-1][j]:
+
+                    sampler1, sampler2 = samplers[i]+'1', samplers[::-1][j]+'1'
+
+                    # Check if sampler results already exists in hf directories
+                    h5py_node1 = '%s-%s' % (sampler1,sampler2)
+                    h5py_node2 = '%s-%s' % (sampler2,sampler1)
+                    node_exists = False
+                    if h5py_node1 in hf.keys() or h5py_node2 in hf.keys():
+                        node_exists=True
+
+                    # Get KL results
+                    if samplers[i] == samplers[::-1][j]: # Skip samplers with themselves
                         print_cnt+=1
                         continue
+                    elif self.params['load_plot_data'] == True or node_exists: # load pre-generated KL results
+                        tot_kl = np.array(hf['%s-%s' % (sampler1,sampler2)])
                     else:
-                        sampler1, sampler2 = samplers[i]+'1', samplers[::-1][j]+'1'
-
-                        if self.params['load_plot_data'] == False:
+                        if self.params['load_plot_data'] == False: # Make new KL results if needed
                             set1,time1 = self.load_test_set(model,sig_test,par_test,normscales,bounds,sampler=sampler1,vitamin_pred_made=vi_pred_made)
                             set2,time2 = self.load_test_set(model,sig_test,par_test,normscales,bounds,sampler=sampler2,vitamin_pred_made=vi_pred_made)
 
@@ -821,9 +836,6 @@ class make_plots:
                                 vi_pred_made = [set2,time2]
 
 
-                    if self.params['load_plot_data'] == True:
-                        tot_kl = np.array(hf['%s-%s' % (sampler1,sampler2)])
-                    else:
                         # Iterate over test cases
                         tot_kl = []  # total KL over all infered parameters
 
@@ -834,9 +846,21 @@ class make_plots:
                             print()
                         tot_kl = np.array(tot_kl)
 
-                    if self.params['load_plot_data'] == False:
-                        # Save results to h5py file
-                        hf.create_dataset('%s-%s' % (sampler1,sampler2), data=tot_kl)
+                    # Try saving both sampler permutations of the KL results
+                    try:
+                        if self.params['load_plot_data'] == False:
+                            # Save results to h5py file
+                            hf.create_dataset('%s-%s' % (sampler1,sampler2), data=tot_kl)
+                    except Exception as e:
+#                        print(e)
+                        pass
+                    try:
+                        if self.params['load_plot_data'] == False:
+                            # Save results to h5py file
+                            hf.create_dataset('%s-%s' % (sampler2,sampler1), data=tot_kl)
+                    except Exception as e:
+#                        print(e)
+                        pass
 
                     logbins = np.logspace(-3,2.5,50)
                     logbins_indi = np.logspace(-3,3,50)
@@ -852,8 +876,8 @@ class make_plots:
                             tot_kl_grey = np.append(tot_kl_grey,tot_kl)
 
                             print()
-                            print('... Mean total KL between bilby samps: %s' % str(np.mean(tot_kl)))
-                    print('... Completed KL calculation %d/%d' % (print_cnt,len(usesamps)*2))
+                            print('... Grey Mean total KL between %s-%s: %s' % ( sampler1, sampler2, str(np.mean(tot_kl)) ) )
+#                    print('... Completed KL calculation %d/%d' % (print_cnt,factorial(4)))
                     print()
                     print_cnt+=1
                 tmp_idx-=1

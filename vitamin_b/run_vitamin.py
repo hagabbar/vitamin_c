@@ -273,7 +273,7 @@ def load_data(params,bounds,fixed_vals,input_dir,inf_pars,load_condor=False):
                     break
 
             if inner_file_existance == False:
-                print('File not consistent beetween samplers')
+#                print('File not consistent beetween samplers')
                 continue
 
         try:
@@ -914,7 +914,7 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
 
             if inner_file_existance == False:
                 i+=1
-                print('File does not exist for one of the samplers')
+#                print('File does not exist for one of the samplers')
                 continue
  
            # If file does not exist, skip to next file
@@ -1204,7 +1204,7 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
 
             if inner_file_existance == False:
                 i+=1
-                print('File does not exist for one of the samplers')
+#                print('File does not exist for one of the samplers')
                 continue
 
             print('... Loading test sample file -> ' + filename)
