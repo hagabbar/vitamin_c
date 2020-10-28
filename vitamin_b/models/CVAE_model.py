@@ -22,8 +22,9 @@ from .neural_networks import VI_encoder_q
 from .neural_networks import batch_manager
 try:
     from .. import gen_benchmark_pe
-    from .models.neural_networks.vae_utils import convert_ra_to_hour_angle
-except:
+    from .neural_networks.vae_utils import convert_ra_to_hour_angle
+except Exception as e:
+    print(e)
     import gen_benchmark_pe
     from models.neural_networks.vae_utils import convert_ra_to_hour_angle
 
