@@ -630,7 +630,6 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
         # VARIABLES LISTS
         var_list_VICI = [var for var in tf.trainable_variables() if var.name.startswith("VI")]
         
-        params['initial_training_rate']=1e-4 
         # DEFINE OPTIMISER (using ADAM here)
         if params['extra_lr_decay_factor']: 
             global_step = tf.Variable(0, trainable=False)
