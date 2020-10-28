@@ -49,7 +49,7 @@ try:
     from .plotting import prune_samples
     from .models.neural_networks.vae_utils import convert_ra_to_hour_angle
     from .gen_benchmark_pe import importance_sampling
-except ModuleNotFoundError:
+except (ModuleNotFoundError, ImportError):
     from models import CVAE_model
     from gen_benchmark_pe import run
     import plotting

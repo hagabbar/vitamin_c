@@ -24,7 +24,6 @@ try:
     from .. import gen_benchmark_pe
     from .neural_networks.vae_utils import convert_ra_to_hour_angle
 except Exception as e:
-    print(e)
     import gen_benchmark_pe
     from models.neural_networks.vae_utils import convert_ra_to_hour_angle
 
