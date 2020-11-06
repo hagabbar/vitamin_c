@@ -47,38 +47,46 @@ def prune_samples(chain_file_loc,params):
     nsteps = 14000
     nburnin = 4000
     nwalkers = 250
-    thresh_num = 50
+    thresh_num = 12
     ndim=len(params['inf_pars'])
     chain_file = h5py.File(chain_file_loc, 'r')
+    exit_flag=False
 
-    # Iterate over all parameters in chain file
-    XS = np.array([])
-    for idx in range(ndim):
+    while exit_flag == False:
+        # Iterate over all parameters in chain file
+        XS = np.array([])
+        for idx in range(ndim):
 #        print(chain_file)
 #        print(params['inf_pars'][idx]+'_post')
-        chains_before = np.array(chain_file[params['inf_pars'][idx]+'_post']).reshape((nsteps-nburnin,nwalkers))
-        logL = np.array(chain_file['log_like_eval']).reshape((nsteps-nburnin,nwalkers))
-        logL_max = np.max(logL)
+            chains_before = np.array(chain_file[params['inf_pars'][idx]+'_post']).reshape((nsteps-nburnin,nwalkers))
+            logL = np.array(chain_file['log_like_eval']).reshape((nsteps-nburnin,nwalkers))
+            logL_max = np.max(logL)
 
-        XS = np.append(XS,np.expand_dims(chains_before,0))
+            XS = np.append(XS,np.expand_dims(chains_before,0))
 
-    # data starts as (nsteps*nwalkers) x ndim -> 2D
-    XS = XS.transpose()                                     # now ndim x (nsteps*nwalkers) -> 2D
-    XS = XS.reshape(ndim,nwalkers,nsteps-nburnin)                      # now ndim x nwalkers x nsteps -> 3D
-    XSex = XS[:,0,:].squeeze().transpose()        # take one walker nsteps x ndim -> 2D
-    XS = XS.transpose((2,1,0))                          # now nsteps x nwalkers x ndim -> 3D
+        # data starts as (nsteps*nwalkers) x ndim -> 2D
+        XS = XS.transpose()                                     # now ndim x (nsteps*nwalkers) -> 2D
+        XS = XS.reshape(ndim,nwalkers,nsteps-nburnin)                      # now ndim x nwalkers x nsteps -> 3D
+        XSex = XS[:,0,:].squeeze().transpose()        # take one walker nsteps x ndim -> 2D
+        XS = XS.transpose((2,1,0))                          # now nsteps x nwalkers x ndim -> 3D
 
-    # identify good walkers
-    # logL starts off with shape (nsteps*nwalkers) -> 1D
-    thresh = logL_max - thresh_num                                # define log likelihood threshold
-    idx_walkers = np.argwhere([np.all(logL[:,i]>thresh) for i in range(nwalkers)])       # get the indices of good chains
-    Nsamp = len(idx_walkers)*(nsteps-nburnin)                                 # redefine total number of good samples 
+        # identify good walkers
+        # logL starts off with shape (nsteps*nwalkers) -> 1D
+        thresh = logL_max - thresh_num                                # define log likelihood threshold
+        idx_walkers = np.argwhere([np.all(logL[:,i]>thresh) for i in range(nwalkers)])       # get the indices of good chains
+        Nsamp = len(idx_walkers)*(nsteps-nburnin)                                 # redefine total number of good samples 
 
-    # select good walkers
-    XS = np.array([XS[:,i,:] for i in idx_walkers]).squeeze()     # just pick out good walkers
+        # select good walkers
+        XS = np.array([XS[:,i,:] for i in idx_walkers]).squeeze()     # just pick out good walkers
 
-    XS = XS.reshape(-1,ndim)                                    # now back to original shape (but different order) (walkers*nstep) x 
-    idx = np.random.choice(Nsamp,10000)          # choose 10000 random indices for corner plots
+        XS = XS.reshape(-1,ndim)                                    # now back to original shape (but different order) (walkers*nstep) x 
+        try:
+            idx = np.random.choice(Nsamp,10000)          # choose 10000 random indices for corner plots
+        except ValueError:
+            thresh_num+=10
+            print('... increasing threshold value to %d' % thresh_num)
+        else:
+            exit_flag = True
 
         # pick out random samples from clean set
     XS = XS[idx,:]                                                  # select 10000 random samples
@@ -790,7 +798,6 @@ class make_plots:
         else:
             hf = h5py.File('plotting_data_%s/KL_plot_data.h5' % params['run_label'], 'r')
         
-
             
         # 4 pannel KL approach
         fig_kl, axis_kl = plt.subplots(2,2,figsize=(8,6),sharey=True,sharex=True)
@@ -874,7 +881,6 @@ class make_plots:
                         if samplers[i] == samplers[1:][k] or samplers[::-1][j] == samplers[1:][k]:
 
                             tot_kl_grey = np.append(tot_kl_grey,tot_kl)
-
                             print()
                             print('... Grey Mean total KL between %s-%s: %s' % ( sampler1, sampler2, str(np.mean(tot_kl)) ) )
 #                    print('... Completed KL calculation %d/%d' % (print_cnt,factorial(4)))
@@ -883,8 +889,18 @@ class make_plots:
                 tmp_idx-=1
 
             # Plot non-colored histograms
-            axis_kl[kl_idx_1,kl_idx_2].hist(np.array(tot_kl_grey).squeeze(),bins=logbins,alpha=0.8,histtype='stepfilled',density=True,color='grey',label=r'$\mathrm{%s \ vs. \ other \ samplers}$' % fig_samplers[1:][k],zorder=1)
-            axis_kl[kl_idx_1,kl_idx_2].hist(np.array(tot_kl_grey).squeeze(),bins=logbins,histtype='step',density=True,facecolor='None',ls='-',lw=2,edgecolor='grey',zorder=1)
+#            axis_kl[kl_idx_1,kl_idx_2].hist(np.array(tot_kl_grey).squeeze(),bins=logbins,alpha=0.8,histtype='stepfilled',density=True,color='grey',label=r'$\mathrm{%s \ vs. \ other \ samplers}$' % fig_samplers[1:][k],zorder=1)
+#            axis_kl[kl_idx_1,kl_idx_2].hist(np.array(tot_kl_grey).squeeze(),bins=logbins,histtype='step',density=True,facecolor='None',ls='-',lw=2,edgecolor='grey',zorder=1)
+
+            grey_colors = [None,'#00FFFF','#FF00FF','#800000']
+            # make segmented grey histograms for Chris and I
+            grey_cnt = 0
+            for sampler_grey in range(1, len(self.params['samplers'][1:])):
+                start_idx = grey_cnt*125; end_idx = (grey_cnt+1)*125
+                print(start_idx, end_idx)
+                axis_kl[kl_idx_1,kl_idx_2].hist(np.array(tot_kl_grey).squeeze()[start_idx:end_idx],bins=logbins,alpha=0.8,histtype='stepfilled',density=True,color=grey_colors[sampler_grey],label=r'$\mathrm{%s \ vs. \ other \ samplers}$' % fig_samplers[1:][k],zorder=1)
+                axis_kl[kl_idx_1,kl_idx_2].hist(np.array(tot_kl_grey).squeeze()[start_idx:end_idx],bins=logbins,histtype='step',density=True,facecolor='None',ls='-',lw=2,edgecolor='grey',zorder=1) 
+                grey_cnt+=1
 
             # plot KL histograms
             if kl_idx_1 == 1:
