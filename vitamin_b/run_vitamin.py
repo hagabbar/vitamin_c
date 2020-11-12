@@ -685,6 +685,7 @@ def gen_train(params=params,bounds=bounds,fixed_vals=fixed_vals):
         for k, v in params.items():
             try:
                 hf.create_dataset(k,data=v)
+                hf.create_dataset('rand_pars', data=np.string_(params['rand_pars']))
             except:
                 pass
         hf.create_dataset('x_data', data=signal_train_pars)
@@ -692,7 +693,6 @@ def gen_train(params=params,bounds=bounds,fixed_vals=fixed_vals):
             hf.create_dataset(k,data=v)
         hf.create_dataset('y_data_noisy', data=np.array([]))
         hf.create_dataset('y_data_noisefree', data=signal_train)
-        hf.create_dataset('rand_pars', data=np.string_(params['rand_pars']))
         hf.create_dataset('snrs', data=snrs)
         hf.close()
     return
