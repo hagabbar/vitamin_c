@@ -758,7 +758,8 @@ def gen_test(params=params,bounds=bounds,fixed_vals=fixed_vals):
         hf = h5py.File('%s/%s_%d.h5py' % (params['test_set_dir'],params['bilby_results_label'],i),'w')
         for k, v in params.items():
             try:
-                hf.create_dataset(k,data=v)
+                hf.create_dataset(k,data=v) 
+                hf.create_dataset('rand_pars', data=np.string_(params['rand_pars']))
             except:
                 pass
         hf.create_dataset('x_data', data=signal_test_pars)
@@ -766,7 +767,6 @@ def gen_test(params=params,bounds=bounds,fixed_vals=fixed_vals):
             hf.create_dataset(k,data=v)
         hf.create_dataset('y_data_noisefree', data=signal_test_noisefree)
         hf.create_dataset('y_data_noisy', data=signal_test_noisy)
-        hf.create_dataset('rand_pars', data=np.string_(params['rand_pars']))
         hf.create_dataset('snrs', data=signal_test_snr)
         hf.close()
     return
