@@ -150,7 +150,7 @@ should have a directory containing the noisy time series labeled ‘y_data_noisy
 ‘y_data’ should be a numpy array of shape (&lt;number of detectors&gt;,&lt;sample rate X duration&gt;)</p>
 </div>
 <ul class="simple">
-<li><p>To produce test sample posteriors using VItamin, simply point vitamin to the directory containing your test waveforms (examples provided <a class="reference external" href="https://drive.google.com/file/d/15LCJC6UJR34dqXO9BgLK-NsYlsWADpvc/view?usp=sharing">here</a>), the pre-trained model (<a class="reference external" href="https://drive.google.com/file/d/1GSdGX2t2SoF3rencUnQ1mZAyoxO5F-zl/view?usp=sharing">model download</a>) and specify the number of samples per posterior requested.</p></li>
+<li><p>To produce test sample posteriors using VItamin, simply point vitamin to the directory containing your test waveforms (examples provided <a class="reference external" href="https://drive.google.com/file/d/1yWZOzvN8yf9rB_boRbXg70nEqhmb5Tfc/view?usp=sharing">here</a>), the pre-trained model (<a class="reference external" href="https://drive.google.com/file/d/1GSdGX2t2SoF3rencUnQ1mZAyoxO5F-zl/view?usp=sharing">model download</a>) and specify the number of samples per posterior requested.</p></li>
 </ul>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nv">samples</span> <span class="o">=</span> run_vitamin.gen_samples<span class="o">(</span><span class="nv">model_loc</span><span class="o">=</span><span class="s1">&#39;public_model/inverse_model.ckpt&#39;</span>,
 <span class="go">                                             test_set=&#39;test_sets/all_4_samplers/test_waveforms/&#39;,num_samples=10000,</span>
