@@ -33,7 +33,7 @@ Some things to note about the provided black box:
    should have a directory containing the noisy time series labeled 'y_data_noisy'. 
    'y_data' should be a numpy array of shape (<number of detectors>,<sample rate X duration>) 
 
-* To produce test sample posteriors using VItamin, simply point vitamin to the directory containing your test waveforms (examples provided `here <https://drive.google.com/file/d/15LCJC6UJR34dqXO9BgLK-NsYlsWADpvc/view?usp=sharing>`_), the pre-trained model (`model download <https://drive.google.com/file/d/1GSdGX2t2SoF3rencUnQ1mZAyoxO5F-zl/view?usp=sharing>`_) and specify the number of samples per posterior requested.
+* To produce test sample posteriors using VItamin, simply point vitamin to the directory containing your test waveforms (examples provided `here <https://drive.google.com/file/d/1yWZOzvN8yf9rB_boRbXg70nEqhmb5Tfc/view?usp=sharing>`_), the pre-trained model (`model download <https://drive.google.com/file/d/1GSdGX2t2SoF3rencUnQ1mZAyoxO5F-zl/view?usp=sharing>`_) and specify the number of samples per posterior requested.
 
 .. code-block:: console
 
