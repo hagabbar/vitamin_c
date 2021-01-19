@@ -133,26 +133,26 @@ bilby_results_label = 'all_4_samplers'
 
 r = 1                                                          
 pe_test_num = 256                                                               
-tot_dataset_size = int(1e7)                                                     
+tot_dataset_size = int(1e6)                                                     
 tset_split = int(1e3)                                                           
-save_interval = int(2e4)                                                        
+save_interval = int(2.5e4)                                                        
 num_iterations=int(1e6)+1                                                       
 ref_geocent_time=1126259642.5                                                   
-load_chunk_size = 2e5                                                           
+load_chunk_size = 1e5                                                           
 samplers=['vitamin','dynesty']                                                  
 
 # Directory variables
 plot_dir="./results/%s" % run_label  
 
 # Training/testing for 1024 Hz full par case
-train_set_dir='./training_sets_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(det),len(rand_pars),ndata,1000000,tset_split)
+train_set_dir='./training_sets_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(det),len(rand_pars),ndata,tot_dataset_size,tset_split)
 #test_set_dir = './test_sets/1024_khz_spins_included_15par/test_waveforms'
 #pe_dir='./test_sets/1024_khz_spins_included_15par/test'
 
 # training/testing for 256 Hz case
 #train_set_dir = '/home/hunter.gabbard/CBC/VItamin/training_sets_second_sub_3det_9par_256Hz/tset_tot-10000000_split-1000/'
-test_set_dir = './test_sets/all_4_samplers/test_waveforms'
-pe_dir='./test_sets/all_4_samplers/test'
+test_set_dir = './test_sets/%s/test_waveforms' % bilby_results_label
+pe_dir='./test_sets/%s/test' % bilby_results_label
 #############################
 # optional tunable variables
 

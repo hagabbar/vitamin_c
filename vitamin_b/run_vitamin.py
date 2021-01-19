@@ -269,11 +269,12 @@ def load_data(params,bounds,fixed_vals,input_dir,inf_pars,load_condor=False):
                 filename_inner = '%s/%s_%d.h5py' % (dataLocations_inner,params['bilby_results_label'],int(filename.split('_')[-1].split('.')[0]))
                 # If file does not exist, skip to next file
                 inner_file_existance = os.path.isfile(filename_inner) 
+                print(filename_inner)
                 if inner_file_existance == False:
                     break
 
             if inner_file_existance == False:
-#                print('File not consistent beetween samplers')
+                print('File not consistent beetween samplers')
                 continue
 
         try:
@@ -725,6 +726,10 @@ def gen_test(params=params,bounds=bounds,fixed_vals=fixed_vals):
 
     # Make testing set directory
     os.system('mkdir -p %s' % params['test_set_dir'])
+
+    # Add 1 to sampler names
+    for i in range(len(params['samplers'])):
+        params['samplers'][i] = params['samplers'][i]+'1'
 
     # Make testing samples
     for i in range(params['r']):

@@ -630,22 +630,9 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
         # VARIABLES LISTS
         var_list_VICI = [var for var in tf.trainable_variables() if var.name.startswith("VI")]
         
-        # DEFINE OPTIMISER (using ADAM here)
-        if params['extra_lr_decay_factor']: 
-            global_step = tf.Variable(0, trainable=False)
-            starter_learning_rate = params['initial_training_rate']
-            learning_rate = tf.compat.v1.train.exponential_decay(starter_learning_rate,
-                                               global_step,
-                                               params['load_iteration'], 0.96, staircase=True)
-        else:
-            learning_rate = params['initial_training_rate']
-
-        optimizer = tf.train.AdamOptimizer(learning_rate)
-#        momentum = tf.Variable(0.99, trainable=False) 
-#        optimizer = tf.train.MomentumOptimizer(learning_rate, momentum, use_locking=False, use_nesterov=True)
-#        optimizer = tf.keras.optimizers.Adamax(learning_rate = learning_rate)
-        minimize = optimizer.minimize(COST,var_list = var_list_VICI, global_step=global_step)
-        
+        optimizer = tf.train.AdamOptimizer(params['initial_training_rate'])
+        minimize = optimizer.minimize(COST,var_list = var_list_VICI)
+ 
         # INITIALISE AND RUN SESSION
         init = tf.global_variables_initializer()
         session.run(init)
@@ -709,7 +696,7 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
         if i % params['report_interval'] == 0 and i > 0:
 
             # get training loss
-            cost, kl, AB_batch, lr = session.run([cost_R, KL, r1_weight, learning_rate], feed_dict={bs_ph:bs, x_ph:next_x_data, y_ph:next_y_data, ramp:rmp})
+            cost, kl, AB_batch = session.run([cost_R, KL, r1_weight], feed_dict={bs_ph:bs, x_ph:next_x_data, y_ph:next_y_data, ramp:rmp})
 
             # Convert validation x to Hour angle
             x_validation = np.zeros(x_data_test.shape)
@@ -767,7 +754,6 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
                 print('Validation KL Divergence:',kl_val)
                 print('Training Total cost:',kl + cost) 
                 print('Validation Total cost:',kl_val + cost_val)
-                print('Learning rate:',lr)
                 print()
 
                 # terminate training if vanishing gradient
