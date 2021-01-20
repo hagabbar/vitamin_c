@@ -317,7 +317,7 @@ def run(params, y_data_test, siz_x_data, y_normscale, load_dir):
         r2_xzy_mean_m2 = reconstruction_xzy[6]
         r2_xzy_log_sig_sq_m2 = reconstruction_xzy[7]
         r2_xzy_mean_sky = reconstruction_xzy[8]
-        r2_xzy_log_sig_sq_sky = reconstruction_xzy[9]
+        r2_xzy_log_sig_sq_sky = tf.slice(reconstruction_xzy[9],[0,0],[bs_ph,1])
 
         # draw from r2(x|z,y) - the masses
         temp_var_r2_m1 = SMALL_CONSTANT + tf.exp(r2_xzy_log_sig_sq_m1)     # the m1 variance
@@ -350,16 +350,19 @@ def run(params, y_data_test, siz_x_data, y_normscale, load_dir):
         von_mises = tfp.distributions.VonMises(loc=2.0*np.pi*(r2_xzy_mean_vonmise-0.5), concentration=con)
         r2_xzy_samp_vonmise = tf.reshape(von_mises.sample()/(2.0*np.pi) + 0.5,[-1,vonmise_len])   # sample from the von mises distribution and shift and scale from -pi-pi to 0-1
 
-        # draw from r2(x|z,y) - the von mises Fisher 
-        temp_var_r2_sky = SMALL_CONSTANT + tf.exp(r2_xzy_log_sig_sq_sky)
-        con = tf.reshape(tf.math.reciprocal(temp_var_r2_sky),[bs_ph])   # modelling wrapped scale output as log variance - only 1 concentration parameter for all sky
-        von_mises_fisher = tfp.distributions.VonMisesFisher(
+        if sky_len>0:
+            # draw from r2(x|z,y) - the von mises Fisher
+            temp_var_r2_sky = SMALL_CONSTANT + tf.exp(r2_xzy_log_sig_sq_sky)
+            con = tf.reshape(tf.math.reciprocal(temp_var_r2_sky),[bs_ph])   # modelling wrapped scale output as log variance - only 1 concentration parameter for all sky
+            von_mises_fisher = tfp.distributions.VonMisesFisher(
                           mean_direction=tf.math.l2_normalize(tf.reshape(r2_xzy_mean_sky,[bs_ph,3]),axis=1),
                           concentration=con)   # define p_vm(2*pi*mu,con=1/sig^2)
-        xyz = tf.reshape(von_mises_fisher.sample(),[bs_ph,3])          # sample the distribution
-        samp_ra = tf.math.floormod(tf.atan2(tf.slice(xyz,[0,1],[-1,1]),tf.slice(xyz,[0,0],[-1,1])),2.0*np.pi)/(2.0*np.pi)   # convert to the rescaled 0->1 RA from the unit vector
-        samp_dec = (tf.asin(tf.slice(xyz,[0,2],[-1,1])) + 0.5*np.pi)/np.pi                       # convert to the rescaled 0->1 dec from the unit vector
-        r2_xzy_samp_sky = tf.reshape(tf.concat([samp_ra,samp_dec],axis=1),[bs_ph,2])             # group the sky samples
+            xyz = tf.reshape(von_mises_fisher.sample(),[bs_ph,3])          # sample the distribution
+            samp_ra = tf.math.floormod(tf.atan2(tf.slice(xyz,[0,1],[bs_ph,1]),tf.slice(xyz,[0,0],[bs_ph,1])),2.0*np.pi)/(2.0*np.pi)   # convert to the rescaled 0->1 RA from the unit vector
+            samp_dec = (tf.asin(tf.slice(xyz,[0,2],[bs_ph,1])) + 0.5*np.pi)/np.pi                       # convert to the rescaled 0->1 dec from the unit vector
+            r2_xzy_samp_sky = tf.reshape(tf.concat([samp_ra,samp_dec],axis=1),[bs_ph,2])             # group the sky samples     
+        else:
+            r2_xzy_samp_sky = tf.zeros([bs_ph,0], tf.float32)
 
         # combine the samples
         r2_xzy_samp = tf.concat([r2_xzy_samp_gauss,r2_xzy_samp_vonmise,r2_xzy_samp_masses,r2_xzy_samp_sky],axis=1)
@@ -526,7 +529,8 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
        
         # GET r2(x|z,y)
         eps = tf.random.normal([bs_ph, params['ndata'], num_det], 0, 1., dtype=tf.float32)
-        y_ph_ramp = tf.add(tf.multiply(ramp,y_conv), tf.multiply((1.0-ramp), eps))
+        #y_ph_ramp = tf.add(tf.multiply(ramp,y_conv), tf.multiply((1.0-ramp), eps))
+        y_ph_ramp = y_conv
         reconstruction_xzy = r2_xzy.calc_reconstruction(q_zxy_samp,y_ph_ramp)
 
         # ugly but required for now - unpack the r2 output params
@@ -539,7 +543,7 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
         r2_xzy_mean_m2 = reconstruction_xzy[6]              # m2 mean (m2 will be conditional on m1)
         r2_xzy_log_sig_sq_m2 = reconstruction_xzy[7]        # m2 log var (m2 will be conditional on m1)
         r2_xzy_mean_sky = reconstruction_xzy[8]             # sky mean unit vector (3D)
-        r2_xzy_log_sig_sq_sky = reconstruction_xzy[9]       # sky log var (1D)
+        r2_xzy_log_sig_sq_sky = tf.slice(reconstruction_xzy[9],[0,0],[bs_ph,1])
 
         # COST FROM RECONSTRUCTION - the masses
         # this sets up a joint distribution on m1 and m2 with m2 being conditional on m1
@@ -603,22 +607,21 @@ def train(params, x_data, y_data, x_data_test, y_data_test, y_data_test_noisefre
             reconstr_loss_sky = von_mises_fisher.log_prob(tf.math.l2_normalize(xyz_unit,axis=1))   # normalise it for safety (should already be normalised) and compute the logprob
 
             # computing Gaussian likelihood for von mises Fisher (sky) parameters to be faded away with the ramp
-            mean_ra = tf.math.floormod(tf.atan2(tf.slice(loc_xyz,[0,1],[-1,1]),tf.slice(loc_xyz,[0,0],[-1,1])),2.0*np.pi)/(2.0*np.pi)    # convert the unit vector to scaled 0->1 RA 
-            mean_dec = (tf.asin(tf.slice(loc_xyz,[0,2],[-1,1])) + 0.5*np.pi)/np.pi        # convert the unit vector to scaled 0->1 dec
-            mean_sky = tf.reshape(tf.concat([mean_ra,mean_dec],axis=1),[bs_ph,2])        # package up the scaled RA and dec 
-            gauss_sky = tfp.distributions.MultivariateNormalDiag(
-                         loc=mean_sky,
-                         scale_diag=tf.concat([tf.sqrt(temp_var_r2_sky),tf.sqrt(temp_var_r2_sky)],axis=1))   # use the same 1D concentration parameter for both RA and dec dimensions
-            reconstr_loss_gauss_sky = gauss_sky.log_prob(tf.boolean_mask(x_ph,sky_mask,axis=1))     # compute the logprob at the true sky location
+            mean_ra = tf.math.floormod(tf.atan2(tf.slice(loc_xyz,[0,1],[bs_ph,1]),tf.slice(loc_xyz,[0,0],[bs_ph,1])),2.0*np.pi)/(2.0*np.pi)    # convert the unit vector to scaled 0->1 RA
+            mean_dec = (tf.asin(tf.slice(loc_xyz,[0,2],[bs_ph,1])) + 0.5*np.pi)/np.pi        # convert the unit vector to scaled 0->1 dec
+            mean_sky = tf.reshape(tf.concat([mean_ra,mean_dec],axis=1),[bs_ph,2])        # package up the scaled RA and dec      
+            scale_sky = tf.concat([tf.sqrt(temp_var_r2_sky),tf.sqrt(temp_var_r2_sky)],axis=1)
+            gauss_sky = tfd.TruncatedNormal(mean_sky,scale_sky,-GAUSS_RANGE*(1.0-ramp),GAUSS_RANGE*(1.0-ramp) + 1.0)
+            reconstr_loss_gauss_sky = tf.reduce_sum(gauss_sky.log_prob(tf.boolean_mask(x_ph,sky_mask,axis=1)),axis=1)
             reconstr_loss_sky = ramp*reconstr_loss_sky + (1.0-ramp)*reconstr_loss_gauss_sky   # start with a Gaussian model and fade in the true vonmises Fisher
         else:
-            reconstr_loss_sky = 0
+            reconstr_loss_sky = 0.0
 
         cost_R = -1.0*tf.reduce_mean(reconstr_loss_gauss + reconstr_loss_vonmise + reconstr_loss_masses + reconstr_loss_sky)
-        r2_xzy_mean = tf.gather(tf.concat([r2_xzy_mean_gauss,r2_xzy_mean_vonmise,r2_xzy_mean_m1,r2_xzy_mean_m2,r2_xzy_mean_sky],axis=1),tf.constant(idx_mask),axis=1)      # put the elements back in order
-        r2_xzy_scale = tf.gather(tf.concat([r2_xzy_log_sig_sq_gauss,r2_xzy_log_sig_sq_vonmise,r2_xzy_log_sig_sq_m1,r2_xzy_log_sig_sq_m2,r2_xzy_log_sig_sq_sky],axis=1),tf.constant(idx_mask),axis=1)   # put the elements back in order
-        r2_xzy_mean = tf.gather(tf.concat([r2_xzy_mean_gauss,r2_xzy_mean_vonmise,r2_xzy_mean_m1,r2_xzy_mean_m2],axis=1),tf.constant(idx_mask),axis=1)      # put the elements back in order
-        r2_xzy_scale = tf.gather(tf.concat([r2_xzy_log_sig_sq_gauss,r2_xzy_log_sig_sq_vonmise,r2_xzy_log_sig_sq_m1,r2_xzy_log_sig_sq_m2],axis=1),tf.constant(idx_mask),axis=1)
+#        r2_xzy_mean = tf.gather(tf.concat([r2_xzy_mean_gauss,r2_xzy_mean_vonmise,r2_xzy_mean_m1,r2_xzy_mean_m2,r2_xzy_mean_sky],axis=1),tf.constant(idx_mask),axis=1)      # put the elements back in order
+#        r2_xzy_scale = tf.gather(tf.concat([r2_xzy_log_sig_sq_gauss,r2_xzy_log_sig_sq_vonmise,r2_xzy_log_sig_sq_m1,r2_xzy_log_sig_sq_m2,r2_xzy_log_sig_sq_sky],axis=1),tf.constant(idx_mask),axis=1)   # put the elements back in order
+#        r2_xzy_mean = tf.gather(tf.concat([r2_xzy_mean_gauss,r2_xzy_mean_vonmise,r2_xzy_mean_m1,r2_xzy_mean_m2],axis=1),tf.constant(idx_mask),axis=1)      # put the elements back in order
+#        r2_xzy_scale = tf.gather(tf.concat([r2_xzy_log_sig_sq_gauss,r2_xzy_log_sig_sq_vonmise,r2_xzy_log_sig_sq_m1,r2_xzy_log_sig_sq_m2],axis=1),tf.constant(idx_mask),axis=1)
        
         log_q_q = mvn_q.log_prob(q_zxy_samp)
         log_r1_q = bimix_gauss.log_prob(q_zxy_samp)   # evaluate the log prob of r1 at the q samples
