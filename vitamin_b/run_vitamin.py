@@ -1364,7 +1364,7 @@ def gen_samples(params=params,bounds=bounds,fixed_vals=fixed_vals,model_loc='mod
     x_data_test = np.zeros((y_data_test.shape[0],len(params['inf_pars'])))
     for i in range(num_timeseries):
         samples[i,:], dt, _,_,_,_,_,_  = CVAE_model.run(params, x_data_test[i], np.expand_dims(y_data_test[i], axis=0),
-                                                         "inverse_model_dir_%s/inverse_model.ckpt" % params['run_label'],        
+                                                       model_loc,        
                                                        wrmp=np.ones(params['n_modes']))
         print('... Runtime to generate samples is: ' + str(dt))
 
