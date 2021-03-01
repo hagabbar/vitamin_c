@@ -4,8 +4,44 @@ import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 from lal import GreenwichMeanSiderealTime
 import bilby
+from astropy.time import Time
+from astropy import coordinates as coord
+from astropy.coordinates import SkyCoord, Angle
+from astropy import units as u
 
-def convert_ra_to_hour_angle(data, params, rand_pars=False, to_ra=False):
+def resblock(x_init, channels, is_training=True, use_bias=True, downsample=False, scope='resblock') :
+
+    with tf.variable_scope(scope) :
+
+        x = tf.nn.relu(x_init)
+
+        if downsample:
+            x = tf.add(tf.nn.conv2d(x, get_res_weights(),strides=[2,1],dilations=[1,1],padding='SAME'),get_res_bias())
+            x_init = tf.add(tf.nn.conv2d(x_init, tf.Variable(tf.reshape(xavier_init(1, 16*16),[1, 1, 16, 16]), dtype=tf.float32),strides=[2,1],dilations=[1,1],padding='SAME'),get_res_bias())
+        else:
+            x = tf.add(tf.nn.conv2d(x, get_res_weights(),strides=[1,1],dilations=[1,1],padding='SAME'),get_res_bias())
+
+        x = tf.nn.relu(x)
+
+        x = tf.add(tf.nn.conv2d(x, get_res_weights(),strides=[1,1],dilations=[1,1],padding='SAME'),get_res_bias())
+        return x + x_init
+
+def get_res_weights():
+    dummy_t = 16
+    with tf.variable_scope("weights"):
+        res_weights = tf.Variable(tf.reshape(xavier_init(3, dummy_t*16),[3, 1, dummy_t, 16]), dtype=tf.float32)
+#    tf.summary.histogram(weight_name+'t', all_weights['VI_decoder_r2'][weight_name+'t'])
+
+        return res_weights
+
+def get_res_bias():
+    with tf.variable_scope("biases"):
+        res_bias = tf.Variable(tf.zeros([16], dtype=tf.float32))
+#    tf.summary.histogram(''+'t', all_weights['VI_decoder_r2'][bias_name+'t'])
+
+        return res_bias
+
+def convert_ra_to_hour_angle(data, params, pars, single=False):
     """
     Converts right ascension to hour angle and back again
 
@@ -17,40 +53,32 @@ def convert_ra_to_hour_angle(data, params, rand_pars=False, to_ra=False):
         general parameters of run
     rand_pars: bool
         if True, base ra idx on randomized paramters list
-    to_ra: bool
-        if True, convert from hour angle to RA
+    ra: float
+        if not None, convert single ra value to hour angle
 
     Returns
     -------
     data: array-like
         converted array of source parameter values
     """
+    return data
 
-    # ignore hour angle conversion if requested by user
-    if not params['convert_to_hour_angle']:
-        print()
-        print('... NOT using hour angle conversion')
-        print()
-        return data
-
-    print()
-    print('... Using hour angle conversion')
-    print()
-    from astropy.time import Time
-    from astropy import coordinates as coord
-    from astropy.coordinates import SkyCoord, Angle
-    from astropy import units as u
+    print('...... Using hour angle conversion')
     greenwich = coord.EarthLocation.of_site('greenwich')
     t = Time(params['ref_geocent_time'], format='gps', location=greenwich)
     t = t.sidereal_time('mean', 'greenwich').radian
    
-    # get ra index
-    if rand_pars == True:
-        enume_pars = params['rand_pars']
-    else:
-        enume_pars = params['inf_pars']
+    # compute single instance
+    if single:
+        return t - data
 
-    for i,k in enumerate(enume_pars):
+    # get ra index
+    #if rand_pars == True:
+    #    enume_pars = params['rand_pars']
+    #else:
+    #    enume_pars = params['inf_pars']
+
+    for i,k in enumerate(pars):
         if k == 'ra':
             ra_idx = i 
 
@@ -58,18 +86,64 @@ def convert_ra_to_hour_angle(data, params, rand_pars=False, to_ra=False):
     try:
         ra_idx
     except NameError:
-        print('Either time or RA is fixed. Not converting RA to hour angle.')
+        print('...... RA is fixed. Not converting RA to hour angle.')
     else:
         # Iterate over all training samples and convert to hour angle
         for i in range(data.shape[0]):
-#            if to_ra:
-#                conver_result = (t - data[i,ra_idx])
-#                data[i,ra_idx] = conver_result / 2*np.pi # why is this factor needed??
-#            else:
-            conver_result = (t - data[i,ra_idx])
-            data[i,ra_idx] = conver_result
+            data[i,ra_idx] = t - data[i,ra_idx]
 
-#            data[i,ra_idx]=np.mod(GreenwichMeanSiderealTime(params['ref_geocent_time']), 2*np.pi) - data[i,ra_idx]
+    return data
+
+def convert_hour_angle_to_ra(data, params, pars, single=False):
+    """
+    Converts right ascension to hour angle and back again
+
+    Parameters
+    ----------
+    data: array-like
+        array containing training/testing data source parameter values
+    params: dict
+        general parameters of run
+    rand_pars: bool
+        if True, base ra idx on randomized paramters list
+    ra: float
+        if not None, convert single ra value to hour angle
+
+    Returns
+    -------
+    data: array-like
+        converted array of source parameter values
+    """
+    return data
+    print('...... Using hour angle conversion')
+    greenwich = coord.EarthLocation.of_site('greenwich')
+    t = Time(params['ref_geocent_time'], format='gps', location=greenwich)
+    t = t.sidereal_time('mean', 'greenwich').radian
+
+    # compute single instance
+    if single:
+        return np.remainder(t - data,2.0*np.pi)
+
+    # get ra index
+    #if rand_pars == True:
+    #    enume_pars = params['rand_pars']
+    #else:
+    #    enume_pars = params['inf_pars']
+
+    for i,k in enumerate(pars):
+        if k == 'ra':
+            ra_idx = i
+
+    # Check if RA exist
+    try:
+        ra_idx
+    except NameError:
+        print('...... RA is fixed. Not converting RA to hour angle.')
+    else:
+        # Iterate over all training samples and convert to hour angle
+        for i in range(data.shape[0]):
+            data[i,ra_idx] = np.remainder(t - data[i,ra_idx],2.0*np.pi)
+
     return data
 
 def xavier_init(fan_in, fan_out, constant = 1):
@@ -77,13 +151,6 @@ def xavier_init(fan_in, fan_out, constant = 1):
     """
     low = -constant * np.sqrt(6.0 / (fan_in + fan_out))
     high = constant * np.sqrt(6.0 / (fan_in + fan_out))
-    return tf.random_uniform((fan_in, fan_out),
-                             minval = low, maxval = high,
-                             dtype = tf.float32)
-
-def chris_init(fan_in, fan_out, constant = 1):
-    low = -constant # * np.sqrt(6.0 / (fan_in + fan_out))
-    high = constant # * np.sqrt(6.0 / (fan_in + fan_out))
     return tf.random_uniform((fan_in, fan_out),
                              minval = low, maxval = high,
                              dtype = tf.float32)
@@ -137,3 +204,20 @@ def cartesian(arrays, out=None):
         for j in xrange(1, arrays[0].size):
             out[j*m:(j+1)*m,1:] = out[0:m,1:]
     return out
+
+def batch_norm_wrapper(inputs, pop_mean, pop_var, is_training, epsilon, decay = 0.999):
+
+    #scale = tf.Variable(tf.ones([inputs.get_shape()[-1]]))
+    #beta = tf.Variable(tf.zeros([inputs.get_shape()[-1]]))
+    #pop_mean = tf.Variable(tf.zeros([inputs.get_shape()[-1]]), trainable=False)
+    #pop_var = tf.Variable(tf.ones([inputs.get_shape()[-1]]), trainable=False)
+
+    if is_training:
+        batch_mean, batch_var = tf.nn.moments(inputs,[0])
+        pop_mean = tf.assign(pop_mean, pop_mean * decay + batch_mean * (1 - decay),validate_shape=True, use_locking=True)
+        pop_var = tf.assign(pop_var, pop_var * decay + batch_var * (1 - decay),validate_shape=True, use_locking=True)
+        with tf.control_dependencies([pop_mean, pop_var]):
+            return tf.nn.batch_normalization(inputs, batch_mean, batch_var, None, None, epsilon)
+    else:
+        return tf.nn.batch_normalization(inputs, pop_mean, pop_var, None, None, epsilon)
+

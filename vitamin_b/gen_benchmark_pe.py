@@ -89,82 +89,6 @@ def parser():
 
     return parser.parse_args()
 
-def gen_real_events(event_name, detectors, duration, sampling_frequency,
-                    ref_geocent_time):
-    """ Generates timeseries info for real LIGO events
-
-    Parameters
-    ----------
-    event_name: str
-        string name of LIGO event (e.g. "GW150914")
-
-    Returns
-    -------
-    whitened noise-free signal: array_like
-    whitened noisy signal: array_like
-    injection_parameters: dict
-        source parameter values of injected signal
-    ifos: dict
-        interferometer properties
-    waveform_generator: bilby function
-        function used by bilby to inject signal into noise
-
-    """
-
-    # compute the number of time domain samples
-    Nt = int(sampling_frequency*duration)
-    # define the start time of the timeseries
-#    start_time = ref_geocent_time-duration/2.0
-    injection_parameters=None
-
-#    prior = bilby.gw.prior.BBHPriorDict(filename='GW150914.prior')
-    ifos = bilby.gw.detector.get_event_data(event_name, interferometer_names=detectors, duration=duration)
-#    likelihood = bilby.gw.likelihood.get_binary_black_hole_likelihood(interferometers)
-#    result = bilby.run_sampler(likelihood, prior, label='GW150914')
-#    result.plot_corner()
-#    return result
-
-    waveform_generator = bilby.gw.WaveformGenerator(
-        duration=ifos.duration,
-        sampling_frequency=ifos.sampling_frequency,
-        frequency_domain_source_model=bilby.gw.source.lal_binary_black_hole,
-        waveform_arguments={'waveform_approximant': 'IMRPhenomPv2',
-                            'reference_frequency': 20., 'minimum_frequency': 20.})
-
-    # Get event parameters
-
-    time_signal = ifos[0].strain_data.time_domain_strain
-    freq_signal = ifos[0].strain_data.frequency_domain_strain
-
-    whitened_signal_td_all = []
-    whitened_h_td_all = []
-    # iterate over ifos
-    for i in range(len(detectors)):
-        # get frequency domain noise-free signal at detector
-#        signal_fd = ifos[i].get_detector_response(freq_signal, injection_parameters)
-
-        # whiten frequency domain noise-free signal (and reshape/flatten)
-#        whitened_signal_fd = signal_fd/ifos[i].amplitude_spectral_density_array
-
-        # inverse FFT noise-free signal back to time domain and normalise
-#        whitened_signal_td = np.sqrt(2.0*Nt)*np.fft.irfft(whitened_signal_fd)
-
-#        whitened_signal_td_all.append([whitened_signal_td])
-
-        # get frequency domain signal + noise at detector
-        h_fd = ifos[i].strain_data.frequency_domain_strain
-
-        # whiten noisy frequency domain signal
-        whitened_h_fd = h_fd/ifos[i].amplitude_spectral_density_array
-
-        # inverse FFT noisy signal back to time domain and normalise
-        whitened_h_td = np.sqrt(2.0*Nt)*np.fft.irfft(whitened_h_fd)
-
-        whitened_h_td_all.append([whitened_h_td])
-
-    print('... Whitened signals')
-    return whitened_signal_td_all,np.squeeze(np.array(whitened_h_td_all),axis=1),injection_parameters,ifos,waveform_generator
-
 def gen_template(duration,
                  sampling_frequency,
                  pars,
@@ -238,15 +162,7 @@ def gen_template(duration,
 
     # Set up interferometers. These default to their design
     # sensitivity
-    if use_real_det_noise: # If true, get real noise
-        ifos=[]
-        for det in pars['det']:
-            ifos.append(bilby.gw.detector.get_interferometer_with_open_data(det, pars['geocent_time'], 
-                                                                   start_time=start_time,
-                                                                   duration=duration))
-        ifos = bilby.gw.detector.InterferometerList(ifos)
-    else:                  # else use gaussian noise
-        ifos = bilby.gw.detector.InterferometerList(pars['det'])
+    ifos = bilby.gw.detector.InterferometerList(pars['det'])
 
     # If user is specifying PSD files
     if len(psd_files) > 0:
@@ -467,142 +383,6 @@ def gen_par(pars,
 
     return pars
 
-def importance_sampling(fixed_vals, params, result, all_x_test, seed=None, outdir='./importance_sampling_results', start_sample=0, end_sample=5000):
-    """ Function to return samples after having run importance sampling
-
-    Parameters
-    ----------
-    
-
-    Returns
-    -------
-    data: array-like
-        new re-weighted samples
-    """
-    ref_geocent_time = params['ref_geocent_time']
-    duration = params['duration']
-    psd_files = params['psd_files']
-    sampling_frequency = params['ndata']
-
-    # Set up a random seed for result reproducibility.  This is optional!
-    if seed is not None:
-        np.random.seed(seed)
-
-    try:
-        # Create target Directory
-        os.mkdir(outdir+'/HM_evaluations/')
-        print("Sample Directory Created ")
-    except:
-        print("Sample Directory already exists")
-
-    ifos = bilby.gw.detector.InterferometerList(params['det'])
-
-    # define the start time of the timeseries
-    start_time = ref_geocent_time-duration/2.0
-
-    # choose waveform parameters here
-    pars = fixed_vals
-    for par_idx, par in enumerate(params['rand_pars']):
-        if par == 'geocent_time':
-            pars[par] = all_x_test[par_idx] + ref_geocent_time
-        else:
-            pars[par] = all_x_test[par_idx]
-
-    # fix parameters here
-    injection_parameters = dict(
-        mass_1=pars['mass_1'],mass_2=pars['mass_2'], a_1=pars['a_1'], a_2=pars['a_2'], tilt_1=pars['tilt_1'], tilt_2=pars['tilt_2'],
-        phi_12=pars['phi_12'], phi_jl=pars['phi_jl'], luminosity_distance=pars['luminosity_distance'], theta_jn=pars['theta_jn'], psi=pars['psi'],
-        phase=pars['phase'], geocent_time=pars['geocent_time'], ra=pars['ra'], dec=pars['dec'])
-
-    # Fixed arguments passed into the source model
-    waveform_arguments = dict(waveform_approximant='IMRPhenomPv2',
-                              reference_frequency=20., minimum_frequency=20.)
-
-    # Create the waveform_generator using a LAL BinaryBlackHole source function
-    waveform_generator = bilby.gw.WaveformGenerator(
-        duration=params['duration'], sampling_frequency=params['ndata'],
-        frequency_domain_source_model=bilby.gw.source.lal_binary_black_hole,
-        parameter_conversion=bilby.gw.conversion.convert_to_lal_binary_black_hole_parameters,
-        waveform_arguments=waveform_arguments,
-        start_time=start_time)
-
-    # create waveform
-    wfg = waveform_generator
-
-    # extract waveform from bilby
-    wfg.parameters = injection_parameters
-    freq_signal = wfg.frequency_domain_strain()
-    time_signal = wfg.time_domain_strain()
-
-    # Set up interferometers. These default to their design
-    # sensitivity
-    ifos = bilby.gw.detector.InterferometerList(params['det'])
-
-    # If user is specifying PSD files
-    if len(psd_files) > 0:
-        for int_idx,ifo in enumerate(ifos):
-            ifo.power_spectral_density = bilby.gw.detector.PowerSpectralDensity(psd_file=psd_files[int_idx])
-
-    # set noise to be colored Gaussian noise
-    ifos.set_strain_data_from_power_spectral_densities(
-    sampling_frequency=params['ndata'], duration=duration,
-    start_time=start_time)
-
-    # inject signal
-    ifos.inject_signal(waveform_generator=waveform_generator,
-                       parameters=injection_parameters)
-
-    # Create the GW likelihood
-    likelihood = bilby.gw.GravitationalWaveTransient(
-        interferometers=ifos, waveform_generator=waveform_generator)
-
-    # Now, it is time to determine the new likelihood values
-    print('Need to figure out how to get likelihood out of VItamin')
-    exit()
-    likelihoods_old = result.posterior['log_likelihood'] # TODO: how do I get log likelihood out of VItamin??
-    posterior_dict_old = result.posterior
-    number_of_samples = len(likelihoods_old)
-
-    print(start_sample, number_of_samples)
-
-    likelihoods_new = []
-    weights = []
-
-    if end_sample >= number_of_samples: print('setting end sample to max sample'); end_sample = number_of_samples
-
-    if start_sample >= number_of_samples:
-        raise ValueError('You are outside of the number of samples')
-
-    for i in range(start_sample,end_sample):
-
-        likelihood_parameters = dict(
-            mass_1=posterior_dict_old['mass_1'][i],
-            mass_2=posterior_dict_old['mass_2'][i],
-            chi_1=posterior_dict_old['chi_1'][i], chi_2=posterior_dict_old['chi_2'][i],
-            luminosity_distance=posterior_dict_old['luminosity_distance'][i],
-            theta_jn=posterior_dict_old['theta_jn'][i], psi=posterior_dict_old['psi'][i],
-            phase=posterior_dict_old['phase'][i],
-            geocent_time=posterior_dict_old['geocent_time'][i],
-            ra=posterior_dict_old['ra'][i], dec=posterior_dict_old['dec'][i])
-
-        likelihood.parameters = likelihood_parameters
-        likelihood_new = likelihood.log_likelihood_ratio()
-        weight = np.exp(likelihood_new - likelihoods_old[i])
-
-        likelihoods_new.append(likelihood_new)
-        weights.append(weight)
-
-        print(likelihoods_old[i], likelihood_new, likelihood_new - likelihoods_old[i])
-        print('evalution {}/{}'.format(i, number_of_samples))
-
-    array_to_be_saved = np.array([likelihoods_old[start_sample:end_sample],
-                                  likelihoods_new, weights]).T
-
-    np.savetxt(outdir+'/new_evaluations/s{}e{}.dat'.format(start_sample,end_sample),
-        array_to_be_saved)
-
-    return data
-
 def run(sampling_frequency=256.0,
            duration=1.,
            N_gen=1000,
@@ -715,30 +495,23 @@ def run(sampling_frequency=256.0,
     # otherwise we are doing test data 
     else:
        
-        # generate simulated test sample
-        if not use_real_events:
- 
-            # generate parameters
-            pars = gen_par(fixed_vals,bounds=bounds,rand_pars=rand_pars,mdist='uniform')
-            pars['det'] = det
-            temp = []
-            for p in rand_pars:
-                for q,qi in pars.items():
-                    if p==q:
-                        temp.append(qi)        
+        # generate parameters
+        pars = gen_par(fixed_vals,bounds=bounds,rand_pars=rand_pars,mdist='uniform')
+        pars['det'] = det
+        temp = []
+        for p in rand_pars:
+            for q,qi in pars.items():
+                if p==q:
+                    temp.append(qi)        
 
-            # inject signal - shift geocent time to correct reference
-            pars['geocent_time'] += ref_geocent_time
-            test_samples_noisefree,test_samples_noisy,injection_parameters,ifos,waveform_generator = gen_template(duration,sampling_frequency,
-                                   pars,ref_geocent_time,psd_files)
+        # inject signal - shift geocent time to correct reference
+        pars['geocent_time'] += ref_geocent_time
+        test_samples_noisefree,test_samples_noisy,injection_parameters,ifos,waveform_generator = gen_template(duration,sampling_frequency,
+                               pars,ref_geocent_time,psd_files)
 
-            # get test sample snr
-            snr = np.array([ifos[j].meta_data['optimal_SNR'] for j in range(len(pars['det']))])
-       
-        # generate test sample from real LIGO event data using event name (i.e. GW150914)
-        else:
-            test_samples_noisefree,test_samples_noisy,injection_parameters,ifos,waveform_generator = gen_real_events(
-                                   use_real_events[samp_idx], det, duration, sampling_frequency, ref_geocent_time)
+        # get test sample snr
+        snr = np.array([ifos[j].meta_data['optimal_SNR'] for j in range(len(pars['det']))])
+   
 
         # if not doing PE then return signal data
         if not do_pe:
@@ -836,10 +609,11 @@ def run(sampling_frequency=256.0,
 
         # Initialise the likelihood by passing in the interferometer data (ifos) and
         # the waveform generator
-        if not use_real_events and np.any([r=='phase' for r in inf_pars]):
-            phase_marginalization=True
-        else:
-            phase_marginalization=False
+#        if np.any([r=='phase' for r in inf_pars]):
+        phase_marginalization=True
+            
+#        else:
+#            phase_marginalization=False
         likelihood = bilby.gw.GravitationalWaveTransient(
             interferometers=ifos, waveform_generator=waveform_generator, phase_marginalization=phase_marginalization,
 
@@ -877,7 +651,7 @@ def run(sampling_frequency=256.0,
             # Run sampler dynesty 1 sampler
 
             result = bilby.run_sampler(
-                likelihood=likelihood, priors=priors, sampler='dynesty', npoints=1000, nact=50, npool=8, dlogz=0.1,
+                likelihood=likelihood, priors=priors, sampler='dynesty', npoints=5000, nact=50, npool=8, dlogz=0.1,
                 injection_parameters=injection_parameters, outdir=out_dir+'_'+samplers[-1], label=label,
                 save='hdf5', plot=True)
             run_endt = time.time()
@@ -902,14 +676,14 @@ def run(sampling_frequency=256.0,
                 # Make a corner plot.
                 result.plot_corner()
                 # remove unecessary files
-                png_files=glob.glob("%s_dynesty1/*.png*" % (out_dir))
-                hdf5_files=glob.glob("%s_dynesty1/*.hdf5*" % (out_dir))
-                pickle_files=glob.glob("%s_dynesty1/*.pickle*" % (out_dir))
-                resume_files=glob.glob("%s_dynesty1/*.resume*" % (out_dir))
-                filelist = [png_files,hdf5_files,pickle_files,resume_files]
-                for file_type in filelist:
-                    for file in file_type:
-                        os.remove(file)
+#                png_files=glob.glob("%s_dynesty1/*.png*" % (out_dir))
+#                hdf5_files=glob.glob("%s_dynesty1/*.hdf5*" % (out_dir))
+#                pickle_files=glob.glob("%s_dynesty1/*.pickle*" % (out_dir))
+#                resume_files=glob.glob("%s_dynesty1/*.resume*" % (out_dir))
+#                filelist = [png_files,hdf5_files,pickle_files,resume_files]
+#                for file_type in filelist:
+#                    for file in file_type:
+#                        os.remove(file)
                 print('finished running pe')
                 return test_samples_noisy,test_samples_noisefree,np.array([temp]),snr
 

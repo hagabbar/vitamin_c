@@ -13,7 +13,7 @@ from . import vae_utils
 
 class VariationalAutoencoder(object):
 
-    def __init__(self, name, wrap_mask, nowrap_mask, m1_mask, m2_mask, sky_mask, n_input1=4, n_input2=256, n_output=3, n_channels=3, n_weights=2048, drate=0.2, n_filters=8, filter_size=8, maxpool=4, strides=1, dilations=1, batch_norm=True, twod_conv=False, parallel_conv=False):
+    def __init__(self, name, wrap_mask, nowrap_mask, m1_mask, m2_mask, sky_mask, n_input1=4, n_input2=256, n_output=3, n_channels=3, n_weights=2048, drate=0.2, n_filters=8, filter_size=8, maxpool=4, batch_norm=True):
         
         self.n_input1 = n_input1                    # actually the output size
         self.n_input2 = n_input2                    # actually the output size
@@ -24,9 +24,6 @@ class VariationalAutoencoder(object):
         self.n_conv = len(n_filters)                # the number of convolutional layers
         self.n_filters = n_filters                  # the number of filters in each conv layer
         self.filter_size = filter_size              # the filter sizes in each conv layer
-        self.strides = strides
-        self.dilations = dilations
-        self.parallel_conv = parallel_conv
         self.maxpool = maxpool                      # the max pooling sizes in each conv layer
         self.name = name                            # the name of the network
         self.drate = drate                          # dropout rate
@@ -47,96 +44,42 @@ class VariationalAutoencoder(object):
         self.nonlinear_scale_sky = tf.nn.relu       # activation for sky params
         self.nonlinearity = tf.nn.relu              # activation between hidden layers
         self.batch_norm = batch_norm
-        self.twod_conv = twod_conv
-        if self.twod_conv:
-            self.conv_out_size_t = n_input2 - 2*int(self.filter_size[0]/2)
-        else:
-            self.conv_out_size_t = n_input2
-        for i in range(self.n_conv):
-            self.conv_out_size_t = np.ceil(self.conv_out_size_t/strides[i])
-            self.conv_out_size_t = np.ceil(self.conv_out_size_t/maxpool[i])
-        if self.parallel_conv:
-            self.conv_out_size_t = int(self.conv_out_size_t*n_filters[-1])*self.n_channels
-        else:
-            self.conv_out_size_t = int(self.conv_out_size_t*n_filters[-1])
-        if self.twod_conv:
-            self.conv_out_size_t *= self.n_channels
-        #self.conv_out_size_t = n_channels*int(self.conv_out_size_t*n_filters[-1])
-  
-#        resnet = True 
-#        if resnet:
-#            self.conv_out_size_t = 256*16
 
         network_weights = self._create_weights()
         self.weights = network_weights
 
     def calc_reconstruction(self, z, y, training=True):
-
         with tf.name_scope("VI_decoder_r2"):
 
             # Reshape input to a 3D tensor - single channel
-            if self.n_conv>0:
-                if self.twod_conv:
-                    conv_pool_t = tf.reshape(y, shape=[-1, self.n_input2, self.n_channels,1])
-                    conv_pool_t = tf.concat([tf.reshape(conv_pool_t[:,:,-1,:],[-1,self.n_input2,1,1]),conv_pool_t,tf.reshape(conv_pool_t[:,:,0,:],[-1,self.n_input2,1,1])],axis=2)
-                    conv_padding = 'VALID'
-                else:
-                    conv_pool_t = tf.reshape(y, shape=[-1, self.n_input2, 1, self.n_channels])
-                    if self.parallel_conv:
-                        conv_pool_t = tf.concat(tf.split(conv_pool_t,num_or_size_splits=self.n_channels,axis=3),axis=0)
-                    conv_padding = 'SAME'
-                #conv_pool_t0 = tf.reshape(conv_pool_t[:,:,0], shape=[-1, self.n_input2, 1])
-                #conv_pool_t1 = tf.reshape(conv_pool_t[:,:,1], shape=[-1, self.n_input2, 1])
-                #conv_pool_t2 = tf.reshape(conv_pool_t[:,:,2], shape=[-1, self.n_input2, 1])
-
+            if self.n_conv is not None:
+                conv_pool = tf.reshape(y, shape=[-1, self.n_input2, 1, self.n_channels])
                 for i in range(self.n_conv):            
                     weight_name = 'w_conv_' + str(i)
                     bias_name = 'b_conv_' + str(i)
-                    conv_pre_t = tf.add(tf.nn.conv2d(conv_pool_t, self.weights['VI_decoder_r2'][weight_name+'t'],strides=[self.strides[i],1],dilations=[self.dilations[i],1],padding=conv_padding),self.weights['VI_decoder_r2'][bias_name+'t'])
-                    conv_post_t = self.nonlinearity(conv_pre_t)
-                    conv_pool_t = tf.nn.max_pool2d(conv_post_t,ksize=[self.maxpool[i],1],strides=[self.maxpool[i],1],padding='SAME')
-                    conv_padding = 'SAME'
-                    #conv_pre_t0 = tf.add(tf.nn.conv1d(conv_pool_t0, self.weights['VI_decoder_r2'][weight_name+'t'],stride=self.strides[i],dilations=self.dilations[i],padding='SAME'),self.weights['VI_decoder_r2'][bias_name+'t'])
-                    #conv_pre_t1 = tf.add(tf.nn.conv1d(conv_pool_t1, self.weights['VI_decoder_r2'][weight_name+'t'],stride=self.strides[i],dilations=self.dilations[i],padding='SAME'),self.weights['VI_decoder_r2'][bias_name+'t'])
-                    #conv_pre_t2 = tf.add(tf.nn.conv1d(conv_pool_t2, self.weights['VI_decoder_r2'][weight_name+'t'],stride=self.strides[i],dilations=self.dilations[i],padding='SAME'),self.weights['VI_decoder_r2'][bias_name+'t'])
-                    #conv_post_t0 = self.nonlinearity(conv_pre_t0)
-                    #conv_post_t1 = self.nonlinearity(conv_pre_t1)
-                    #conv_post_t2 = self.nonlinearity(conv_pre_t2)
-                    #conv_pool_t0 = tf.nn.max_pool1d(conv_post_t0,ksize=self.maxpool[i],strides=self.maxpool[i],padding='SAME')
-                    #conv_pool_t1 = tf.nn.max_pool1d(conv_post_t1,ksize=self.maxpool[i],strides=self.maxpool[i],padding='SAME')
-                    #conv_pool_t2 = tf.nn.max_pool1d(conv_post_t2,ksize=self.maxpool[i],strides=self.maxpool[i],padding='SAME')
-     
-                #conv_pool_t = tf.concat([conv_pool_t0,conv_pool_t1,conv_pool_t2],axis=-1)
-                if self.parallel_conv:
-                    conv_pool_t = tf.concat(tf.split(conv_pool_t,num_or_size_splits=self.n_channels,axis=0),axis=1)
-                fc = tf.concat([z,tf.reshape(conv_pool_t, [-1, self.conv_out_size_t])],axis=1) 
+                    conv_pre = tf.add(tf.nn.conv2d(conv_pool, self.weights['VI_decoder_r2'][weight_name],strides=1,padding='SAME'),self.weights['VI_decoder_r2'][bias_name])
+                    if self.batch_norm:
+                        conv_batchnorm = tf.layers.batch_normalization(conv_pre,axis=-1,center=False,scale=False,
+                                   beta_initializer=tf.zeros_initializer(),
+                                   gamma_initializer=tf.ones_initializer(),
+                                   moving_mean_initializer=tf.zeros_initializer(),
+                                   moving_variance_initializer=tf.ones_initializer(),
+                                   trainable=True,epsilon=1e-3,training=training)
+                        conv_post = self.nonlinearity(conv_batchnorm)
+                    else:
+                        conv_post = self.nonlinearity(conv_pre)
+                    conv_pool = tf.nn.max_pool2d(conv_post,ksize=[self.maxpool[i],1],strides=[self.maxpool[i],1],padding='SAME')
+
+                fc = tf.concat([z,tf.reshape(conv_pool, [-1, int(self.n_input2*self.n_filters[-1]/(np.prod(self.maxpool)))])],axis=1)            
 
             else:
                 fc = tf.concat([z,y],axis=1)
 
-            """
-        # ResNet Approach
-        with tf.name_scope("VI_decoder_r2"):
-            conv_pool_t = tf.reshape(y, shape=[-1, self.n_input2, 1, self.n_channels])
-            weight_name = 'w_conv_' + str(0)
-            bias_name = 'b_conv_' + str(0)
-            conv_pool_t = tf.add(tf.nn.conv2d(conv_pool_t, self.weights['VI_decoder_r2'][weight_name+'t'],strides=[1,1],dilations=[1,1],padding='SAME'),self.weights['VI_decoder_r2'][bias_name+'t'])
-
-            res_n = [2, 2, 2, 2]
-            for block_idx,block in enumerate(res_n):
-                for i in range(block):
-                    conv_pool_t = vae_utils.resblock(conv_pool_t, channels=self.n_channels, is_training=training, downsample=False, scope='resblock%d_%d' % (block_idx,i))
-#                conv_pool_t = vae_utils.resblock(conv_pool_t, channels=self.n_channels, is_training=training, downsample=True, scope='resblock%d_0' % (block_idx+1))
-            #print(z.shape, tf.reshape(conv_pool_t, [-1, self.conv_out_size_t]))
-            #exit()
-            fc = tf.concat([z,tf.reshape(conv_pool_t, [-1, self.conv_out_size_t])],axis=1)        
-            """
             hidden_dropout = fc
             for i in range(self.n_hlayers):
                 weight_name = 'w_hidden_' + str(i)
                 bias_name = 'b_hidden_' + str(i)
                 bn_name = 'VI_bn_hidden_' + str(i)
-
                 hidden_pre = tf.add(tf.matmul(hidden_dropout, self.weights['VI_decoder_r2'][weight_name]), self.weights['VI_decoder_r2'][bias_name])
                 if self.batch_norm:
                     hidden_batchnorm = tf.layers.batch_normalization(hidden_pre,axis=-1,center=False,scale=False,
@@ -172,36 +115,41 @@ class VariationalAutoencoder(object):
         with tf.variable_scope("VI_DEC"):
             all_weights['VI_decoder_r2'] = collections.OrderedDict()
             
-            if self.n_conv>0:
-                if self.parallel_conv:
-                    dummy_t = 1
-                else:
-                    dummy_t = self.n_channels
-                #dummy_t = 1
+            if self.n_conv is not None:
+                dummy = self.n_channels
                 for i in range(self.n_conv):
                     weight_name = 'w_conv_' + str(i)
                     bias_name = 'b_conv_' + str(i)
-                    if self.twod_conv:
-                        all_weights['VI_decoder_r2'][weight_name+'t'] = tf.Variable(tf.reshape(vae_utils.xavier_init(self.filter_size[i], self.n_channels*self.n_filters[i]),[self.filter_size[i], self.n_channels, 1, self.n_filters[i]]), dtype=tf.float32)
-                    else:
-                        all_weights['VI_decoder_r2'][weight_name+'t'] = tf.Variable(tf.reshape(vae_utils.xavier_init(self.filter_size[i], dummy_t*self.n_filters[i]),[self.filter_size[i], 1, dummy_t, self.n_filters[i]]), dtype=tf.float32)
-                    all_weights['VI_decoder_r2'][bias_name+'t'] = tf.Variable(tf.zeros([self.n_filters[i]], dtype=tf.float32))
-                    tf.summary.histogram(weight_name+'t', all_weights['VI_decoder_r2'][weight_name+'t'])
-                    tf.summary.histogram(bias_name+'t', all_weights['VI_decoder_r2'][bias_name+'t'])
-                    dummy_t = self.n_filters[i]
-                fc_input_size = self.n_input1 + self.conv_out_size_t
+                    #bn_beta_name = 'bn_beta_conv_' + str(i)
+                    #bn_scale_name = 'bn_scale_conv_' + str(i)
+                    all_weights['VI_decoder_r2'][weight_name] = tf.Variable(tf.reshape(vae_utils.xavier_init(self.filter_size[i], dummy*self.n_filters[i]),[self.filter_size[i], 1, dummy, self.n_filters[i]]), dtype=tf.float32)
+                    all_weights['VI_decoder_r2'][bias_name] = tf.Variable(tf.zeros([self.n_filters[i]], dtype=tf.float32))
+                    #all_weights['VI_decoder_r2'][bn_beta_name] = tf.Variable(tf.zeros([self.n_filters[i]], dtype=tf.float32))
+                    #all_weights['VI_decoder_r2'][bn_scale_name] = tf.Variable(tf.zeros([self.n_filters[i]], dtype=tf.float32))
+                    tf.summary.histogram(weight_name, all_weights['VI_decoder_r2'][weight_name])
+                    tf.summary.histogram(bias_name, all_weights['VI_decoder_r2'][bias_name])
+                    #tf.summary.histogram(bn_beta_name, all_weights['VI_decoder_r2'][bn_beta_name])
+                    #tf.summary.histogram(bn_scale_name, all_weights['VI_decoder_r2'][bn_scale_name])
+                    dummy = self.n_filters[i]
+
+                fc_input_size = self.n_input1 + int(self.n_input2*self.n_filters[-1]/(np.prod(self.maxpool)))
             else:
                 fc_input_size = self.n_input1 + self.n_input2*self.n_channels
 
             for i in range(self.n_hlayers):
                 weight_name = 'w_hidden_' + str(i)
                 bias_name = 'b_hidden_' + str(i)
+                #bn_mean_name = 'bn_mean_hidden_' + str(i)
+                #bn_var_name = 'bn_var_hidden_' + str(i)
                 all_weights['VI_decoder_r2'][weight_name] = tf.Variable(vae_utils.xavier_init(fc_input_size, self.n_weights[i]), dtype=tf.float32)
                 all_weights['VI_decoder_r2'][bias_name] = tf.Variable(tf.zeros([self.n_weights[i]], dtype=tf.float32))
+                #all_weights['VI_decoder_r2'][bn_mean_name] = tf.Variable(tf.zeros([self.n_weights[i]], dtype=tf.float32),trainable=True)
+                ##all_weights['VI_decoder_r2'][bn_var_name] = tf.Variable(tf.zeros([self.n_weights[i]], dtype=tf.float32),trainable=True)
                 tf.summary.histogram(weight_name, all_weights['VI_decoder_r2'][weight_name])
                 tf.summary.histogram(bias_name, all_weights['VI_decoder_r2'][bias_name])
+                #tf.summary.histogram(bn_mean_name, all_weights['VI_decoder_r2'][bn_mean_name])
+                #tf.summary.histogram(bn_var_name, all_weights['VI_decoder_r2'][bn_var_name])
                 fc_input_size = self.n_weights[i]
-
             all_weights['VI_decoder_r2']['w_loc'] = tf.Variable(vae_utils.xavier_init(self.n_weights[-1], self.n_output+1),dtype=tf.float32)  # +1 for extra sky param
             all_weights['VI_decoder_r2']['b_loc'] = tf.Variable(tf.zeros([self.n_output+1], dtype=tf.float32), dtype=tf.float32) # +1 for extra sky param
             tf.summary.histogram('w_loc', all_weights['VI_decoder_r2']['w_loc'])
