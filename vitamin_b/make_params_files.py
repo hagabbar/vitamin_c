@@ -141,10 +141,11 @@ bilby_results_label = '1024Hz_full_15par'
 r = 1                                                          
 pe_test_num = 256                                                               
 tot_dataset_size = int(1e3)                                                     
+
 tset_split = int(1e3)                                                           
 save_interval = int(1e3)
 plot_interval = int(10)                                                        
-num_iterations=int(1e7)+1                                                       
+num_iterations=int(25000)+1                                                       
 ref_geocent_time=1126259642.5                                                   
 load_chunk_size = int(1e4)                                                           
 samplers=['vitamin','dynesty']                                                  

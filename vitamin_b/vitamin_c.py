@@ -723,13 +723,16 @@ def run_vitc(params, x_data_train, y_data_train, x_data_val, y_data_val, x_data_
 
     y_data_test = y_data_test[:params['r']]
     x_data_test = x_data_test[:params['r']]
-    epochs = params['epochs']
+    epochs = params['num_iterations']
     train_size = params['load_chunk_size']
     batch_size = params['batch_size']
     val_size = params['val_dataset_size']
     test_size = params['r']
     plot_dir = params['plot_dir']
     plot_cadence = params['plot_interval']
+    # Include the epoch in the file name (uses `str.format`)
+    checkpoint_path = "inverse_model_%s/model.ckpt" % params['run_label']
+    checkpoint_dir = os.path.dirname(checkpoint_path)
 
     train_dataset = (tf.data.Dataset.from_tensor_slices((x_data_train,y_data_train))
                      .shuffle(train_size).batch(batch_size))
@@ -739,11 +742,18 @@ def run_vitc(params, x_data_train, y_data_train, x_data_val, y_data_val, x_data_
                     .batch(1))
 
     train_loss_metric = tf.keras.metrics.Mean('train_loss', dtype=tf.float32)
-    #os.mkdir(train_log_dir)
     train_summary_writer = tf.summary.create_file_writer(train_log_dir)
-#    model = CVAE(x_data_train.shape[1], params['ndata'], y_data_train.shape[2], params['z_dimension'], params['n_modes'])
-    model = CVAE(x_data_train.shape[1], params['ndata'],
-                 y_data_train.shape[2], params['z_dimension'], params['n_modes'], params)
+
+    if params['resume_training']:
+        model = CVAE(x_data_train.shape[1], params['ndata'],
+                     y_data_train.shape[2], params['z_dimension'], params['n_modes'], params) 
+        # Load the previously saved weights
+        latest = tf.train.latest_checkpoint(checkpoint_dir)
+        model.load_weights(latest)
+        print('... loading in previous model %s' % checkpoint_path)
+    else:
+        model = CVAE(x_data_train.shape[1], params['ndata'],
+                     y_data_train.shape[2], params['z_dimension'], params['n_modes'], params)
 
     # start the training loop
     train_loss = np.zeros((epochs,3))
@@ -751,9 +761,6 @@ def run_vitc(params, x_data_train, y_data_train, x_data_val, y_data_val, x_data_
     ramp_start = params['ramp_start']
     ramp_stop = params['ramp_end']
     ramp_grad = 1.0/(ramp_stop - ramp_start)
-#    boundary_start = 10
-#    boundary_stop = 20
-#    boundary_grad = 1.0/(boundary_stop - boundary_start)
     KL_samples = []
     for epoch in range(1, epochs + 1):
 
@@ -786,6 +793,9 @@ def run_vitc(params, x_data_train, y_data_train, x_data_val, y_data_val, x_data_
             .format(epoch, run, train_loss[epoch-1,0], train_loss[epoch-1,1], train_loss[epoch-1,2], end_time_train - start_time_train))
         print('Epoch: {}, Run {}, Validation RECON: {}, KL: {}, TOTAL: {}, time elapsed {}'
             .format(epoch, run, val_loss[epoch-1,0], val_loss[epoch-1,1], val_loss[epoch-1,2], end_time_val - start_time_val))       
+        # Save the weights using the `checkpoint_path` format
+        model.save_weights(checkpoint_path)
+        print('... Saved model %s ' % checkpoint_path)
 
         # update loss plot
         plot_losses(train_loss, val_loss, epoch, run=plot_dir)
