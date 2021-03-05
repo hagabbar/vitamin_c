@@ -43,7 +43,7 @@ def write_version_file(version):
 
     version_file = '.version'
     if os.path.isfile(version_file) is False:
-        with open('vitamin_b/' + version_file, 'w+') as f:
+        with open('vitamin_c/' + version_file, 'w+') as f:
             f.write('{}: {}'.format(version, git_status))
 
     return version_file
@@ -70,7 +70,7 @@ long_description = get_long_description()
 
 
 setup(
-    name='vitamin_b',
+    name='vitamin_c',
     version='0.2.10',    
     description='A user-friendly machine learning Bayesian inference library',
     long_description=long_description,
