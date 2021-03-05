@@ -894,49 +894,39 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
         y_data_val = y_data_val_copy
         print('... converted the data into channels-last format')
 
-    if params['vitamin_c']:
-        print('... Using new vitamin_c code')
-        # run hyperparameter optimization
-        if params['hyperparam_optim'] == True:
+    # run hyperparameter optimization
+    if params['hyperparam_optim'] == True:
 
-            # list of initial default hyperparameters to use for GP hyperparameter optimization
-            default_hyperparams = [8, 3]
+        # list of initial default hyperparameters to use for GP hyperparameter optimization
+        default_hyperparams = [8, 3]
 
-            # Define hyperparam iteration counter
-            global cur_hyperparam_iter
-            cur_hyperparam_iter = 0
+        # Define hyperparam iteration counter
+        global cur_hyperparam_iter
+        cur_hyperparam_iter = 0
 
-            # Run optimization
-            search_result = gp_minimize(func=hyperparam_fitness,
-                                dimensions=dimensions,
-                                acq_func='EI', # Negative Expected Improvement.
-                                n_calls=params['hyperparam_n_call'],
-                                x0=default_hyperparams)
+        # Run optimization
+        search_result = gp_minimize(func=hyperparam_fitness,
+                            dimensions=dimensions,
+                            acq_func='EI', # Negative Expected Improvement.
+                            n_calls=params['hyperparam_n_call'],
+                            x0=default_hyperparams)
 
-            dump(search_result, 'search_result_store')
+        dump(search_result, 'search_result_store')
 
-            # plot best loss as a function of optimization step
-            plt.close('all')
-            plot_convergence(search_result)
-            plt.savefig('%s/latest_%s/hyperpar_convergence.png' % (params['plot_dir'],params['run_label']))
-            print('... Saved hyperparameter convergence loss to -> %s/latest_%s/hyperpar_convergence.png' % (params['plot_dir'],params['run_label']))
-            print('... Did a hyperparameter search') 
-        else:
-            vitamin_c.run_vitc(params, x_data_train, y_data_train,
-                               x_data_val, y_data_val,
-                               x_data_test, y_data_test, y_data_test_noisefree,
-                               "inverse_model_dir_%s/inverse_model.ckpt" % params['run_label'],
-                               x_data_test, bounds, fixed_vals,
-                               XS_all,snrs_test)
+        # plot best loss as a function of optimization step
+        plt.close('all')
+        plot_convergence(search_result)
+        plt.savefig('%s/latest_%s/hyperpar_convergence.png' % (params['plot_dir'],params['run_label']))
+        print('... Saved hyperparameter convergence loss to -> %s/latest_%s/hyperpar_convergence.png' % (params['plot_dir'],params['run_label']))
+        print('... Did a hyperparameter search') 
+    else:
+        vitamin_c.run_vitc(params, x_data_train, y_data_train,
+                           x_data_val, y_data_val,
+                           x_data_test, y_data_test, y_data_test_noisefree,
+                           "inverse_model_dir_%s/inverse_model.ckpt" % params['run_label'],
+                           x_data_test, bounds, fixed_vals,
+                           XS_all,snrs_test)
 
-    else:    
-        # finally train the model
-        CVAE_model.train(params, x_data_train, y_data_train,
-                                     x_data_val, y_data_val,
-                                     x_data_test, y_data_test, y_data_test_noisefree,
-                                     "inverse_model_dir_%s/inverse_model.ckpt" % params['run_label'],
-                                     x_data_test, bounds, fixed_vals,
-                                     XS_all,snrs_test)
     print('... completed training') 
     return
 
@@ -1394,23 +1384,6 @@ def gen_samples(params=params,bounds=bounds,fixed_vals=fixed_vals,model_loc='mod
     with open(fixed_vals, 'r') as fp:
         fixed_vals = json.load(fp)
 
-    # if doing hour angle, use hour angle bounds on RA
-    if params['convert_to_hour_angle']:
-        bounds['ra_min'] = params['hour_angle_range'][0]
-        bounds['ra_max'] = params['hour_angle_range'][1]
-
-    if use_gpu == True:
-        print('GPU found')
-        os.environ["CUDA_VISIBLE_DEVICES"]=str(params['gpu_num'])
-        config = tf.compat.v1.ConfigProto()
-        config.gpu_options.allow_growth = True  # Let GPU consumption grow as needed
-    else:
-        print("No GPU found")
-        os.environ["CUDA_VISIBLE_DEVICES"]=''
-        config = tf.compat.v1.ConfigProto() 
-
-    session = tf.compat.v1.Session(config=config)
-
     if num_samples != None:
         params['n_samples'] = num_samples
 
@@ -1461,50 +1434,22 @@ def gen_samples(params=params,bounds=bounds,fixed_vals=fixed_vals,model_loc='mod
                 y_data_test_copy[i,:,j] = y_data_test[i,idx_range]
         y_data_test = y_data_test_copy
     num_timeseries=y_data_test.shape[0]
-    
-
-    """
-    # Daniel Williams waveforms
-    num_timeseries = 1
-    f = open('daniel_williams_BNU_waveforms/hunter-mdc/0.json')
-    data = json.load(f)
-    y_data_test = np.zeros((1,params['ndata'],len(params['det'])))
-    for det_idx,det in enumerate(params['det']):
-        y_data_test[0,-(np.array(data['data'][det]).shape[0]):,det_idx] = np.array(data['data'][det])
-
-    # Get x_data_test
-    x_data_test = []
-    for idx, i in enumerate(params['inf_pars']):
-        if i == data['meta'][i]:
-            x_data_test.append(data['meta'][i])
-    x_data_test = np.array(x_data_test)
-    print(x_data_test)
-    exit()
-
-    # whiten Daniel waveforms
-    # Set up interferometers. These default to their design
-    # sensitivity
-
-    # define the start time of the timeseries
-    start_time = params['ref_geocent_time']-params['duration']/2.0
-
-    ifos = bilby.gw.detector.InterferometerList(params['det'])
-    # set noise to be colored Gaussian noise
-    ifos.set_strain_data_from_power_spectral_densities(
-    sampling_frequency=params['ndata'], duration=params['duration'],
-    start_time=start_time)
-
-    for det_idx,det in enumerate(params['det']):
-        fft_waveform = np.fft.rfft(y_data_test[0,:,det_idx])
-        whitened_signal = fft_waveform / ifos[det_idx].amplitude_spectral_density_array
-        y_data_test[0,:,det_idx] = np.fft.irfft(whitened_signal) + np.random.normal(loc=0,scale=1.0,size=(params['ndata']))
-    """
-
+   
+    checkpoint_path = model_loc #"inverse_model_%s/model.ckpt" % params['run_label']
+    checkpoint_dir = os.path.dirname(checkpoint_path)
+    model = vitamin_c.CVAE(len(params['inf_pars']), params['ndata'],
+                 y_data_test.shape[2], params['z_dimension'], params['n_modes'], params)
+    # Load the previously saved weights
+    latest = tf.train.latest_checkpoint(checkpoint_dir)
+    model.load_weights(latest)
+    print('... loading in previous model %s' % checkpoint_path)
+ 
     samples = np.zeros((num_timeseries,num_samples,len(params['inf_pars'])))
     for i in range(num_timeseries):
-        samples[i,:], dt, _  = CVAE_model.run(params, np.expand_dims(y_data_test[i],axis=0), len(params['inf_pars']),
-                                                              params['y_normscale'],
-                                                              model_loc)
+        start = time.time()
+        samples[i,:] = vitamin_c.gen_samples(model, np.expand_dims(y_data_test[i],axis=0), ramp=1.0, nsamples=num_samples)
+        end = time.time()
+        dt = end-start
         print('... Runtime to generate samples is: ' + str(dt))
 
         # unnormalize predictions
@@ -1512,9 +1457,6 @@ def gen_samples(params=params,bounds=bounds,fixed_vals=fixed_vals,model_loc='mod
             par_min = q + '_min'
             par_max = q + '_max'
             samples[i,:,q_idx] = (samples[i,:,q_idx] * (bounds[par_max] - bounds[par_min])) + bounds[par_min]
-
-        # Convert hour angle back to RA
-        samples[i,:] = convert_ra_to_hour_angle(samples[i,:], params, rand_pars=False)
 
         # plot results
         if plot_corner==True:
@@ -1554,5 +1496,5 @@ if args.train:
 if args.test:
     test(params,bounds,fixed_vals,use_gpu=bool(args.use_gpu))
 if args.gen_samples:
-    gen_samples(arams,bounds,fixed_vals,model_loc=args.pretrained_loc,
+    gen_samples(params,bounds,fixed_vals,model_loc=args.pretrained_loc,
                 test_set=args.test_set_loc,num_samples=args.num_samples,use_gpu=bool(args.use_gpu))
