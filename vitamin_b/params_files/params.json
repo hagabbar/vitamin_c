@@ -1,4 +1,54 @@
 {
+    "val_dataset_size": 1000,
+    "__definition__val_dataset_size": "validation dataset total size",
+    "bilby_pars": [
+        "mass_1",
+        "mass_2",
+        "luminosity_distance",
+        "geocent_time",
+        "theta_jn",
+        "psi",
+        "a_1",
+        "a_2",
+        "tilt_1",
+        "tilt_2",
+        "phi_12",
+        "phi_jl"
+    ],
+    "__definition__bilby_pars": "parameters for bilby to infer",
+    "vitamin_c": true,
+    "__definition__vitamin_c": "If True, use new vitamin_c version of code with keras",
+    "parallel_conv": false,
+    "__definition__parallel_conv": "if true analyse detectors separately in convolutions, otherwise as channels",
+    "extra_lr_decay_factor": false,
+    "__definition__extra_decay_factor": "Use an extra decay factor of 0.96 after every load iteration",
+    "n_KLzsamp": 1,
+    "__definition_n_KLzsamp": "The number of samples to use to perfrom MonteCarlo integration over z to compute the KL",
+    "twod_conv": false,
+    "__definition__twod_conv": "if true treat the detectors as an extra image dimension otherwise as channels",
+    "n_modes_q": 1,
+    "__definition__n_modes_q": "number of modes in Gaussian mixture model for the q distribution",
+    "conv_dilations_r1": [
+        1,
+        1,
+        1,
+        1
+    ],
+    "__definition__conv_dilations_r1": "size of convolutional dilation to use in r1 network",
+    "conv_dilations_r2": [
+        1,
+        1,
+        1,
+        1
+    ],
+    "__definition__conv_dilations_r2": "size of convolutional dilation to use in r2 network",
+    "conv_dilations_q": [
+        1,
+        1,
+        1,
+        1
+    ],
+    "__definition__conv_dilations_q": "size of convolutional dilation to use in q network",
     "hour_angle_range": [
         -3.813467684252483,
         2.469671758574231
@@ -6,9 +56,16 @@
     "__definition__hour_angle_range": "min and max range of hour angle space",
     "use_real_det_noise": false,
     "__definition__use_real_det_noise": "If True, use real detector noise around reference time",
-    "use_real_events": [],
+    "real_noise_time_range": [
+        1126051217,
+        1137254417
+    ],
+    "__definition__real_noise_time_range": "time range to produce real noise samples over",
+    "use_real_events": [
+        "GW150914"
+    ],
     "__definition__use_real_events": "list containing real ligo events to be analyzed",
-    "convert_to_hour_angle": true,
+    "convert_to_hour_angle": false,
     "__definition__convert_to_hour_angle": "If True, convert RA to hour angle during trianing and testing",
     "make_corner_plots": true,
     "__definition__make_corner_plots": "if True, make corner plots",
@@ -32,94 +89,101 @@
     "__definition__print_values": "# optionally print loss values every report interval",
     "by_channel": true,
     "__definition__by_channel": "if True, do convolutions as seperate 1-D channels, if False, stack training samples as 2-D images (n_detectors,(duration*sampling_frequency))",
-    "load_plotmartin_shape_error_data": false,
     "load_plot_data": false,
     "__definition__load_plot_data": "Use plotting data which has already been generated",
     "doPE": true,
     "__definition__doPE": "if True then do bilby PE when generating new testing samples",
-    "gpu_num": 5,
+    "gpu_num": 1,
     "__definition__gpu_num": "gpu number run is running on",
-    "ndata": 256,
+    "ndata": 1024,
     "__definition__ndata": "sampling frequency",
-    "run_label": "public_model",
+    "run_label": "vitamin_c_testing",
     "__definition__run_label": "label of run",
-    "bilby_results_label": "all_4_samplers",
+    "bilby_results_label": "1024Hz_full_15par",
     "__definition__bilby_result_label": "label given to bilby results directory",
-    "tot_dataset_size": 1000000,
+    "tot_dataset_size": 1000,
     "__definition__tot_dataset_size": "total number of training samples available to use",
     "tset_split": 1000,
     "__definition__tset_split": "number of training samples in each training data file",
-    "plot_dir": "./results/public_model",
+    "plot_dir": "/home/hunter.gabbard/public_html/CBC/chris_dec2020_vitamin/vitamin_c_testing",
     "__definition__plot_dir": "output directory to save results plots",
     "hyperparam_optim_stop": 500000,
     "__definition__hyperparam_optim_stop": "stopping iteration of hyperparameter optimizer per call",
     "hyperparam_n_call": 30,
     "__definition__hyperparam_n_call": "number of hyperparameter optimization calls",
-    "load_chunk_size": 100000.0,
+    "load_chunk_size": 10000,
     "__definition__load_chunk_size": "Number of training samples to load in at a time.",
-    "load_iteration": 4882,
+    "load_iteration": 31250,
     "__definition__load_iteration": "How often to load another chunk of training samples",
     "weight_init": "xavier",
     "__definition__weight_init": "[xavier,VarianceScaling,Orthogonal]. Network model weight initialization (default is xavier)",
     "n_samples": 9000,
     "__definition__n_samples": "number of posterior samples to save per reconstruction upon inference (default 3000)",
-    "num_iterations": 1000001,
+    "num_iterations": 25001,
     "__definition__num_iterations": "total number of iterations before ending training of model",
     "initial_training_rate": 0.0001,
     "__definition__initial_training_rate": "initial training rate for ADAM optimiser inference model (inverse reconstruction)",
-    "batch_size": 512,
+    "batch_size": 8,
     "__definition__batch_size": " Number training samples shown to neural network per iteration",
-    "batch_norm": true,
+    "batch_norm": false,
     "__definition__batch_norm": "if true, do batch normalization in all layers of neural network",
     "report_interval": 500,
     "__definition__report_interval": "interval at which to save objective function values and optionally print info during training",
-    "n_modes": 16,
+    "n_modes": 32,
     "__definition__n_modes": "number of modes in Gaussian mixture model (ideal 7, but may go higher/lower)",
     "n_filters_r1": [
-        33,
-        33,
-        33
+        32,
+        32,
+        32,
+        32
     ],
     "__definition__n_filters_r1": "number of convolutional filters to use in r1 network (must be divisible by 3)",
     "n_filters_r2": [
-        33,
-        33,
-        33
+        32,
+        32,
+        32,
+        32
     ],
     "__definition__n_filters_r2": "number of convolutional filters to use in r2 network (must be divisible by 3)",
     "n_filters_q": [
-        33,
-        33,
-        33
+        32,
+        32,
+        32,
+        32
     ],
     "__definition__n_filters_q": "number of convolutional filters to use in q network  (must be divisible by 3)",
     "filter_size_r1": [
         5,
-        8,
-        11
+        5,
+        5,
+        5
     ],
     "__definition__filter_size_r1": "size of convolutional fitlers in r1 network",
     "filter_size_r2": [
         5,
-        8,
-        11
+        5,
+        5,
+        5
     ],
     "__definition__filter_size_r2": "size of convolutional filters in r2 network",
     "filter_size_q": [
         5,
-        8,
-        11
+        5,
+        5,
+        5
     ],
     "__definition__filter_size_q": "size of convolutional filters in q network",
-    "drate": 0.2,
+    "drate": 0.0,
     "__definition__drate": "dropout rate to use in fully-connected layers",
     "maxpool_r1": [
         1,
         2,
-        1
+        1,
+        2
     ],
     "__definition__maxpool_r1": "size of maxpooling to use in r1 network",
     "conv_strides_r1": [
+        1,
         1,
         1,
         1
@@ -128,16 +192,19 @@
     "pool_strides_r1": [
         1,
         2,
-        1
+        1,
+        2
     ],
     "__definition_pool_strides_r1": "size of max pool stride to use in r1 network",
     "maxpool_r2": [
         1,
         2,
-        1
+        1,
+        2
     ],
     "__definition_maxpool_r2": "size of max pooling to use in r2 network",
     "conv_strides_r2": [
+        1,
         1,
         1,
         1
@@ -146,16 +213,19 @@
     "pool_strides_r2": [
         1,
         2,
-        1
+        1,
+        2
     ],
     "__definition__pool_strides_r2": "size of max pool stride in r2 network",
     "maxpool_q": [
         1,
         2,
-        1
+        1,
+        2
     ],
     "__definition__maxpool_q": "size of max pooling to use in q network",
     "conv_strides_q": [
+        1,
         1,
         1,
         1
@@ -164,30 +234,34 @@
     "pool_strides_q": [
         1,
         2,
-        1
+        1,
+        2
     ],
     "__definition__pool_strides_q": "size of max pool stride to use in q network",
-    "ramp_start": 10000.0,
+    "ramp_start": 100,
     "__definition__ramp_start": "starting iteration of KL divergence ramp",
-    "ramp_end": 100000.0,
+    "ramp_end": 200,
     "__definition__ramp_end": "ending iteration of KL divergence ramp",
-    "save_interval": 25000,
+    "save_interval": 1000,
     "__definition__save_interval": "number of iterations to save model",
-    "plot_interval": 25000,
+    "plot_interval": 10,
     "__definition__plot_interval": "number of iterations to plot validation results corner plots",
-    "z_dimension": 10,
+    "z_dimension": 8,
     "__definition__z_dimension": "number of latent space dimensions of model",
     "n_weights_r1": [
+        1024,
         1024,
         1024
     ],
     "__definition__n_weights_r1": "number fully-connected neurons in layers of encoders and decoders in the r1 model",
     "n_weights_r2": [
         1024,
+        1024,
         1024
     ],
     "__definition__n_weights_r2": "number fully-connected neurons in layers of encoders and decoders in the r2 model",
     "n_weights_q": [
+        1024,
         1024,
         1024
     ],
@@ -204,6 +278,12 @@
         "phase",
         "theta_jn",
         "psi",
+        "a_1",
+        "a_2",
+        "tilt_1",
+        "tilt_2",
+        "phi_12",
+        "phi_jl",
         "ra",
         "dec"
     ],
@@ -232,21 +312,32 @@
     "__definition__training_data_seed": "tensorflow training random seed number",
     "testing_data_seed": 44,
     "__definition__testing_data_seed": " tensorflow testing random seed number",
+    "validation_data_seed": 45,
+    "__definition__validation_data_seed": "Seed for validation data",
     "inf_pars": [
         "mass_1",
         "mass_2",
         "luminosity_distance",
         "geocent_time",
         "theta_jn",
+        "psi",
+        "a_1",
+        "a_2",
+        "tilt_1",
+        "tilt_2",
+        "phi_12",
+        "phi_jl",
         "ra",
         "dec"
     ],
     "__definition__inf_pars": "parameters to infer",
-    "train_set_dir": "./training_sets_3det_9par_256Hz/tset_tot-1000000_split-1000",
+    "train_set_dir": "./training_sets_realnoise_3det_15par_1024Hz/tset_tot-1000_split-1000",
     "__definition__train_set_dir": "location of training set directory",
-    "test_set_dir": "./test_sets/all_4_samplers/test_waveforms",
+    "val_set_dir": "./validation_sets_realnoise_3det_15par_1024Hz/tset_tot-1000_split-1000",
+    "__definition__val_set_dir": "location of validation set directory",
+    "test_set_dir": "./test_sets/1024Hz_full_15par/test_waveforms",
     "__definition__test_set_dir": "location of test set directory waveforms",
-    "pe_dir": "./test_sets/all_4_samplers/test",
+    "pe_dir": "./test_sets/1024Hz_full_15par/test",
     "__definition__pe_dir": "location of test set directory Bayesian PE samples. Set to None if you do not want to use posterior samples when training.",
     "KL_cycles": 1,
     "__definition__KL_cycles": " number of cycles to repeat for the KL approximation",
@@ -260,13 +351,8 @@
         "Dynesty"
     ],
     "__definition__figure_sampler_names": "matplotlib figure sampler labels (e.g. [ptemcee,CPNest,emcee])",
-    "y_normscale": 36.0,
+    "y_normscale": 16.638832624721797,
     "__definition__y_normscale": "arbitrary normalization factor on all time series waveforms (helps convergence in training)",
-    "boost_pars": [
-        "ra",
-        "dec"
-    ],
-    "__definition__boost_pars": "parameters to boost during training (by default this is off)",
     "gauss_pars": [
         "luminosity_distance",
         "geocent_time",
@@ -274,20 +360,18 @@
         "a_1",
         "a_2",
         "tilt_1",
-        "tilt_2"
-    ],
-    "__definition__gauss_pars": "parameters that require a truncated gaussian distribution",
-    "vonmise_pars": [
+        "tilt_2",
+        "ra",
+        "dec",
         "phase",
         "psi",
         "phi_12",
         "phi_jl"
     ],
+    "__definition__gauss_pars": "parameters that require a truncated gaussian distribution",
+    "vonmise_pars": [],
     "__definition__vonmises_pars": "parameters that get wrapped on the 1D parameter",
-    "sky_pars": [
-        "ra",
-        "dec"
-    ],
+    "sky_pars": [],
     "__definition__sky_pars": "sky parameters",
     "det": [
         "H1",
