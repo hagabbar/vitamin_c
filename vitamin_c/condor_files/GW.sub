@@ -1,0 +1,15 @@
+universe=vanilla
+executable=./run_bilby.sh
+arguments="$(training) $(randpars) $(samplingfrequency) $(samplers) $(Ngen) $(bounds) $(label) $(infpars) $(fixedvals) $(refgeocenttime) $(duration) $(seed) $(dope) $(outdir)"
+output=/dev/null
+error=GW.$(Process).err
+log=GW.log
+accounting_group = ligo.dev.o3.cbc.explore.test
+RequestMemory=8000
+RequestCpus=2
+getenv=True
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+transfer_input_files = ../../gen_benchmark_pe.py
+transfer_output_files = test_waveforms,test_dynesty1,test_dynesty2,test_cpnest1,test_cpnest2,test_emcee1,test_emcee2,test_emcee1_h5py_files,test_emcee2_h5py_files,test_ptemcee1,test_ptemcee2,test_ptemcee1_h5py_files,test_ptemcee2_h5py_files
+queue 1
