@@ -3,7 +3,7 @@
 ![GitHub Stars](https://img.shields.io/github/stars/hagabbar/vitamin_b?style=social)
 ![Twitter](https://img.shields.io/twitter/follow/gw_hunter?style=social)
 
-# [VItamin_B: A Machine Learning Library for Fast Gravitational Wave Posterior Generation](https://arxiv.org/abs/1909.06296)
+# [VItamin_C: A Machine Learning Library for Fast Gravitational Wave Posterior Generation](https://arxiv.org/abs/1909.06296)
 :star: Star us on GitHub  it helps!
 
 Welcome to VItamin_B, a python toolkit for producing fast gravitational wave posterior samples.
