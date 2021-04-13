@@ -40,11 +40,11 @@ fixed_vals = {'mass_1':50.0,
         '__definition__phi_jl': 'phi_jl fixed value'}                                                
 
 # Prior bounds on source parameters
-bounds = {'mass_1_min':35.0, 'mass_1_max':80.0,
+bounds = {'mass_1_min':30.0, 'mass_1_max':160.0,
         '__definition__mass_1': 'mass 1 range',
-        'mass_2_min':35.0, 'mass_2_max':80.0,
+        'mass_2_min':30.0, 'mass_2_max':160.0,
         '__definition__mass_2': 'mass 2 range',
-        'M_min':70.0, 'M_max':160.0,
+        'M_min':60.0, 'M_max':320.0,
         '__definition__M': 'total mass range',
         'geocent_time_min':0.15,'geocent_time_max':0.35,
         '__definition__geocent_time': 'time of coalescence range',
@@ -74,27 +74,23 @@ bounds = {'mass_1_min':35.0, 'mass_1_max':80.0,
         '__definition__luminosity_distance': 'luminosity distance range'}
 
 # arbitrary value for normalization of timeseries (Don't change this)
-y_normscale = 16.638832624721797
+y_normscale = 42.20995090737759
 
 ##########################
 # Main tunable variables
 ##########################
-ndata = 1024                                                                     
+ndata = 256                                                                     
 det=['H1','L1','V1']                                                            
 #psd_files=['cuda_11_env/lib/python3.6/site-packages/bilby/gw/detector/noise_curves/aLIGO_O4_high_asd.txt'] 
 psd_files=[]
 rand_pars = ['mass_1','mass_2','luminosity_distance','geocent_time','phase',
-                 'theta_jn','psi','a_1','a_2','tilt_1','tilt_2','phi_12','phi_jl','ra','dec']                                   
-bilby_pars = ['mass_1','mass_2','luminosity_distance','geocent_time','theta_jn','psi','a_1','a_2',
-          'tilt_1','tilt_2','phi_12','phi_jl']
-inf_pars=['mass_1','mass_2','luminosity_distance','geocent_time',
-                 'theta_jn','psi','a_1','a_2','tilt_1','tilt_2','phi_12','phi_jl','ra','dec'] 
-#rand_pars = ['mass_1','mass_2','luminosity_distance','geocent_time','phase',
-#                 'theta_jn','psi','ra','dec']
-#inf_pars=['mass_1','mass_2','luminosity_distance','geocent_time','theta_jn','ra','dec']
-batch_size = int(8)                                                                 
+                 'theta_jn','psi','ra','dec']
+bilby_pars = ['mass_1','mass_2','luminosity_distance','geocent_time',
+                 'theta_jn','ra','dec']
+inf_pars=['mass_1','mass_2','luminosity_distance','geocent_time','phase','theta_jn','ra','dec']
+batch_size = int(512)                                                                 
 weight_init = 'xavier'                                                            
-n_modes=32; n_modes_q=1                                                                      
+n_modes=64; n_modes_q=1                                                                      
 initial_training_rate=1e-4                                                     
 batch_norm=False                                                                
 
@@ -120,7 +116,7 @@ conv_strides_q = [1,1,1,1]
 pool_strides_q = [1,2,1,2] 
 conv_dilations_q=[1,1,1,1]                                                        
 n_fc = 1024                                                                      
-z_dimension=8                                                                  
+z_dimension=7                                                                  
 n_weights_r1 = [n_fc,n_fc,n_fc]                                                     
 n_weights_r2 = [n_fc,n_fc,n_fc]                                                     
 n_weights_q = [n_fc,n_fc,n_fc]                                                      
@@ -131,23 +127,23 @@ n_weights_q = [n_fc,n_fc,n_fc]
 #############################
 # optional tunable variables
 #############################
-run_label = 'vitamin_c_testing'#'demo_%ddet_%dpar_%dHz_hour_angle_with_late_kl_start' % (len(det),len(rand_pars),ndata) 
+run_label = 'weichangfeng_model_run3'#'demo_%ddet_%dpar_%dHz_hour_angle_with_late_kl_start' % (len(det),len(rand_pars),ndata) 
 
 # 1024 Hz label
 #bilby_results_label = 'weichangfeng_theta_jn_issue'                                             
 # 256 Hz label
-bilby_results_label = '1024Hz_full_15par'
+bilby_results_label = 'comp_mass-30_160'
 
 r = 1                                                          
 pe_test_num = 256                                                               
-tot_dataset_size = int(1e3)                                                     
+tot_dataset_size = int(1e6)                                                     
 
 tset_split = int(1e3)                                                           
-save_interval = int(1e3)
-plot_interval = int(10)                                                        
+save_interval = int(1000)
+plot_interval = int(1000)                                                        
 num_iterations=int(25000)+1                                                       
 ref_geocent_time=1126259642.5                                                   
-load_chunk_size = int(1e4)                                                           
+load_chunk_size = int(2e4)                                                           
 samplers=['vitamin','dynesty']                                                  
 val_dataset_size = int(1e3)
 
@@ -161,8 +157,8 @@ plot_dir='/home/hunter.gabbard/public_html/CBC/chris_dec2020_vitamin/%s' % run_l
 #pe_dir='/home/hunter.gabbard/CBC/public_VItamin/provided_models/vitamin_b/vitamin_b/test_sets/1024_khz_spins_included_15par/test'
 
 # default training/testing directories
-train_set_dir='./training_sets_realnoise_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(det),len(rand_pars),ndata,tot_dataset_size,tset_split)
-val_set_dir='./validation_sets_realnoise_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(det),len(rand_pars),ndata,val_dataset_size,tset_split) 
+train_set_dir='./training_sets_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(det),len(rand_pars),ndata,tot_dataset_size,tset_split)
+val_set_dir='./validation_sets_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(det),len(rand_pars),ndata,val_dataset_size,tset_split) 
 test_set_dir = './test_sets/%s/test_waveforms' % bilby_results_label
 pe_dir='./test_sets/%s/test' % bilby_results_label
 
@@ -232,7 +228,7 @@ def get_params():
         __definition__load_plot_data='Use plotting data which has already been generated',
         doPE = True,                                                            
         __definition__doPE='if True then do bilby PE when generating new testing samples',
-        gpu_num=1,                                                              
+        gpu_num=6,                                                              
         __definition__gpu_num='gpu number run is running on',
         ndata = ndata,                                                          
         __definition__ndata='sampling frequency',

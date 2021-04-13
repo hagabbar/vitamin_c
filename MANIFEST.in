@@ -1,3 +1,6 @@
 include README.md
 include LICENSE.md
-recursive-include *.py *.json
+recursive-include *.py 
+include vitamin_c/params_files/params.json
+include vitamin_c/params_files/fixed_vals.json
+include vitamin_c/params_files/bounds.json
