@@ -23,6 +23,7 @@ from matplotlib.ticker import (MultipleLocator, FormatStrFormatter, FixedLocator
                                AutoMinorLocator)
 import matplotlib.ticker as ticker
 from lal import GreenwichMeanSiderealTime
+from vitamin_c_new import gen_samples, load_samples, convert_hour_angle_to_ra
 
 def prune_samples(chain_file_loc,params):
     """ Function to remove bad likelihood emcee chains 
@@ -384,7 +385,7 @@ class make_plots:
 
         return r
 
-    def plot_pp(self,model,sig_test,par_test,normscales,bounds):
+    def plot_pp(self, model, sig_test, par_test, params, bounds, inf_ol_idx, bilby_ol_idx):
         """ make p-p plots using in-house methods
         
         Parameters
@@ -398,6 +399,8 @@ class make_plots:
             
 
         """
+        normscales=params['y_normscale']
+
         matplotlib.rc('text', usetex=True)
         Npp = int(self.params['r']) # number of test GW waveforms to use to calculate PP plot
         ndim_y = self.params['ndata']
@@ -413,55 +416,38 @@ class make_plots:
                 os.remove('plotting_data_%s/pp_plot_data.h5' % self.params['run_label'])
             except:
                 pass
-            hf = h5py.File('plotting_data_%s/pp_plot_data.h5' % self.params['run_label'], 'w')
+            hf = h5py.File('%s/pp_plot_data.h5' % self.params['plot_dir'], 'w')
 
         if self.params['load_plot_data'] == False:
-            pp = np.zeros(((self.params['r'])+2,len(self.params['inf_pars']))) 
+            pp = np.zeros(((self.params['r'])+2,len(self.params['bilby_pars']))) 
             for cnt in range(Npp):
 
                 # generate Vitamin samples
-                if self.params['n_filters_r1'] != None:
-                    y = sig_test[cnt,:].reshape(1,sig_test.shape[1],sig_test.shape[2])
-                else:
-                    y = sig_test[cnt,:].reshape(1,sig_test.shape[1])
+                y = np.expand_dims(sig_test[cnt,:], axis=0)
                  # The trained inverse model weights can then be used to infer a probability density of solutions 
 #given new measurements
-                x, dt, _,_,_,_,_,_  = model.run(self.params, par_test[cnt], y,
-                                                "inverse_model_dir_%s/inverse_model.ckpt" % self.params['run_label'],
-                                                wrmp=np.ones(self.params['n_modes']))
-
-              
-                """ 
-                # convert RA to hour angle for test set validation cost if both ra and geo time present
-                if np.isin('ra', self.params['inf_pars']) and  np.isin('geocent_time', self.params['inf_pars']):
-                    # get geocenttime index
-                    for k_idx,k in enumerate(self.params['inf_pars']):
-                        if k == 'geocent_time':
-                            geo_idx = k_idx
-                        elif k == 'ra':
-                            ra_idx = k_idx
-
-                    # unnormalize and get gps time
-                    x[:,ra_idx] = (x[:,ra_idx] * (bounds['ra_max'] - bounds['ra_min'])) + bounds['ra_min']   
- 
-                    gps_time_arr = (x[:,geo_idx] * (bounds['geocent_time_max'] - bounds['geocent_time_min'])) + bounds['geocent_time_min']
-                    # convert to RA
-                    # Iterate over all training samples and convert to hour angle
-                    for k in range(x.shape[0]):
-                        #x[k,ra_idx]=np.mod(GreenwichMeanSiderealTime(float(self.params['ref_geocent_time']+gps_time_arr[k]))-x[k,ra_idx], 2.0*np.pi)
-                        x[k,ra_idx]=np.mod(GreenwichMeanSiderealTime(self.params['ref_geocent_time'])-x[k,ra_idx], 2.0*np.pi)
-                    # normalize
-                    x[:,ra_idx]=(x[:,ra_idx] - bounds['ra_min']) / (bounds['ra_max'] - bounds['ra_min'])
-                """
+                samples = np.array(gen_samples(model, y, ramp=1, nsamples=params['n_samples']))
+                
+                true_XS = np.zeros([samples.shape[0],len(inf_ol_idx)])
+                true_x = np.zeros([len(inf_ol_idx)])
+                ol_pars = []
+                cnt_rm_inf = 0
+                for inf_idx in inf_ol_idx:
+                    inf_par = params['inf_pars'][inf_idx]
+                    true_XS[:,cnt_rm_inf] = samples[:,inf_idx] # (samples[:,inf_idx] * (bounds[inf_par+'_max'] - bounds[inf_par+'_min'])) + bounds[inf_par+'_min']
+                    true_x[cnt_rm_inf] = par_test[cnt,inf_idx]
+                    ol_pars.append(inf_par)
+                    cnt_rm_inf += 1
 
                 # Apply mask
+                x = true_XS
                 x = x.T
                 sampset_1 = x   
                 del_cnt = 0
                 # iterate over each sample   during inference training
                 for i in range(sampset_1.shape[1]):
                     # iterate over each parameter
-                    for k,q in enumerate(self.params['inf_pars']):
+                    for k,q in enumerate(self.params['bilby_pars']):
                         # if sample out of range, delete the sample                                              the y data (size changes by factor of  n_filter/(2**n_redsteps) )
                         if sampset_1[k,i] < 0.0 or sampset_1[k,i] > 1.0:
                             x = np.delete(x,del_cnt,axis=1)   
@@ -469,18 +455,17 @@ class make_plots:
                             break
                         # check m1 > m2
                         elif q == 'mass_1' or q == 'mass_2':
-                            m1_idx = np.argwhere(self.params['inf_pars']=='mass_1')
-                            m2_idx = np.argwhere(self.params['inf_pars']=='mass_2')
+                            m1_idx = np.argwhere(self.params['bilby_pars']=='mass_1')
+                            m2_idx = np.argwhere(self.params['bilby_pars']=='mass_2')
                             if sampset_1[m1_idx,i] < sampset_1[m2_idx,i]:
                                 x = np.delete(x,del_cnt,axis=1)
                                 del_cnt-=1
                                 break    
                     del_cnt+=1
-
-                for j in range(len(self.params['inf_pars'])):
+                for j in range(len(self.params['bilby_pars'])):
                     pp[0,j] = 0.0
                     pp[1,j] = 1.0
-                    pp[cnt+2,j] = self.pp_plot(par_test[cnt,j],x[j,:])
+                    pp[cnt+2,j] = self.pp_plot(true_x[j],x[j,:])
                     print()
                     print('... Computed param %d p-p plot iteration %d/%d' % (j,int(cnt)+1,int(Npp)))
                     print()
@@ -493,16 +478,17 @@ class make_plots:
             print()
             print('... Loaded VItamin pp curves')
             print()
-
-        
         confidence_pp = np.zeros((len(self.params['samplers'])-1,int(self.params['r'])+2))
         # plot the pp plot
-        for j in range(len(self.params['inf_pars'])):        
+        for j in range(len(self.params['bilby_pars'])):        
             if j == 0:
                 axis.plot(np.arange((self.params['r'])+2)/((self.params['r'])+1.0),np.sort(pp[:,j]),'-',color='red',linewidth=1,zorder=50,label=r'$\textrm{%s}$' % self.params['figure_sampler_names'][0],alpha=0.5)
+            elif j == 10:
+                print(np.sort(pp[:,j]))
             else:
                 axis.plot(np.arange((self.params['r'])+2)/((self.params['r'])+1.0),np.sort(pp[:,j]),'-',color='red',linewidth=1,zorder=50,alpha=0.5)
 
+        #confidence_pp = np.zeros((len(self.params['samplers'])-1,int(self.params['r'])+2))
         # make bilby p-p plots
         samplers = self.params['samplers']
         CB_color_cycle=['blue','green','purple','orange']
@@ -512,19 +498,32 @@ class make_plots:
 
             if self.params['load_plot_data'] == False:
                 # load bilby sampler samples
-                samples,time = self.load_test_set(model,sig_test,par_test,normscales,bounds,sampler=samplers[i]+'1')
+                #samples,time = self.load_test_set(model,sig_test,par_test,normscales,bounds,sampler=samplers[i]+'1')
+                samples = load_samples(self.params, samplers[i], pp_plot=True)
+                true_XS = np.zeros([samples.shape[0],samples.shape[1],len(bilby_ol_idx)])
+                true_x = np.zeros([samples.shape[0],len(bilby_ol_idx)])
+                ol_pars = []; cnt_rm_inf = 0
+                for inf_idx,bilby_idx in zip(inf_ol_idx,bilby_ol_idx):
+                    bilby_par = params['bilby_pars'][bilby_idx]
+                    inf_par = params['inf_pars'][inf_idx]
+                    true_XS[:,:,cnt_rm_inf] = samples[:,:,bilby_idx] #(samples[:,:,bilby_idx] * (bounds[bilby_par+'_max'] - bounds[bilby_par+'_min'])) + bounds[bilby_par+'_min']
+                    true_x[:,cnt_rm_inf] = par_test[:,inf_idx]
+                    ol_pars.append(bilby_par)
+                    cnt_rm_inf += 1
+                samples = true_XS
+
                 if samples.shape[0] == self.params['r']:
                     samples = samples[:,:,-self.params['n_samples']:]
                 else:
                     samples = samples[:self.params['n_samples'],:]
 
-            for j in range(len(self.params['inf_pars'])):
+            for j in range(len(self.params['bilby_pars'])):
                 pp_bilby = np.zeros((self.params['r'])+2)
                 pp_bilby[0] = 0.0
                 pp_bilby[1] = 1.0
                 if self.params['load_plot_data'] == False:
                     for cnt in range(self.params['r']):
-                        pp_bilby[cnt+2] = self.pp_plot(par_test[cnt,j],samples[cnt,:,j].transpose())
+                        pp_bilby[cnt+2] = self.pp_plot(true_x[cnt, j], samples[cnt,:,j])
                         print()
                         print('... Computed %s, param %d p-p plot iteration %d/%d' % (samplers[i],j,int(cnt)+1,int(self.params['r'])))
                         print()
@@ -620,7 +619,7 @@ class make_plots:
 
         return
 
-    def gen_kl_plots(self,model,sig_test,par_test,normscales,bounds,snrs_test):
+    def gen_kl_plots(self,model,sig_test,par_test,params,bounds,inf_ol_idx,bilby_ol_idx):
         """  Make kl corner histogram plots.
         
         Parameters
@@ -639,6 +638,42 @@ class make_plots:
             Optimal SNR values for every test sample
         """
         matplotlib.rc('text', usetex=True)
+
+        def extract_correct_sample_idx(samples, inf_ol_idx):
+            true_XS = np.zeros([samples.shape[0],len(inf_ol_idx)])
+            cnt_rm_inf = 0
+            for inf_idx in inf_ol_idx:
+                inf_par = params['inf_pars'][inf_idx]
+                true_XS[:,cnt_rm_inf] = samples[:,inf_idx] # (samples[:,inf_idx] * (bounds[inf_par+'_max'] - bounds[inf_par+'_min'])) + bounds[inf_par+'_min']
+                cnt_rm_inf += 1
+
+            # Apply mask
+            true_XS = true_XS.T
+            sampset_1 = true_XS
+            del_cnt = 0
+            # iterate over each sample   during inference training
+            for i in range(sampset_1.shape[1]):
+                # iterate over each parameter
+                for k,q in enumerate(self.params['bilby_pars']):
+                    # if sample out of range, delete the sample                                              the y data (size changes by factor of  n_filter/(2**n_redsteps) )
+                    if sampset_1[k,i] < 0.0 or sampset_1[k,i] > 1.0:
+                        true_XS = np.delete(true_XS,del_cnt,axis=1)
+                        del_cnt-=1
+                        break
+                    # check m1 > m2
+                    elif q == 'mass_1' or q == 'mass_2':
+                        m1_idx = np.argwhere(self.params['bilby_pars']=='mass_1')
+                        m2_idx = np.argwhere(self.params['bilby_pars']=='mass_2')
+                        if sampset_1[m1_idx,i] < sampset_1[m2_idx,i]:
+                            true_XS = np.delete(true_XS,del_cnt,axis=1)
+                            del_cnt-=1
+                            break
+            # transpose
+            true_XS = np.zeros([samples.shape[0],len(inf_ol_idx)])
+            for i in range(true_XS.shape[1]):
+                true_XS[:,i] = sampset_1[i,:]
+            return true_XS
+
         def compute_kl(sampset_1,sampset_2,samplers,one_D=False):
             """
             Compute KL for one test case.
@@ -771,7 +806,6 @@ class make_plots:
                 """   
 
         # Define variables 
-        params = self.params
         usesamps = params['samplers']
         samplers = params['samplers']
         fig_samplers = params['figure_sampler_names']
@@ -819,7 +853,7 @@ class make_plots:
             for i in range(len(usesamps)):
                 for j in range(tmp_idx):
 
-                    sampler1, sampler2 = samplers[i]+'1', samplers[::-1][j]+'1'
+                    sampler1, sampler2 = samplers[i], samplers[::-1][j]
 
                     # Check if sampler results already exists in hf directories
                     h5py_node1 = '%s-%s' % (sampler1,sampler2)
@@ -836,14 +870,22 @@ class make_plots:
                         tot_kl = np.array(hf['%s-%s' % (sampler1,sampler2)])
                     else:
                         if self.params['load_plot_data'] == False: # Make new KL results if needed
-                            set1,time1 = self.load_test_set(model,sig_test,par_test,normscales,bounds,sampler=sampler1,vitamin_pred_made=vi_pred_made)
-                            set2,time2 = self.load_test_set(model,sig_test,par_test,normscales,bounds,sampler=sampler2,vitamin_pred_made=vi_pred_made)
-
-                            # check if vitamin test posteriors were generated for the first time
-                            if sampler1 == 'vitamin1' and vi_pred_made == None:
-                                vi_pred_made = [set1,time1]
-                            elif sampler2 == 'vitamin1' and vi_pred_made == None:
-                                vi_pred_made = [set2,time2]
+                            if sampler1 != 'vitamin':
+                                set1 = load_samples(params, sampler1, pp_plot=True)
+                            elif sampler1 == 'vitamin' and vi_pred_made == None:
+                                set1 = np.zeros((params['r'], params['n_samples'], len(params['bilby_pars'])))
+                                for sig_test_idx in range(params['r']):
+                                    samples = np.array(gen_samples(model, np.expand_dims(sig_test[sig_test_idx], axis=0), ramp=1, nsamples=params['n_samples'])) 
+                                    set1[sig_test_idx,:,:] = extract_correct_sample_idx(samples, inf_ol_idx)
+                                vi_pred_made = [set1]
+                            if sampler2 != 'vitamin':
+                                set2 = load_samples(params, sampler2, pp_plot=True)
+                            elif sampler1 == 'vitamin' and vi_pred_made == None:
+                                set2 = np.zeros((params['r'], params['n_samples'], len(params['bilby_pars'])))
+                                for sig_test_idx in range(params['r']):
+                                    samples = np.array(gen_samples(model, np.expand_dims(sig_test[sig_test_idx], axis=0), ramp=1, nsamples=params['n_samples']))
+                                    set2[sig_test_idx,:,:] = extract_correct_sample_idx(samples, inf_ol_idx)
+                                vi_pred_made = [set2]
 
                         # Iterate over test cases
                         tot_kl = []  # total KL over all infered parameters

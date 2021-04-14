@@ -44,11 +44,13 @@ from skopt.utils import use_named_args
 
 try:
     from .gen_benchmark_pe import run, gen_real_noise
-    from . import plotting, vitamin_c
+    from . import plotting
+    from . import vitamin_c_new as vitamin_c
     from .plotting import prune_samples
 except (ModuleNotFoundError, ImportError):
     from gen_benchmark_pe import run, gen_real_noise
-    import plotting, vitamin_c
+    import plotting
+    import vitamin_c_new as vitamin_c
     from plotting import prune_samples
 
 # Check for optional basemap installation
@@ -546,6 +548,13 @@ def gen_train(params=params,bounds=bounds,fixed_vals=fixed_vals):
     # Iterate over number of requested training samples
     for i in range(0,params['tot_dataset_size'],params['tset_split']):
 
+        # Use this if wanting to add to existing training database
+        start_point = 4371000
+        if i <= start_point:
+            continue
+        else:
+            params['training_data_seed'] = start_point
+
         logging.config.dictConfig({
         'version': 1,
         'disable_existing_loggers': True,
@@ -756,7 +765,7 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
     resume_training: bool
         If True, continue training a pre-trained model.
     """
-    
+   
     global x_data_train, y_data_train, x_data_test, y_data_test, x_data_val, y_data_val, y_data_test_noisefree, XS_all
     global snrs_test
 
@@ -782,6 +791,8 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
         params['ramp'] = False
         print('... resuming training and disabling the ramp')
 
+    params['make_paper_plots'] = False
+    """
     # load the noisefree training data back in
     x_data_train, y_data_train, _, snrs_train = load_data(params,bounds,fixed_vals,params['train_set_dir'],params['inf_pars'])
     print('... loaded in the training data')
@@ -802,8 +813,11 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
     y_data_test = y_data_test.reshape(y_data_test.shape[0],y_data_test.shape[1]*y_data_test.shape[2])
     y_data_test_noisefree = y_data_test_noisefree.reshape(y_data_test_noisefree.shape[0],y_data_test_noisefree.shape[1]*y_data_test_noisefree.shape[2])
     print('... reshaped train,val,test y-data -> (N_samples,fs*duration*n_detectors)')
+    """
 
     # Make directory for plots
+    os.system('mkdir -p %s' % (params['plot_dir']))
+    print('... make directory for plots {}'.format(params['plot_dir']))
     os.system('mkdir -p %s/latest_%s' % (params['plot_dir'],params['run_label']))
     print('... make directory for plots {}/latest_{}'.format(params['plot_dir'],params['run_label']))
 
@@ -813,6 +827,7 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
     f.close()
     print('... saved config file to {}/latest_{}/params_{}.txt'.format(params['plot_dir'],params['run_label'],params['run_label']))
 
+    """
     # load up the posterior samples (if they exist)
     if params['pe_dir'] != None:
         # load generated samples back in
@@ -920,7 +935,9 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
         print('... Saved hyperparameter convergence loss to -> %s/latest_%s/hyperpar_convergence.png' % (params['plot_dir'],params['run_label']))
         print('... Did a hyperparameter search') 
     else:
-        vitamin_c.run_vitc(params, x_data_train, y_data_train,
+    """
+    x_data_train=y_data_train=x_data_val=y_data_val=x_data_test=y_data_test=y_data_test_noisefree=x_data_test=XS_all=snrs_test=None
+    vitamin_c.run_vitc(params, x_data_train, y_data_train,
                            x_data_val, y_data_val,
                            x_data_test, y_data_test, y_data_test_noisefree,
                            "inverse_model_dir_%s/inverse_model.ckpt" % params['run_label'],
@@ -961,9 +978,20 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
     with open(fixed_vals, 'r') as fp:
         fixed_vals = json.load(fp)
 
+
+    params['make_paper_plots'] = True
+    x_data_train=y_data_train=x_data_val=y_data_val=x_data_test=y_data_test=y_data_test_noisefree=x_data_test=XS_all=snrs_test=None
+    vitamin_c.run_vitc(params, x_data_train, y_data_train,
+                           x_data_val, y_data_val,
+                           x_data_test, y_data_test, y_data_test_noisefree,
+                           "inverse_model_dir_%s/inverse_model.ckpt" % params['run_label'],
+                           x_data_test, bounds, fixed_vals,
+                           XS_all,snrs_test)
+    return
+
     # if doing hour angle, use hour angle bounds on RA
-    bounds['ra_min'] = convert_ra_to_hour_angle(bounds['ra_min'],params,None,single=True)
-    bounds['ra_max'] = convert_ra_to_hour_angle(bounds['ra_max'],params,None,single=True)
+#    bounds['ra_min'] = vitamin_c.convert_ra_to_hour_angle(bounds['ra_min'],params,None,single=True)
+#    bounds['ra_max'] = vitamin_c.convert_ra_to_hour_angle(bounds['ra_max'],params,None,single=True)
 
     if use_gpu == True:
         print("... GPU found")
