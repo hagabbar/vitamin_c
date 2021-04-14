@@ -640,20 +640,20 @@ def gen_val(params=params,bounds=bounds,fixed_vals=fixed_vals):
         'version': 1,
         'disable_existing_loggers': True,
         })
-        #with suppress_stdout():
-        # generate training sample source parameter, waveform and snr
-        signal_train, signal_train_pars,snrs = run(sampling_frequency=params['ndata']/params['duration'],
-                                                      duration=params['duration'],
-                                                      N_gen=params['val_dataset_size'],
-                                                      ref_geocent_time=params['ref_geocent_time'],
-                                                      bounds=bounds,
-                                                      fixed_vals=fixed_vals,
-                                                      rand_pars=params['rand_pars'],
-                                                      seed=params['validation_data_seed']+i,
-                                                      label=params['run_label'],
-                                                      training=True,det=params['det'],
-                                                      psd_files=params['psd_files'],
-                                                      use_real_det_noise=params['use_real_det_noise'])
+        with suppress_stdout():
+            # generate training sample source parameter, waveform and snr
+            signal_train, signal_train_pars,snrs = run(sampling_frequency=params['ndata']/params['duration'],
+                                                          duration=params['duration'],
+                                                          N_gen=params['val_dataset_size'],
+                                                          ref_geocent_time=params['ref_geocent_time'],
+                                                          bounds=bounds,
+                                                          fixed_vals=fixed_vals,
+                                                          rand_pars=params['rand_pars'],
+                                                          seed=params['validation_data_seed']+i,
+                                                          label=params['run_label'],
+                                                          training=True,det=params['det'],
+                                                          psd_files=params['psd_files'],
+                                                          use_real_det_noise=params['use_real_det_noise'])
         logging.config.dictConfig({
         'version': 1,
         'disable_existing_loggers': False,
@@ -706,6 +706,13 @@ def gen_test(params=params,bounds=bounds,fixed_vals=fixed_vals):
     # Make testing set directory
     os.system('mkdir -p %s' % params['test_set_dir'])
 
+    # Add numerical label to samplers
+    for i in range(len(params['samplers'])):
+        if i == 0:
+            continue
+        else:
+            params['samplers'][i] = params['samplers'][i]+'1'
+
     # Make testing samples
     for i in range(params['r']):
         temp_noisy, temp_noisefree, temp_pars, temp_snr = run(sampling_frequency=params['ndata']/params['duration'],
@@ -718,7 +725,7 @@ def gen_test(params=params,bounds=bounds,fixed_vals=fixed_vals):
                                                       inf_pars=params['inf_pars'],
                                                       label=params['bilby_results_label'] + '_' + str(i),
                                                       out_dir=params['pe_dir'],
-                                                      samplers=params['samplers']+'1',
+                                                      samplers=params['samplers'],
                                                       training=False,
                                                       seed=params['testing_data_seed']+i,
                                                       do_pe=params['doPE'],det=params['det'],

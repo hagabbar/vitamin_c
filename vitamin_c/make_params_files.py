@@ -132,14 +132,14 @@ n_weights_q = [n_fc,n_fc,n_fc]
 # optional tunable variables
 #############################
 run_label = 'vitamin_c_run19'#'demo_%ddet_%dpar_%dHz_hour_angle_with_late_kl_start' % (len(det),len(rand_pars),ndata) 
-gpu_num = 5
+gpu_num = 0
 
 # 1024 Hz label
 #bilby_results_label = 'weichangfeng_theta_jn_issue'                                             
 # 256 Hz label
 bilby_results_label = '1024Hz_full_15par'
 
-r = 10 # 251                                                         
+r = 2 # 251                                                         
 pe_test_num = 256                                                               
 tot_dataset_size = int(1e7)                                                     
 
@@ -149,7 +149,7 @@ plot_interval = int(1000)
 num_iterations=int(25000)+1 # 12500 for Green et al.                                                       
 ref_geocent_time=1126259642.5                                                   
 load_chunk_size = int(2e4)                                                           
-samplers=['vitamin','dynesty','ptemcee','cpnest']                                                  
+samplers=['vitamin','dynesty']                                                  
 val_dataset_size = int(1e3)
 
 # Directory variables

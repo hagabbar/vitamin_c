@@ -799,10 +799,6 @@ def paper_plots(test_dataset, y_data_test, x_data_test, model, params, plot_dir,
     """
     epoch = 'pub_plot'; ramp = 1
     plotter = plotting.make_plots(params, None, None, x_data_test) 
-    # Make KL plots
-    plotter.gen_kl_plots(model,y_data_test, x_data_test, params, bounds, inf_ol_idx, bilby_ol_idx)
-    print('... Finished making KL plots!')
-    exit()
 
     for step, (x_batch_test, y_batch_test) in test_dataset.enumerate():
         mu_r1, z_r1, mu_q, z_q = gen_z_samples(model, x_batch_test, y_batch_test, nsamples=1000)
@@ -821,18 +817,14 @@ def paper_plots(test_dataset, y_data_test, x_data_test, model, params, plot_dir,
             KL_est = plot_posterior(samples,x_batch_test[0,:],epoch,step,all_other_samples=bilby_samples[:,step,:],run=plot_dir)
             _ = plot_posterior(samples,x_batch_test[0,:],epoch,step,run=plot_dir)
     print('... Finished making publication plots! Congrats fam.')
-    exit()
 
     # Make p-p plots
     plotter.plot_pp(model, y_data_test, x_data_test, params, bounds, inf_ol_idx, bilby_ol_idx)
     print('... Finished making p-p plots!')
-    exit()
 
     # Make KL plots
-    plotter.gen_kl_plots(model,test_dataset,params,bounds)
+    plotter.gen_kl_plots(model,y_data_test, x_data_test, params, bounds, inf_ol_idx, bilby_ol_idx)
     print('... Finished making KL plots!')    
-
-    exit() 
 
     return
 
@@ -864,7 +856,11 @@ def run_vitc(params, x_data_train, y_data_train, x_data_val, y_data_val, x_data_
     y_data_test = y_data_test[:params['r'],:,:]; x_data_test = x_data_test[:params['r'],:]
 
     # load precomputed samples
-    bilby_samples = np.array([load_samples(params,'dynesty'),load_samples(params,'ptemcee'),load_samples(params,'cpnest')])
+    bilby_samples = []
+    for sampler in params['samplers'][1:]:
+        bilby_samples.append(load_samples(params,sampler))
+    bilby_samples = np.array(bilby_samples)
+    #bilby_samples = np.array([load_samples(params,'dynesty'),load_samples(params,'ptemcee'),load_samples(params,'cpnest')])
 
     if not make_paper_plots:
         if not hyper_par_tune:

@@ -95,7 +95,7 @@
     "__definition__load_plot_data": "Use plotting data which has already been generated",
     "doPE": true,
     "__definition__doPE": "if True then do bilby PE when generating new testing samples",
-    "gpu_num": 5,
+    "gpu_num": 0,
     "__definition__gpu_num": "gpu number run is running on",
     "ndata": 1024,
     "__definition__ndata": "sampling frequency",
@@ -270,7 +270,7 @@
     "__definition__n_weights_q": "number fully-connected neurons in layers of encoders and decoders in the q model",
     "duration": 1.0,
     "__definition__duration": "length of training/validation/test sample time series in seconds",
-    "r": 10,
+    "r": 2,
     "__definition__r": "number of GW timeseries to use for testing.",
     "rand_pars": [
         "mass_1",
@@ -346,9 +346,7 @@
     "__definition__KL_cycles": " number of cycles to repeat for the KL approximation",
     "samplers": [
         "vitamin",
-        "dynesty",
-        "ptemcee",
-        "cpnest"
+        "dynesty"
     ],
     "__definition__samplers": "Samplers to use when comparing ML results (vitamin is ML approach) dynesty,ptemcee,cpnest,emcee",
     "figure_sampler_names": [
