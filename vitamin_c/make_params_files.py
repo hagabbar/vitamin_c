@@ -86,15 +86,15 @@ psd_files=[]
 rand_pars = ['mass_1','mass_2','luminosity_distance','geocent_time','phase',
                  'theta_jn','psi','a_1','a_2','tilt_1','tilt_2','phi_12','phi_jl','ra','dec']                                   
 bilby_pars = ['mass_1','mass_2','luminosity_distance','geocent_time','theta_jn','psi','a_1','a_2',
-          'tilt_1','tilt_2','phi_12','phi_jl']
-inf_pars=['mass_1','mass_2','luminosity_distance','geocent_time',
-                 'theta_jn','psi','a_1','a_2','tilt_1','tilt_2','phi_12','phi_jl','ra','dec'] 
-#rand_pars = ['mass_1','mass_2','luminosity_distance','geocent_time','phase',
-#                 'theta_jn','psi','ra','dec']
-#inf_pars=['mass_1','mass_2','luminosity_distance','geocent_time','theta_jn','ra','dec']
-batch_size = int(8)                                                                 
+          'tilt_1','tilt_2','phi_12','phi_jl','ra','dec']
+inf_pars=['mass_1','mass_2','luminosity_distance','geocent_time','phase',
+                 'theta_jn','psi','a_1','a_2','tilt_1','tilt_2','phi_12','phi_jl','ra','dec']
+#rand_pars = ["mass_1","mass_2","luminosity_distance","geocent_time","phase","theta_jn","psi","ra","dec","a_1","a_2","tilt_1","tilt_2","phi_12","phi_jl"]
+#bilby_pars = ["mass_1","mass_2","luminosity_distance","geocent_time","theta_jn","psi","ra","dec","a_1","a_2","tilt_1","tilt_2","phi_12","phi_jl"]
+#inf_pars = ["mass_1","mass_2","luminosity_distance","geocent_time","phase","theta_jn","psi","ra","dec","a_1","a_2","tilt_1","tilt_2","phi_12","phi_jl"]
+batch_size = int(512)                                                                 
 weight_init = 'xavier'                                                            
-n_modes=32; n_modes_q=1                                                                      
+n_modes=64; n_modes_q=1                                                                      
 initial_training_rate=1e-4                                                     
 batch_norm=False                                                                
 
@@ -120,7 +120,7 @@ conv_strides_q = [1,1,1,1]
 pool_strides_q = [1,2,1,2] 
 conv_dilations_q=[1,1,1,1]                                                        
 n_fc = 1024                                                                      
-z_dimension=8                                                                  
+z_dimension=15                                                                  
 n_weights_r1 = [n_fc,n_fc,n_fc]                                                     
 n_weights_r2 = [n_fc,n_fc,n_fc]                                                     
 n_weights_q = [n_fc,n_fc,n_fc]                                                      
@@ -131,23 +131,24 @@ n_weights_q = [n_fc,n_fc,n_fc]
 #############################
 # optional tunable variables
 #############################
-run_label = 'vitamin_c_testing'#'demo_%ddet_%dpar_%dHz_hour_angle_with_late_kl_start' % (len(det),len(rand_pars),ndata) 
+run_label = 'vitamin_c_run19'#'demo_%ddet_%dpar_%dHz_hour_angle_with_late_kl_start' % (len(det),len(rand_pars),ndata) 
+gpu_num = 0
 
 # 1024 Hz label
 #bilby_results_label = 'weichangfeng_theta_jn_issue'                                             
 # 256 Hz label
 bilby_results_label = '1024Hz_full_15par'
 
-r = 1                                                          
+r = 2 # 251                                                         
 pe_test_num = 256                                                               
-tot_dataset_size = int(1e3)                                                     
+tot_dataset_size = int(1e7)                                                     
 
 tset_split = int(1e3)                                                           
-save_interval = int(1e3)
-plot_interval = int(10)                                                        
-num_iterations=int(25000)+1                                                       
+save_interval = int(1000)
+plot_interval = int(1000)                                                        
+num_iterations=int(25000)+1 # 12500 for Green et al.                                                       
 ref_geocent_time=1126259642.5                                                   
-load_chunk_size = int(1e4)                                                           
+load_chunk_size = int(2e4)                                                           
 samplers=['vitamin','dynesty']                                                  
 val_dataset_size = int(1e3)
 
@@ -232,7 +233,7 @@ def get_params():
         __definition__load_plot_data='Use plotting data which has already been generated',
         doPE = True,                                                            
         __definition__doPE='if True then do bilby PE when generating new testing samples',
-        gpu_num=1,                                                              
+        gpu_num=gpu_num,                                                              
         __definition__gpu_num='gpu number run is running on',
         ndata = ndata,                                                          
         __definition__ndata='sampling frequency',
@@ -259,7 +260,7 @@ def get_params():
         __definition__load_iteration='How often to load another chunk of training samples',
         weight_init = weight_init,
         __definition__weight_init='[xavier,VarianceScaling,Orthogonal]. Network model weight initialization (default is xavier)',                                           
-        n_samples = 9000,                                                        
+        n_samples = 8000,                                                        
         __definition__n_samples='number of posterior samples to save per reconstruction upon inference (default 3000)',
         num_iterations=num_iterations,                                              
         __definition__num_iterations='total number of iterations before ending training of model',
@@ -369,7 +370,7 @@ def get_params():
         __definition__KL_cycles=' number of cycles to repeat for the KL approximation',
         samplers=samplers,       
         __definition__samplers='Samplers to use when comparing ML results (vitamin is ML approach) dynesty,ptemcee,cpnest,emcee',                                               
-        figure_sampler_names = ['VItamin', 'Dynesty'],
+        figure_sampler_names = ['VItamin', 'Dynesty', 'Ptemcee', 'CPNest', 'Emcee'],
         __definition__figure_sampler_names='matplotlib figure sampler labels (e.g. [ptemcee,CPNest,emcee])',
         y_normscale = y_normscale,
         __definition__y_normscale='arbitrary normalization factor on all time series waveforms (helps convergence in training)',

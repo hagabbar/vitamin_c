@@ -468,7 +468,7 @@ def run(sampling_frequency=256.0,
             # Run sampler dynesty 1 sampler
 
             result = bilby.run_sampler(
-                likelihood=likelihood, priors=priors, sampler='dynesty', npoints=1000, nact=50, npool=8, dlogz=27.0,
+                likelihood=likelihood, priors=priors, sampler='dynesty', npoints=1000, nact=50, npool=8, dlogz=0.1,
                 injection_parameters=injection_parameters, outdir=out_dir+'_'+samplers[-1], label=label,
                 save='hdf5', plot=True)
             run_endt = time.time()
@@ -497,7 +497,8 @@ def run(sampling_frequency=256.0,
                 hdf5_files=glob.glob("%s_dynesty1/*.hdf5*" % (out_dir))
                 pickle_files=glob.glob("%s_dynesty1/*.pickle*" % (out_dir))
                 resume_files=glob.glob("%s_dynesty1/*.resume*" % (out_dir))
-                filelist = [png_files,hdf5_files,pickle_files,resume_files]
+                pkl_files=glob.glob("%s_dynesty1/*.pkl*" % (out_dir))
+                filelist = [png_files,hdf5_files,pickle_files,resume_files,pkl_files]
                 for file_type in filelist:
                     for file in file_type:
                         os.remove(file)
@@ -540,7 +541,8 @@ def run(sampling_frequency=256.0,
                 hdf5_files=glob.glob("%s_cpnest1/*.hdf5*" % (out_dir))
                 other_files=glob.glob("%s_cpnest1/*cpnest_*" % (out_dir))
                 resume_files=glob.glob("%s_cpnest1/*.resume*" % (out_dir))
-                filelist = [png_files,hdf5_files,pickle_files]
+                pkl_files=glob.glob("%s_cpnest1/*.pkl*" % (out_dir))
+                filelist = [png_files,hdf5_files,pickle_files,pkl_files,resume_files]
                 for file_idx,file_type in enumerate(filelist):
                     for file in file_type:
                         if file_idx == 2:
@@ -603,7 +605,8 @@ def run(sampling_frequency=256.0,
                 hdf5_files=glob.glob("%s_ptemcee1/*.hdf5*" % (out_dir))
                 other_files=glob.glob("%s_ptemcee1/*ptemcee_*" % (out_dir))
                 resume_files=glob.glob("%s_ptemcee1/*.resume*" % (out_dir))
-                filelist = [png_files,hdf5_files,other_files]
+                pkl_files=glob.glob("%s_ptemcee1/*.pkl*" % (out_dir))
+                filelist = [png_files,hdf5_files,other_files,resume_files,pkl_files]
                 for file_idx,file_type in enumerate(filelist):
                     for file in file_type:
                         if file_idx == 2:
@@ -668,7 +671,8 @@ def run(sampling_frequency=256.0,
                 hdf5_files=glob.glob("%s_emcee1/*.hdf5*" % (out_dir))
                 other_files=glob.glob("%s_emcee1/*emcee_*" % (out_dir))
                 resume_files=glob.glob("%s_emcee1/*.resume*" % (out_dir))
-                filelist = [png_files,hdf5_files,other_files]
+                pkl_files=glob.glob("%s_emcee1/*.pkl*" % (out_dir))
+                filelist = [png_files,hdf5_files,other_files,resume_files,pkl_files]
                 for file_idx,file_type in enumerate(filelist):
                     for file in file_type:
                         if file_idx == 2:
