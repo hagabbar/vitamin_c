@@ -548,13 +548,6 @@ def gen_train(params=params,bounds=bounds,fixed_vals=fixed_vals):
     # Iterate over number of requested training samples
     for i in range(0,params['tot_dataset_size'],params['tset_split']):
 
-        # Use this if wanting to add to existing training database
-        start_point = 4371000
-        if i <= start_point:
-            continue
-        else:
-            params['training_data_seed'] = start_point
-
         logging.config.dictConfig({
         'version': 1,
         'disable_existing_loggers': True,
