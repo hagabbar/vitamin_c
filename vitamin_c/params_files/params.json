@@ -63,9 +63,7 @@
         1137254417
     ],
     "__definition__real_noise_time_range": "time range to produce real noise samples over",
-    "use_real_events": [
-        "GW150914"
-    ],
+    "use_real_events": false,
     "__definition__use_real_events": "list containing real ligo events to be analyzed",
     "convert_to_hour_angle": false,
     "__definition__convert_to_hour_angle": "If True, convert RA to hour angle during trianing and testing",
@@ -95,11 +93,11 @@
     "__definition__load_plot_data": "Use plotting data which has already been generated",
     "doPE": true,
     "__definition__doPE": "if True then do bilby PE when generating new testing samples",
-    "gpu_num": 5,
+    "gpu_num": 2,
     "__definition__gpu_num": "gpu number run is running on",
     "ndata": 1024,
     "__definition__ndata": "sampling frequency",
-    "run_label": "vitamin_c_run19",
+    "run_label": "vitamin_c_run49",
     "__definition__run_label": "label of run",
     "bilby_results_label": "1024Hz_full_15par",
     "__definition__bilby_result_label": "label given to bilby results directory",
@@ -107,7 +105,7 @@
     "__definition__tot_dataset_size": "total number of training samples available to use",
     "tset_split": 1000,
     "__definition__tset_split": "number of training samples in each training data file",
-    "plot_dir": "/home/hunter.gabbard/public_html/CBC/chris_dec2020_vitamin/vitamin_c_run19",
+    "plot_dir": "/home/hunter.gabbard/public_html/CBC/chris_dec2020_vitamin/vitamin_c_run49",
     "__definition__plot_dir": "output directory to save results plots",
     "hyperparam_optim_stop": 500000,
     "__definition__hyperparam_optim_stop": "stopping iteration of hyperparameter optimizer per call",
@@ -115,23 +113,23 @@
     "__definition__hyperparam_n_call": "number of hyperparameter optimization calls",
     "load_chunk_size": 20000,
     "__definition__load_chunk_size": "Number of training samples to load in at a time.",
-    "load_iteration": 976,
+    "load_iteration": 333,
     "__definition__load_iteration": "How often to load another chunk of training samples",
     "weight_init": "xavier",
     "__definition__weight_init": "[xavier,VarianceScaling,Orthogonal]. Network model weight initialization (default is xavier)",
     "n_samples": 8000,
     "__definition__n_samples": "number of posterior samples to save per reconstruction upon inference (default 3000)",
-    "num_iterations": 25001,
+    "num_iterations": 100001,
     "__definition__num_iterations": "total number of iterations before ending training of model",
     "initial_training_rate": 0.0001,
     "__definition__initial_training_rate": "initial training rate for ADAM optimiser inference model (inverse reconstruction)",
-    "batch_size": 512,
+    "batch_size": 1500,
     "__definition__batch_size": " Number training samples shown to neural network per iteration",
     "batch_norm": false,
     "__definition__batch_norm": "if true, do batch normalization in all layers of neural network",
     "report_interval": 500,
     "__definition__report_interval": "interval at which to save objective function values and optionally print info during training",
-    "n_modes": 64,
+    "n_modes": 32,
     "__definition__n_modes": "number of modes in Gaussian mixture model (ideal 7, but may go higher/lower)",
     "n_filters_r1": [
         32,
@@ -334,9 +332,9 @@
         "dec"
     ],
     "__definition__inf_pars": "parameters to infer",
-    "train_set_dir": "./training_sets_realnoise_3det_15par_1024Hz/tset_tot-10000000_split-1000",
+    "train_set_dir": "./training_sets_TiltSineDist_3det_15par_1024Hz/tset_tot-10000000_split-1000",
     "__definition__train_set_dir": "location of training set directory",
-    "val_set_dir": "./validation_sets_realnoise_3det_15par_1024Hz/tset_tot-1000_split-1000",
+    "val_set_dir": "./validation_sets_TiltSineDist_3det_15par_1024Hz/tset_tot-1000_split-1000",
     "__definition__val_set_dir": "location of validation set directory",
     "test_set_dir": "./test_sets/1024Hz_full_15par/test_waveforms",
     "__definition__test_set_dir": "location of test set directory waveforms",
@@ -347,8 +345,7 @@
     "samplers": [
         "vitamin",
         "dynesty",
-        "ptemcee",
-        "cpnest"
+        "ptemcee"
     ],
     "__definition__samplers": "Samplers to use when comparing ML results (vitamin is ML approach) dynesty,ptemcee,cpnest,emcee",
     "figure_sampler_names": [
@@ -359,7 +356,7 @@
         "Emcee"
     ],
     "__definition__figure_sampler_names": "matplotlib figure sampler labels (e.g. [ptemcee,CPNest,emcee])",
-    "y_normscale": 16.638832624721797,
+    "y_normscale": 36.0,
     "__definition__y_normscale": "arbitrary normalization factor on all time series waveforms (helps convergence in training)",
     "gauss_pars": [
         "luminosity_distance",
@@ -377,9 +374,17 @@
         "phi_jl"
     ],
     "__definition__gauss_pars": "parameters that require a truncated gaussian distribution",
-    "vonmise_pars": [],
+    "vonmise_pars": [
+        "phase",
+        "phi_12",
+        "phi_jl",
+        "psi"
+    ],
     "__definition__vonmises_pars": "parameters that get wrapped on the 1D parameter",
-    "sky_pars": [],
+    "sky_pars": [
+        "ra",
+        "dec"
+    ],
     "__definition__sky_pars": "sky parameters",
     "det": [
         "H1",

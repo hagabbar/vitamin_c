@@ -74,7 +74,7 @@ bounds = {'mass_1_min':35.0, 'mass_1_max':80.0,
         '__definition__luminosity_distance': 'luminosity distance range'}
 
 # arbitrary value for normalization of timeseries (Don't change this)
-y_normscale = 16.638832624721797
+y_normscale = 36.0
 
 ##########################
 # Main tunable variables
@@ -92,9 +92,9 @@ inf_pars=['mass_1','mass_2','luminosity_distance','geocent_time','phase',
 #rand_pars = ["mass_1","mass_2","luminosity_distance","geocent_time","phase","theta_jn","psi","ra","dec","a_1","a_2","tilt_1","tilt_2","phi_12","phi_jl"]
 #bilby_pars = ["mass_1","mass_2","luminosity_distance","geocent_time","theta_jn","psi","ra","dec","a_1","a_2","tilt_1","tilt_2","phi_12","phi_jl"]
 #inf_pars = ["mass_1","mass_2","luminosity_distance","geocent_time","phase","theta_jn","psi","ra","dec","a_1","a_2","tilt_1","tilt_2","phi_12","phi_jl"]
-batch_size = int(512)                                                                 
+batch_size = int(1500)                                                                 
 weight_init = 'xavier'                                                            
-n_modes=64; n_modes_q=1                                                                      
+n_modes=32; n_modes_q=1                                                                      
 initial_training_rate=1e-4                                                     
 batch_norm=False                                                                
 
@@ -131,8 +131,8 @@ n_weights_q = [n_fc,n_fc,n_fc]
 #############################
 # optional tunable variables
 #############################
-run_label = 'vitamin_c_run19'#'demo_%ddet_%dpar_%dHz_hour_angle_with_late_kl_start' % (len(det),len(rand_pars),ndata) 
-gpu_num = 5
+run_label = 'vitamin_c_run49'#'vitamin_c_run31_fast_testing'#'demo_%ddet_%dpar_%dHz_hour_angle_with_late_kl_start' % (len(det),len(rand_pars),ndata) 
+gpu_num =2
 
 # 1024 Hz label
 #bilby_results_label = 'weichangfeng_theta_jn_issue'                                             
@@ -146,10 +146,10 @@ tot_dataset_size = int(1e7)
 tset_split = int(1e3)                                                           
 save_interval = int(1000)
 plot_interval = int(1000)                                                        
-num_iterations=int(25000)+1 # 12500 for Green et al.                                                       
+num_iterations=int(100000)+1 # 12500 for Green et al.                                                       
 ref_geocent_time=1126259642.5                                                   
 load_chunk_size = int(2e4)                                                           
-samplers=['vitamin','dynesty','ptemcee','cpnest']                                                  
+samplers=['vitamin','dynesty','ptemcee']#,'cpnest','emcee']                                                  
 val_dataset_size = int(1e3)
 
 # Directory variables
@@ -162,8 +162,8 @@ plot_dir='/home/hunter.gabbard/public_html/CBC/chris_dec2020_vitamin/%s' % run_l
 #pe_dir='/home/hunter.gabbard/CBC/public_VItamin/provided_models/vitamin_b/vitamin_b/test_sets/1024_khz_spins_included_15par/test'
 
 # default training/testing directories
-train_set_dir='./training_sets_realnoise_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(det),len(rand_pars),ndata,tot_dataset_size,tset_split)
-val_set_dir='./validation_sets_realnoise_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(det),len(rand_pars),ndata,val_dataset_size,tset_split) 
+train_set_dir='./training_sets_TiltSineDist_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(det),len(rand_pars),ndata,tot_dataset_size,tset_split)
+val_set_dir='./validation_sets_TiltSineDist_%ddet_%dpar_%dHz/tset_tot-%d_split-%d' % (len(det),len(rand_pars),ndata,val_dataset_size,tset_split) 
 test_set_dir = './test_sets/%s/test_waveforms' % bilby_results_label
 pe_dir='./test_sets/%s/test' % bilby_results_label
 
@@ -203,7 +203,7 @@ def get_params():
         __definition__use_real_det_noise='If True, use real detector noise around reference time',
         real_noise_time_range = [1126051217, 1137254417],
         __definition__real_noise_time_range = 'time range to produce real noise samples over',
-        use_real_events=['GW150914'], # e.g. 'GW150914'
+        use_real_events=False, # e.g. 'GW150914'
         __definition__use_real_events='list containing real ligo events to be analyzed',
         convert_to_hour_angle = False,
         __definition__convert_to_hour_angle='If True, convert RA to hour angle during trianing and testing',
@@ -376,9 +376,9 @@ def get_params():
         __definition__y_normscale='arbitrary normalization factor on all time series waveforms (helps convergence in training)',
         gauss_pars=['luminosity_distance','geocent_time','theta_jn','a_1','a_2','tilt_1','tilt_2','ra','dec','phase','psi','phi_12','phi_jl'],         
         __definition__gauss_pars='parameters that require a truncated gaussian distribution',
-        vonmise_pars=[],                                        
+        vonmise_pars=['phase','phi_12','phi_jl','psi'],                                        
         __definition__vonmises_pars='parameters that get wrapped on the 1D parameter', 
-        sky_pars=[],                                              
+        sky_pars=['ra','dec'],                                              
         __definition__sky_pars='sky parameters',
         det=det,
         __definition__det='LIGO detectors to perform analysis on (default is 3detector H1,L1,V1)',

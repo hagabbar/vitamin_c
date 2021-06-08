@@ -45,28 +45,13 @@ from skopt.utils import use_named_args
 try:
     from .gen_benchmark_pe import run, gen_real_noise
     from . import plotting
-    from . import vitamin_c_new as vitamin_c
+    from . import vitamin_c
     from .plotting import prune_samples
 except (ModuleNotFoundError, ImportError):
     from gen_benchmark_pe import run, gen_real_noise
     import plotting
-    import vitamin_c_new as vitamin_c
+    import vitamin_c
     from plotting import prune_samples
-
-# Check for optional basemap installation
-try:
-    from mpl_toolkits.basemap import Basemap
-    print("module 'basemap' is installed")
-except (ModuleNotFoundError, ImportError):
-    print("module 'basemap' is not installed")
-    print("Skyplotting functionality is automatically disabled.")
-    skyplotting_usage = False
-else:
-    skyplotting_usage = True
-    try:
-        from .skyplotting import plot_sky
-    except:
-        from skyplotting import plot_sky
 
 """ Script has several main functions:
 1.) Generate training data
@@ -76,7 +61,6 @@ else:
 5.) Generate samples only given model and timeseries
 6.) Apply importance sampling to VItamin results
 """
-
 parser = argparse.ArgumentParser(description='VItamin: A user friendly Bayesian inference machine learning library.')
 parser.add_argument("--gen_train", default=False, help="generate the training data")
 parser.add_argument("--gen_rnoise", default=False, help="generate the real noise samples")
@@ -88,8 +72,8 @@ parser.add_argument("--test", default=False, help="test the network")
 parser.add_argument("--params_file", default=None, type=str, help="dictionary containing parameters of run")
 parser.add_argument("--bounds_file", default=None, type=str, help="dictionary containing source parameter bounds")
 parser.add_argument("--fixed_vals_file", default=None, type=str, help="dictionary containing source parameter values when fixed")
-parser.add_argument("--pretrained_loc", default=None, type=str, help="location of a pretrained network (i.e. .ckpt file)")
-parser.add_argument("--test_set_loc", default=None, type=str, help="directory containing test set waveforms")
+parser.add_argument("--model_loc", default=None, type=str, help="location of a pretrained network (i.e. .ckpt file)")
+parser.add_argument("--test_set", default=None, type=str, help="directory containing test set waveforms")
 parser.add_argument("--gen_samples", default=False, help="If True, generate samples only (no plotting)")
 parser.add_argument("--num_samples", type=int, default=10000, help="number of posterior samples to generate")
 parser.add_argument("--use_gpu", default=False, help="if True, use gpu")
@@ -549,11 +533,11 @@ def gen_train(params=params,bounds=bounds,fixed_vals=fixed_vals):
     for i in range(0,params['tot_dataset_size'],params['tset_split']):
 
         # Use this if wanting to add to existing training database
-        start_point = 4371000
-        if i <= start_point:
-            continue
-        else:
-            params['training_data_seed'] = start_point
+#        start_point = 2854000
+#        if i <= start_point:
+#            continue
+#        else:
+#            params['training_data_seed'] = start_point
 
         logging.config.dictConfig({
         'version': 1,
@@ -718,7 +702,7 @@ def gen_test(params=params,bounds=bounds,fixed_vals=fixed_vals):
                                                       inf_pars=params['inf_pars'],
                                                       label=params['bilby_results_label'] + '_' + str(i),
                                                       out_dir=params['pe_dir'],
-                                                      samplers=params['samplers']+'1',
+                                                      samplers=params['samplers'][-1]+'1',
                                                       training=False,
                                                       seed=params['testing_data_seed']+i,
                                                       do_pe=params['doPE'],det=params['det'],
@@ -792,28 +776,6 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
         print('... resuming training and disabling the ramp')
 
     params['make_paper_plots'] = False
-    """
-    # load the noisefree training data back in
-    x_data_train, y_data_train, _, snrs_train = load_data(params,bounds,fixed_vals,params['train_set_dir'],params['inf_pars'])
-    print('... loaded in the training data')
-
-    # load the noisefree validation data back in
-    x_data_val, y_data_val, _, snrs_val = load_data(params,bounds,fixed_vals,params['val_set_dir'],params['inf_pars'])
-    print('... loaded in the validation data')
-
-    # load the noisy testing data back in
-    x_data_test, y_data_test_noisefree, y_data_test, snrs_test = load_data(params,bounds,fixed_vals,params['test_set_dir'],params['inf_pars'],test_data=True)
-    print('... loaded in the testing data')
-    for x in x_data_test:
-        print(x)
-
-    # reshape time series arrays for single channel ( N_samples,fs*duration,n_detectors -> (N_samples,fs*duration*n_detectors) )
-    y_data_train = y_data_train.reshape(y_data_train.shape[0]*y_data_train.shape[1],y_data_train.shape[2]*y_data_train.shape[3])
-    y_data_val = y_data_val.reshape(y_data_val.shape[0]*y_data_val.shape[1],y_data_val.shape[2]*y_data_val.shape[3])
-    y_data_test = y_data_test.reshape(y_data_test.shape[0],y_data_test.shape[1]*y_data_test.shape[2])
-    y_data_test_noisefree = y_data_test_noisefree.reshape(y_data_test_noisefree.shape[0],y_data_test_noisefree.shape[1]*y_data_test_noisefree.shape[2])
-    print('... reshaped train,val,test y-data -> (N_samples,fs*duration*n_detectors)')
-    """
 
     # Make directory for plots
     os.system('mkdir -p %s' % (params['plot_dir']))
@@ -827,115 +789,6 @@ def train(params=params,bounds=bounds,fixed_vals=fixed_vals,resume_training=Fals
     f.close()
     print('... saved config file to {}/latest_{}/params_{}.txt'.format(params['plot_dir'],params['run_label'],params['run_label']))
 
-    """
-    # load up the posterior samples (if they exist)
-    if params['pe_dir'] != None:
-        # load generated samples back in
-        dataLocations = '%s_%s' % (params['pe_dir'],params['samplers'][1]+'1')
-        print('... looking in {} for posterior samples'.format(dataLocations))
-
-        i_idx = 0
-        i = 0
-
-        # Iterate over requested number of testing samples to use
-        for i in range(params['r']):
-
-            filename = '%s/%s_%d.h5py' % (dataLocations,params['bilby_results_label'],i)
-            if not os.path.isfile(filename):
-                print('... unable to find file {}. Exiting.'.format(filename))
-                exit(0)
-
-            print('... Loading test sample -> ' + filename)
-            data_temp = {} 
-            n = 0
-       
-            # Retrieve all source parameters to do inference on
-            for q in params['inf_pars']:
-                 p = q + '_post'
-                 par_min = q + '_min'
-                 par_max = q + '_max'
-                 data_temp[p] = h5py.File(filename, 'r')[p][:]
-                 if p == 'geocent_time_post':
-                     data_temp[p] = data_temp[p] - params['ref_geocent_time']
-                 data_temp[p] = (data_temp[p] - bounds[par_min]) / (bounds[par_max] - bounds[par_min])
-                 Nsamp = data_temp[p].shape[0]
-                 n = n + 1
-            print('... read in {} samples from {}'.format(Nsamp,filename))
-
-            # place retrieved source parameters in numpy array rather than dictionary
-            j = 0
-            XS = np.zeros((Nsamp,n))
-            for p,d in data_temp.items():
-                XS[:,j] = d
-                j += 1
-            print('... put the samples in an array')
-        
-            # Append test sample posteriors to existing array of other test sample posteriors
-            rand_idx_posterior = np.random.randint(0,Nsamp,params['n_samples']) 
-            if i == 0:
-                XS_all = np.expand_dims(XS[rand_idx_posterior,:], axis=0)
-            else:
-                XS_all = np.vstack((XS_all,np.expand_dims(XS[rand_idx_posterior,:], axis=0)))
-            print('... appended {} samples to the total'.format(params['n_samples']))
-
-    # Set posterior samples to None if posteriors don't exist
-    elif params['pe_dir'] == None:
-        XS_all = None
-        print('... not using pre-computed samples')
-    # reshape y data into channels last format for convolutional approach (if requested)
-    if params['n_filters_r1'] != None:
-        y_data_test_copy = np.zeros((y_data_test.shape[0],params['ndata'],len(params['det'])))
-        y_data_test_noisefree_copy = np.zeros((y_data_test_noisefree.shape[0],params['ndata'],len(params['det'])))
-        y_data_train_copy = np.zeros((y_data_train.shape[0],params['ndata'],len(params['det'])))
-        y_data_val_copy = np.zeros((y_data_val.shape[0],params['ndata'],len(params['det'])))
-        for i in range(y_data_test.shape[0]):
-            for j in range(len(params['det'])):
-                idx_range = np.linspace(int(j*params['ndata']),int((j+1)*params['ndata'])-1,num=params['ndata'],dtype=int)
-                y_data_test_copy[i,:,j] = y_data_test[i,idx_range]
-                y_data_test_noisefree_copy[i,:,j] = y_data_test_noisefree[i,idx_range]
-        y_data_test = y_data_test_copy
-        y_data_noisefree_test = y_data_test_noisefree_copy
-
-        for i in range(y_data_train.shape[0]):
-            for j in range(len(params['det'])):
-                idx_range = np.linspace(int(j*params['ndata']),int((j+1)*params['ndata'])-1,num=params['ndata'],dtype=int)
-                y_data_train_copy[i,:,j] = y_data_train[i,idx_range]
-        y_data_train = y_data_train_copy
-
-        for i in range(y_data_val.shape[0]):
-            for j in range(len(params['det'])):
-                idx_range = np.linspace(int(j*params['ndata']),int((j+1)*params['ndata'])-1,num=params['ndata'],dtype=int)
-                y_data_val_copy[i,:,j] = y_data_val[i,idx_range]
-        y_data_val = y_data_val_copy
-        print('... converted the data into channels-last format')
-
-    # run hyperparameter optimization
-    if params['hyperparam_optim'] == True:
-
-        # list of initial default hyperparameters to use for GP hyperparameter optimization
-        default_hyperparams = [8, 3]
-
-        # Define hyperparam iteration counter
-        global cur_hyperparam_iter
-        cur_hyperparam_iter = 0
-
-        # Run optimization
-        search_result = gp_minimize(func=hyperparam_fitness,
-                            dimensions=dimensions,
-                            acq_func='EI', # Negative Expected Improvement.
-                            n_calls=params['hyperparam_n_call'],
-                            x0=default_hyperparams)
-
-        dump(search_result, 'search_result_store')
-
-        # plot best loss as a function of optimization step
-        plt.close('all')
-        plot_convergence(search_result)
-        plt.savefig('%s/latest_%s/hyperpar_convergence.png' % (params['plot_dir'],params['run_label']))
-        print('... Saved hyperparameter convergence loss to -> %s/latest_%s/hyperpar_convergence.png' % (params['plot_dir'],params['run_label']))
-        print('... Did a hyperparameter search') 
-    else:
-    """
     x_data_train=y_data_train=x_data_val=y_data_val=x_data_test=y_data_test=y_data_test_noisefree=x_data_test=XS_all=snrs_test=None
     vitamin_c.run_vitc(params, x_data_train, y_data_train,
                            x_data_val, y_data_val,
@@ -977,7 +830,6 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
         bounds = json.load(fp)
     with open(fixed_vals, 'r') as fp:
         fixed_vals = json.load(fp)
-
 
     params['make_paper_plots'] = True
     x_data_train=y_data_train=x_data_val=y_data_val=x_data_test=y_data_test=y_data_test_noisefree=x_data_test=XS_all=snrs_test=None
@@ -1182,10 +1034,6 @@ def test(params=params,bounds=bounds,fixed_vals=fixed_vals,use_gpu=False):
             y_data_test_new.append(sig.T)
         y_data_test = np.array(y_data_test_new)
         del y_data_test_new
-
-    # check is basemap is installed
-    if not skyplotting_usage:
-        params['Make_sky_plot'] = False
 
     VI_pred_all = []
     # Iterate over total number of testing samples
@@ -1424,7 +1272,10 @@ def gen_samples(params=params,bounds=bounds,fixed_vals=fixed_vals,model_loc='mod
         data={'y_data_noisy': []}
 
     # Sort files from first generated to last generated
-    filenames = sorted(os.listdir(dataLocations[0]), key=lambda x: int(x.split('.')[0].split('_')[-1]))
+    try:
+        filenames = sorted(os.listdir(dataLocations[0]), key=lambda x: int(x.split('.')[0].split('_')[-1]))
+    except ValueError:
+        filenames = sorted(os.listdir(dataLocations[0]))
 
     # Append training/testing filenames to list. Ignore those that can't be loaded
     for filename in filenames:
@@ -1445,7 +1296,6 @@ def gen_samples(params=params,bounds=bounds,fixed_vals=fixed_vals,model_loc='mod
 
     # Extract the prior bounds from training/testing files
     data['y_data_noisy'] = np.concatenate(np.array(data['y_data_noisy']), axis=0)
-    
 
     y_data_test = data['y_data_noisy']
 
@@ -1462,29 +1312,66 @@ def gen_samples(params=params,bounds=bounds,fixed_vals=fixed_vals,model_loc='mod
                 y_data_test_copy[i,:,j] = y_data_test[i,idx_range]
         y_data_test = y_data_test_copy
     num_timeseries=y_data_test.shape[0]
-   
+    test_dataset = (tf.data.Dataset.from_tensor_slices((y_data_test))
+                        .batch(1))  
+ 
     checkpoint_path = model_loc #"inverse_model_%s/model.ckpt" % params['run_label']
     checkpoint_dir = os.path.dirname(checkpoint_path)
     model = vitamin_c.CVAE(len(params['inf_pars']), params['ndata'],
-                 y_data_test.shape[2], params['z_dimension'], params['n_modes'], params)
+                 y_data_test.shape[2], params['z_dimension'], params['n_modes'],
+                 tf.Variable(1.0, trainable=False), tf.Variable(0, trainable=False, dtype=tf.float32),
+                 1, params['ramp_start'], params['ramp_end']-params['ramp_start'], 1)
     # Load the previously saved weights
     latest = tf.train.latest_checkpoint(checkpoint_dir)
     model.load_weights(latest)
+    model.compile(
+            optimizer=tf.keras.optimizers.Adam(learning_rate=params['initial_training_rate']),
+            loss=vitamin_c.compute_loss,
+        )
     print('... loading in previous model %s' % checkpoint_path)
  
-    samples = np.zeros((num_timeseries,num_samples,len(params['inf_pars'])))
-    for i in range(num_timeseries):
+    all_samples = np.zeros((num_timeseries,num_samples,len(params['inf_pars'])))
+    for i, (y_batch_test) in test_dataset.enumerate():
         start = time.time()
-        samples[i,:] = vitamin_c.gen_samples(model, np.expand_dims(y_data_test[i],axis=0), ramp=1.0, nsamples=num_samples)
+        samples, _ = vitamin_c.gen_samples(model, y_batch_test, 
+                                             ramp=tf.Variable(1.0, trainable=False), nsamples=num_samples)
+        all_samples[i,:] = samples
         end = time.time()
         dt = end-start
         print('... Runtime to generate samples is: ' + str(dt))
 
-        # unnormalize predictions
-        for q_idx,q in enumerate(params['inf_pars']):
-            par_min = q + '_min'
-            par_max = q + '_max'
-            samples[i,:,q_idx] = (samples[i,:,q_idx] * (bounds[par_max] - bounds[par_min])) + bounds[par_min]
+        # trim samples from outside the cube
+        mask = []
+        for s in samples:
+            if (np.all(s>=0.0) and np.all(s<=1.0)):
+                mask.append(True)
+            else:
+                mask.append(False)
+        samples = tf.boolean_mask(samples,mask,axis=0)
+        print('identified {} good samples'.format(samples.shape[0]))
+        if samples.shape[0]<100:
+            return [-1.0,-1.0,-1.0]
+
+        # randonly convert from reduced psi-phi space to full space
+        _, psi_idx, _ = vitamin_c.get_param_index(params['inf_pars'],['psi'])
+        _, phi_idx, _ = vitamin_c.get_param_index(params['inf_pars'],['phase'])
+        psi_idx = psi_idx[0]
+        phi_idx = phi_idx[0]
+        samples = samples.numpy()
+        samples[:,psi_idx], samples[:,phi_idx] = vitamin_c.psiX_to_psiphi(samples[:,psi_idx], samples[:,phi_idx])
+
+        inf_ol_mask, inf_ol_idx, inf_ol_len = vitamin_c.get_param_index(params['inf_pars'],params['bilby_pars'])
+        true_XS = np.zeros([samples.shape[0],inf_ol_len])
+        ol_pars = []
+        cnt = 0
+        for inf_idx in inf_ol_idx:
+            inf_par = params['inf_pars'][inf_idx]
+            true_XS[:,cnt] = (samples[:,inf_idx] * (bounds[inf_par+'_max'] - bounds[inf_par+'_min'])) + bounds[inf_par+'_min']
+            ol_pars.append(inf_par)
+            cnt += 1
+
+        # convert to RA
+        samples = vitamin_c.convert_sky(true_XS,params['ref_geocent_time'],ol_pars)
 
         # plot results
         if plot_corner==True:
@@ -1501,14 +1388,14 @@ def gen_samples(params=params,bounds=bounds,fixed_vals=fixed_vals,model_loc='mod
                     levels=(0.50,0.90), density=True,
                     plot_density=False, plot_datapoints=True,
                     max_n_ticks=3)
-            figure = corner.corner(samples[i,:,:],**defaults_kwargs,labels=parnames)
-            plt.savefig('./vitamin_corner_timeseries-%d.png' % i)
+            figure = corner.corner(samples,**defaults_kwargs,labels=parnames)
+            plt.savefig('%s/vitamin_corner_timeseries-%d.png' % (params['plot_dir'],i))
             plt.close()
             print('... Saved corner plot to -> ./vitamin_corner_timeseries-%d.png' % i)
             print()
 
     print('... All posterior samples generated for all waveforms in test sample directory!')
-    return samples
+    return all_samples
 
 # If running module from command line
 if args.gen_train:
@@ -1524,5 +1411,5 @@ if args.train:
 if args.test:
     test(params,bounds,fixed_vals,use_gpu=bool(args.use_gpu))
 if args.gen_samples:
-    gen_samples(params,bounds,fixed_vals,model_loc=args.pretrained_loc,
-                test_set=args.test_set_loc,num_samples=args.num_samples,use_gpu=bool(args.use_gpu))
+    gen_samples(params,bounds,fixed_vals,model_loc=args.model_loc,
+                test_set=args.test_set,num_samples=args.num_samples,use_gpu=bool(args.use_gpu))

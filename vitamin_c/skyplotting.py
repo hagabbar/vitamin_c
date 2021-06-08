@@ -56,7 +56,7 @@ def plot_sky(pts,contour=True,filled=False,ax=None,trueloc=None,cmap='Reds',col=
     """
     cls = kde.Clustered2DSkyKDE
     pts[:,0] = pts[:,0] - np.pi
-    skypost = cls(pts, trials=5, jobs=8)
+    skypost = cls(pts, trials=1, jobs=1) # default: 5trails, 8jobs
 
     # make up some data on a regular lat/lon grid.
     nlats = 145; nlons = 291; delta = 2.*np.pi/(nlons-1)
@@ -72,6 +72,8 @@ def plot_sky(pts,contour=True,filled=False,ax=None,trueloc=None,cmap='Reds',col=
     nz = np.sin(pts[:,1])
     mean_n = [np.mean(nx),np.mean(ny),np.mean(nz)]
     bestloc = [trueloc[0],trueloc[1]]
+
+    matplotlib.rc('text', usetex=True)
 
     if ax is None:
         map = Basemap(projection='moll',lon_0=0,resolution=None,celestial=True)
