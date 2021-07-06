@@ -46,11 +46,13 @@ try:
     from .gen_benchmark_pe import run, gen_real_noise
     from . import plotting
     from . import vitamin_c
+#    from . import vitamin_c_old as vitamin_c
     from .plotting import prune_samples
 except (ModuleNotFoundError, ImportError):
     from gen_benchmark_pe import run, gen_real_noise
     import plotting
     import vitamin_c
+#    import vitamin_c_old as vitamin_c
     from plotting import prune_samples
 
 """ Script has several main functions:
@@ -543,9 +545,9 @@ def gen_train(params=params,bounds=bounds,fixed_vals=fixed_vals):
         'version': 1,
         'disable_existing_loggers': True,
         })
-        with suppress_stdout():
-            # generate training sample source parameter, waveform and snr
-            signal_train, signal_train_pars,snrs = run(sampling_frequency=params['ndata']/params['duration'],
+#        with suppress_stdout():
+        # generate training sample source parameter, waveform and snr
+        signal_train, signal_train_pars,snrs = run(sampling_frequency=params['ndata']/params['duration'],
                                                           duration=params['duration'],
                                                           N_gen=params['tset_split'],
                                                           ref_geocent_time=params['ref_geocent_time'],

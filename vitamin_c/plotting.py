@@ -26,6 +26,10 @@ from matplotlib.ticker import (MultipleLocator, FormatStrFormatter, FixedLocator
 import matplotlib.ticker as ticker
 from lal import GreenwichMeanSiderealTime
 from vitamin_c import gen_samples, load_samples, convert_sky, get_param_index, psiX_to_psiphi
+#from vitamin_c_old import gen_samples, load_samples, convert_sky, get_param_index, psiX_to_psiphi
+from scipy.spatial.distance import jensenshannon
+from collections import namedtuple
+import mplfinance as mpf
 
 def sky_JS_decade_plots(params, JS_data, test_dataset, model, all_other_samples, bilby_ol_idx, bilby_ol_len, bounds, sky_mask, inf_ol_idx, inf_ol_len):
     """ Make sky only plots at specific JS divergence 
@@ -62,7 +66,7 @@ def sky_JS_decade_plots(params, JS_data, test_dataset, model, all_other_samples,
 
             for step, (x_batch_test, y_batch_test) in test_dataset.enumerate():
                 if int(step) == zero_idx:
-                    samples,_ = gen_samples(model, y_batch_test, ramp=ramp, nsamples=params['n_samples'])
+                    samples,_,_ = gen_samples(model, y_batch_test, ramp=ramp, nsamples=params['n_samples'])
                     # trim samples from outside the cube
                     mask = []
                     for s in samples:
@@ -130,7 +134,7 @@ def sky_JS_decade_plots(params, JS_data, test_dataset, model, all_other_samples,
 
             for step, (x_batch_test, y_batch_test) in test_dataset.enumerate():
                 if int(step) == minus1_idx:
-                    samples,_ = gen_samples(model, y_batch_test, ramp=ramp, nsamples=params['n_samples'])
+                    samples,_,_ = gen_samples(model, y_batch_test, ramp=ramp, nsamples=params['n_samples'])
                     # trim samples from outside the cube
                     mask = []
                     for s in samples:
@@ -199,7 +203,7 @@ def sky_JS_decade_plots(params, JS_data, test_dataset, model, all_other_samples,
 
             for step, (x_batch_test, y_batch_test) in test_dataset.enumerate():
                 if int(step) == minus2_idx:
-                    samples,_ = gen_samples(model, y_batch_test, ramp=ramp, nsamples=params['n_samples'])
+                    samples,_,_ = gen_samples(model, y_batch_test, ramp=ramp, nsamples=params['n_samples'])
                     # trim samples from outside the cube
                     mask = []
                     for s in samples:
@@ -375,14 +379,35 @@ def indiPar_JS_plots(model,sig_test,par_test,params,bounds,inf_ol_idx,bilby_ol_i
 
             set1 = sampset_1.T
             set2 = sampset_2.T
-  
+ 
+        def calc_median_error(jsvalues, quantiles=(0.16, 0.84)):
+            quants_to_compute = np.array([quantiles[0], 0.5, quantiles[1]])
+            quants = np.percentile(jsvalues, quants_to_compute * 100)
+            summary = namedtuple("summary", ["median", "lower", "upper"])
+            summary.median = quants[1]
+            summary.plus = quants[2] - summary.median
+            summary.minus = summary.median - quants[0]
+            return summary
+
+
+        def calculate_js(samplesA, samplesB, ntests=100, xsteps=100):
+            js_array = np.zeros(ntests)
+            for j in range(ntests):
+                nsamples = min([len(samplesA), len(samplesB)])
+                A = np.random.choice(samplesA, size=nsamples, replace=False)
+                B = np.random.choice(samplesB, size=nsamples, replace=False)
+                xmin = np.min([np.min(A), np.min(B)])
+                xmax = np.max([np.max(A), np.max(B)])
+                x = np.linspace(xmin, xmax, xsteps)
+                A_pdf = gaussian_kde(A)(x)
+                B_pdf = gaussian_kde(B)(x)
+
+                js_array[j] = np.nan_to_num(np.power(jensenshannon(A_pdf, B_pdf), 2))
+
+            return calc_median_error(js_array)
+ 
         # Iterate over number of randomized sample slices
         SMALL_CONSTANT = 1e-162 # 1e-4 works best for some reason
-        def my_kde_bandwidth(obj, fac=1.0):
-
-            """We use Scott's Rule, multiplied by a constant factor."""
-
-            return np.power(obj.n, -1./(obj.d+4)) * fac
             
         kl_result = []
         set1 = set1.T
@@ -390,23 +415,29 @@ def indiPar_JS_plots(model,sig_test,par_test,params,bounds,inf_ol_idx,bilby_ol_i
         #for kl_idx in range(10):
         rand_idx_kl = np.linspace(0,params['n_samples']-1,num=params['n_samples'],dtype=np.int)
         np.random.shuffle(rand_idx_kl)
-        rand_idx_kl = rand_idx_kl[:1000]
+        #rand_idx_kl = rand_idx_kl[:1000]
         rand_idx_kl_2 = np.linspace(0,params['n_samples']-1,num=params['n_samples'],dtype=np.int)
         np.random.shuffle(rand_idx_kl_2)
-        rand_idx_kl_2 = rand_idx_kl_2[:1000]
+        #rand_idx_kl_2 = rand_idx_kl_2[:1000]
         kl_result = np.zeros((len(params['bilby_pars'])))
         for indi_par_idx,_ in enumerate(params['bilby_pars']):
-            kl_result[indi_par_idx] = estimate(np.expand_dims(set1[rand_idx_kl,indi_par_idx],axis=1),np.expand_dims(set2[rand_idx_kl_2,indi_par_idx],axis=1),k=10,n_jobs=10) + estimate(np.expand_dims(set2[rand_idx_kl_2,indi_par_idx],axis=1),np.expand_dims(set1[rand_idx_kl,indi_par_idx],axis=1),k=10,n_jobs=10)
-        
+            kl_result[indi_par_idx] = calculate_js(set1[rand_idx_kl,indi_par_idx], set2[rand_idx_kl_2,indi_par_idx]).median
+        #    print(kl_result[indi_par_idx])
+        #exit()
+ 
         return kl_result
 
     # Define variables 
     usesamps = params['samplers']
     samplers = params['samplers']
     fig_samplers = params['figure_sampler_names']
-    indi_fig_kl, ((ax1, ax2, ax3), (ax4, ax5, ax6), (ax7, ax8, ax9)) = plt.subplots(3,3,figsize=(6,6))  
+    indi_fig_kl, ((ax1, ax2, ax3), (ax4, ax5, ax6), (ax7, ax8, ax9)) = plt.subplots(3,3,figsize=(10,6))  
     indi_axis_kl = [ax1,ax2,ax3,ax4,ax5,ax6,ax7,ax8,ax9]
-  
+#    mpf_figure = mpf.figure()
+#    ax = mpf_figure.subplots(3,3)
+#    print('Made it!')
+#    exit()  
+
     # Compute kl divergence on all test cases with preds vs. benchmark
     # Iterate over samplers
     tmp_idx=len(usesamps)
@@ -421,6 +452,21 @@ def indiPar_JS_plots(model,sig_test,par_test,params,bounds,inf_ol_idx,bilby_ol_i
     label_idx = 0
     vi_pred_made = None
 
+    """
+    # Compute the JS of Dynesty with itself
+    dynesty_v_dynesty = np.zeros((params['r'],len(params['bilby_pars'])))
+    d1 = load_samples(params, 'dynesty', pp_plot=True, samp_run='1')
+    d2 = load_samples(params, 'dynesty', pp_plot=True, samp_run='2')
+    for r in range(0,params['r']):
+        dynesty_v_dynesty[r,:] = compute_indi_kl(d1[r,:],d2[r,:],['dynesty','dynesty'],params)
+        print('Computed indi KL for test sample %d' % r)
+    for par_idx,par in enumerate(params['bilby_pars']):
+        mean_par_JS = np.mean(dynesty_v_dynesty[:,par_idx])
+        print('Mean JS for %s: %.3f' % (par,mean_par_JS))
+    np.savetxt('plotting_data_%s/JS_indi_dyn_v_dyn.txt' % params['run_label'], dynesty_v_dynesty)
+    print() 
+    """
+
     # Get the xaxis labels for the scatter plot
     JS_par_labels=[]
     for par in params['bilby_pars']:
@@ -434,13 +480,22 @@ def indiPar_JS_plots(model,sig_test,par_test,params,bounds,inf_ol_idx,bilby_ol_i
             os.remove('plotting_data_%s/JS_indiPar_plot_data.h5' % params['run_label'])
             hf = h5py.File('plotting_data_%s/JS_indiPar_plot_data.h5' % params['run_label'], 'w')
     else:
-        hf = h5py.File('plotting_data_%s/JS_indiPar_plot_data.h5' % params['run_label'], 'r')
-   
+        hf = h5py.File('plotting_data_%s/JS_indiPar_plot_data.h5' % params['run_label'], 'r+')
+
+    # delete vitamin samples if only making vitamin posterior samples
+    gen_only_vitamin_samp = True 
+    if gen_only_vitamin_samp:
+        for key in hf.keys():
+            key_list = key.split('-')
+            if key_list[0] == 'vitamin' or key_list[1] == 'vitamin':
+                del hf[key]
+
     # Individual plots (not subplots)
     fig_dict = {}
-    axis_dict = {}
+    axis_dict = {}; axis_dict_labels = {}; axis_dict_colors = {} 
     for k in range(len(usesamps)-1):
         fig_dict[usesamps[1:][k]], axis_dict[usesamps[1:][k]] = plt.subplots(figsize=(8,6))
+        axis_dict_labels[usesamps[1:][k]] = []; axis_dict_colors[usesamps[1:][k]] = [] 
 
     # This will go through values of 0 to 3 in steps of 1
     for k in range(len(usesamps)-1):
@@ -474,26 +529,31 @@ def indiPar_JS_plots(model,sig_test,par_test,params,bounds,inf_ol_idx,bilby_ol_i
                 if samplers[i] == samplers[::-1][j]: # Skip samplers with themselves
                     print_cnt+=1
                     continue
-                elif params['load_plot_data'] == True or node_exists: # load pre-generated JS results
-                    tot_kl = np.array(hf['%s-%s' % (sampler1,sampler2)])
-                else:
-                    if params['load_plot_data'] == False: # Make new JS results if needed
-                        if sampler1 != 'vitamin':
-                            set1 = load_samples(params, sampler1, pp_plot=True)
-                        elif sampler1 == 'vitamin' and vi_pred_made == None:
-                            set1 = np.zeros((params['r'], params['n_samples'], len(params['bilby_pars'])))
-                            for sig_test_idx in range(params['r']):
-                                samples,_ = np.array(gen_samples(model, np.expand_dims(sig_test[sig_test_idx], axis=0), ramp=1, nsamples=params['n_samples'])) 
-                                set1[sig_test_idx,:,:] = extract_correct_sample_idx(samples, inf_ol_idx, params)
-                            vi_pred_made = [set1]
-                        if sampler2 != 'vitamin':
-                            set2 = load_samples(params, sampler2, pp_plot=True)
-                        elif sampler1 == 'vitamin' and vi_pred_made == None:
-                            set2 = np.zeros((params['r'], params['n_samples'], len(params['bilby_pars'])))
-                            for sig_test_idx in range(params['r']):
-                                samples,_ = np.array(gen_samples(model, np.expand_dims(sig_test[sig_test_idx], axis=0), ramp=1, nsamples=params['n_samples']))
-                                set2[sig_test_idx,:,:] = extract_correct_sample_idx(samples, inf_ol_idx, params)
-                            vi_pred_made = [set2]
+                elif node_exists: # load pre-generated JS results
+                    tot_kl = np.array(hf['%s-%s' % (sampler1,sampler2)])[:params['r']]
+                    print('... Node exists.')
+                elif params['load_plot_data'] == False or gen_only_vitamin_samp:
+                # else:
+                    #if params['load_plot_data'] == False: # Make new JS results if needed
+                    if sampler1 != 'vitamin':
+                        set1 = load_samples(params, sampler1, pp_plot=True)
+                    elif sampler1 == 'vitamin' and vi_pred_made == None:
+                        set1 = np.zeros((params['r'], params['n_samples'], len(params['bilby_pars'])))
+                        for sig_test_idx in range(params['r']):
+                            print('... Generating index %d samples' % sig_test_idx)
+                            samples,_,_ = gen_samples(model, np.expand_dims(sig_test[sig_test_idx], axis=0), ramp=1, nsamples=params['n_samples']) 
+                            set1[sig_test_idx,:,:] = extract_correct_sample_idx(samples, inf_ol_idx, params)
+                            #set1[sig_test_idx,:,:] = np.random.uniform(low=0,high=1,size=(5000,14))
+                        vi_pred_made = [set1]
+                    if sampler2 != 'vitamin':
+                        set2 = load_samples(params, sampler2, pp_plot=True)
+                    elif sampler1 == 'vitamin' and vi_pred_made == None:
+                        set2 = np.zeros((params['r'], params['n_samples'], len(params['bilby_pars'])))
+                        for sig_test_idx in range(params['r']):
+                            samples,_,_ = gen_samples(model, np.expand_dims(sig_test[sig_test_idx], axis=0), ramp=1, nsamples=params['n_samples'])
+                            set2[sig_test_idx,:,:] = extract_correct_sample_idx(samples, inf_ol_idx, params)
+                            #set2[sig_test_idx,:,:] = np.random.uniform(low=0,high=1,size=(5000,14))
+                        vi_pred_made = [set2]
 
                     # Iterate over test cases
                     tot_kl = np.zeros((params['r'],len(params['bilby_pars'])))  # total JS over all infered parameters
@@ -501,29 +561,88 @@ def indiPar_JS_plots(model,sig_test,par_test,params,bounds,inf_ol_idx,bilby_ol_i
                     for r in range(params['r']):
                         # Iterate over indi source parameters
                         tot_kl[r,:] = compute_indi_kl(set1[r,:],set2[r,:],[sampler1,sampler2],params)
+                        #tot_kl[r,:] = np.random.normal(0,1)
                         print()
                         print('... Completed JS for set %s-%s and test sample %s with mean JS: %.6f' % (sampler1,sampler2,str(r), np.mean(tot_kl)))
                         print()
+                elif params['load_plot_data']:
+                    tot_kl = np.array(hf['%s-%s' % (sampler1,sampler2)])[:params['r']]
+                    print('... Loading plot data.')
+
+                # remove crazy outlier values
+                new_tot_kl = []
+                print(tot_kl.shape)
+                for tot_kl_idx in range(tot_kl.shape[0]):
+                    if np.mean(tot_kl[tot_kl_idx,:]) < 1e4:
+                        new_tot_kl.append(tot_kl[tot_kl_idx,:])
+                tot_kl = np.array(new_tot_kl)
 
                 # Try saving both sampler permutations of the JS results
                 try:
                     if params['load_plot_data'] == False:
                         # Save results to h5py file
                         hf.create_dataset('%s-%s' % (sampler1,sampler2), data=tot_kl)
+                    if sampler1 == 'vitamin' or sampler2 == 'vitamin':
+                        if gen_only_vitamin_samp:
+                            hf.create_dataset('%s-%s' % (sampler1,sampler2), data=tot_kl)
                 except Exception as e:
                     pass
                 try:
                     if params['load_plot_data'] == False:
                         # Save results to h5py file
                         hf.create_dataset('%s-%s' % (sampler2,sampler1), data=tot_kl)
+                    if sampler1 == 'vitamin' or sampler2 == 'vitamin':
+                        if gen_only_vitamin_samp:
+                            hf.create_dataset('%s-%s' % (sampler2,sampler1), data=tot_kl)
                 except Exception as e:
                     pass
+
+                def jitter_dots(dots,sampler):
+                    if sampler == 'VItamin':
+                        jitter = -0.1
+                    elif sampler == 'Dynesty':
+                        jitter = -0.05
+                    elif sampler == 'Emcee':
+                        jitter = 0.0
+                    elif sampler == 'Ptemcee':
+                        jitter = 0.05
+                    elif sampler == 'CPNest':
+                        jitter = 0.1
+                    offsets = dots.get_offsets()
+                    jittered_offsets = offsets
+                    # only jitter in the x-direction
+                    jittered_offsets[:, 0] += jitter #np.random.uniform(-0.1, 0.1, offsets.shape[0])
+                    dots.set_offsets(jittered_offsets)
+
+                # Set jitter value for boxplots
+                def set_jitter_value(sampler):
+                    if sampler == 'VItamin':
+                        jitter = -0.1
+                    elif sampler == 'Dynesty':
+                        jitter = -0.05
+                    elif sampler == 'Emcee':
+                        jitter = 0.0
+                    elif sampler == 'Ptemcee':
+                        jitter = 0.05
+                    elif sampler == 'CPNest':
+                        jitter = 0.1
+                    return jitter
 
                 # plot colored hist
                 if samplers[i] == 'vitamin' and samplers[::-1][j] == samplers[1:][k]:
                     cur_bayesian_sampler = fig_samplers[::-1][j]
                     
-                    axis_dict[usesamps[1:][k]].scatter(JS_par_labels,tot_kl.flatten(),s=1,c=CB_color_cycle[print_cnt],label=r'$\mathrm{%s \ vs. \ %s}$' % (fig_samplers[::-1][j],fig_samplers[i]))
+                    #tmp_axis_dict = axis_dict[usesamps[1:][k]].scatter(JS_par_labels[:int(len(params['bilby_pars'])*tot_kl.shape[0])],tot_kl.flatten(),s=0.1,c=CB_color_cycle[print_cnt],label=r'$\mathrm{%s \ vs. \ %s}$' % (fig_samplers[::-1][j],fig_samplers[i]))
+                    boxprops = dict(facecolor=CB_color_cycle[print_cnt],color=CB_color_cycle[print_cnt],alpha=0.8);whiskerprops=dict(color=CB_color_cycle[print_cnt]);capprops=dict(color=CB_color_cycle[print_cnt])
+                    positions = list(range(1, tot_kl.shape[1]+1))
+                    jitter_value = set_jitter_value(fig_samplers[i])
+                    for pos_idx in range(len(positions)):
+                        positions[pos_idx] += jitter_value
+                    tmp_axis_dict = axis_dict[usesamps[1:][k]].boxplot(tot_kl,whis=(5,95),showcaps=True,showfliers=False,patch_artist=True,widths=0.2,positions=positions,capprops=capprops,whiskerprops=whiskerprops,labels=np.array(JS_par_labels[:int(len(params['bilby_pars']))]),boxprops=boxprops)
+                    axis_dict[usesamps[1:][k]].set_xticks(list(range(1, tot_kl.shape[1]+1)))
+                    axis_dict_labels[usesamps[1:][k]].append(r'$\mathrm{%s \ vs. \ %s}$' % (fig_samplers[::-1][j],fig_samplers[i]))
+                    axis_dict_colors[usesamps[1:][k]].append(CB_color_cycle[print_cnt])
+                    #jitter_dots(tmp_axis_dict['boxes'], fig_samplers[i])
                 # record non-colored hists
                 elif samplers[i] != 'vitamin' and samplers[::-1][j] != 'vitamin':
                     if samplers[i] == samplers[1:][k] or samplers[::-1][j] == samplers[1:][k]:
@@ -533,24 +652,35 @@ def indiPar_JS_plots(model,sig_test,par_test,params,bounds,inf_ol_idx,bilby_ol_i
                         else:
                             second_bayesian_sampler = fig_samplers[i]
                             grey_cnt = fig_samplers.index(fig_samplers[i]) - 1 
-                        axis_dict[usesamps[1:][k]].scatter(JS_par_labels,tot_kl.flatten(),s=1,c=grey_colors[grey_cnt],label=r'$\mathrm{%s \ vs. \ %s}$' % (cur_bayesian_sampler,second_bayesian_sampler))
+                        #tmp_axis_dict = axis_dict[usesamps[1:][k]].scatter(JS_par_labels[:int(len(params['bilby_pars'])*tot_kl.shape[0])],tot_kl.flatten(),s=0.1,c=grey_colors[grey_cnt],label=r'$\mathrm{%s \ vs. \ %s}$' % (cur_bayesian_sampler,second_bayesian_sampler))
+                        boxprops = dict(facecolor=grey_colors[grey_cnt],color=grey_colors[grey_cnt],alpha=0.8);whiskerprops=dict(color=grey_colors[grey_cnt]);capprops=dict(color=grey_colors[grey_cnt]) 
+                        positions = list(range(1, tot_kl.shape[1]+1))
+                        jitter_value = set_jitter_value(second_bayesian_sampler)
+                        for pos_idx in range(len(positions)):
+                            positions[pos_idx] += jitter_value
+                        tmp_axis_dict = axis_dict[usesamps[1:][k]].boxplot(tot_kl,whis=(5,95),showcaps=True,showfliers=False,patch_artist=True,widths=0.2,positions=positions,capprops=capprops,whiskerprops=whiskerprops,labels=np.array(JS_par_labels[:int(len(params['bilby_pars']))]),boxprops=boxprops)
+                        axis_dict[usesamps[1:][k]].set_xticks(list(range(1, tot_kl.shape[1]+1)))
+                        axis_dict_labels[usesamps[1:][k]].append(r'$\mathrm{%s \ vs. \ %s}$' % (cur_bayesian_sampler,second_bayesian_sampler))
+                        axis_dict_colors[usesamps[1:][k]].append(grey_colors[grey_cnt])
+                        #jitter_dots(tmp_axis_dict, second_bayesian_sampler)
                         print()
                         print('... Grey Mean total JS between %s-%s: %s' % ( sampler1, sampler2, str(np.mean(tot_kl)) ) )
+                #print(JS_par_labels.shape, tot_kl.flatten().shape)
+                #exit()
                 print()
                 print_cnt+=1
             tmp_idx-=1
         # plot JS histograms
         axis_dict[usesamps[1:][k]].set_xlabel(r'$\mathrm{Source \ Parameters}$',fontsize=14)
-        axis_dict[usesamps[1:][k]].set_ylabel(r'$p(\mathrm{JS})$',fontsize=14)
-        #axis_dict[usesamps[1:][k]].set_xticks(rotation=45)
-        #plt.xticks(rotation=45)
+        axis_dict[usesamps[1:][k]].set_ylabel(r'$\mathrm{JS}$',fontsize=14)
         axis_dict[usesamps[1:][k]].set_xticklabels(JS_par_labels[:len(params['bilby_pars'])], rotation=45, ha='right')
-        leg = axis_dict[usesamps[1:][k]].legend(loc='upper right',  fontsize=6) #'medium')
-        for l in leg.legendHandles:
+        axis_dict[usesamps[1:][k]].set_yscale('log')
+        leg = axis_dict[usesamps[1:][k]].legend(axis_dict_labels[usesamps[1:][k]],loc='upper right',fontsize=6)
+        for l_idx,l in enumerate(leg.legendHandles):
             l.set_alpha(1.0)
+            l.set_color(axis_dict_colors[usesamps[1:][k]][l_idx])
 
         # Make horizontal line for Gregory criterion
-#        axis_dict[usesamps[1:][k]].plot(JS_par_labels[:len(params['bilby_pars'])],[0.002]*len(params['bilby_pars']), color='red', ls='dashed')
         axis_dict[usesamps[1:][k]].axhline(y=0.002, color='red', ls='dashed')
         print()
         print('... Made JS IndiPar plot %d' % k)
@@ -559,7 +689,7 @@ def indiPar_JS_plots(model,sig_test,par_test,params,bounds,inf_ol_idx,bilby_ol_i
         # Save figure
         fig_dict[usesamps[1:][k]].canvas.draw()
         plt.tight_layout()
-        fig_dict[usesamps[1:][k]].savefig('%s/latest_%s/JS_IndiPar_%s.png' % (params['plot_dir'],params['run_label'],usesamps[1:][k]),dpi=360)
+        fig_dict[usesamps[1:][k]].savefig('%s/latest_%s/JS_IndiPar_%s.png' % (params['plot_dir'],params['run_label'],usesamps[1:][k]),dpi=360,bbox_inches="tight")
         plt.close(fig_dict[usesamps[1:][k]])
         print()
         print('... Saved JS IndiPar plot to -> %s/latest_%s/JS_IndiPar_%s.png' % (params['plot_dir'],params['run_label'],usesamps[1:][k]))
@@ -1002,7 +1132,7 @@ class make_plots:
                 y = np.expand_dims(sig_test[cnt,:], axis=0)
                  # The trained inverse model weights can then be used to infer a probability density of solutions 
 #given new measurements
-                samples,_ = np.array(gen_samples(model, y, ramp=1, nsamples=params['n_samples']))
+                samples, _, _ = gen_samples(model, y, ramp=1, nsamples=params['n_samples'])
 
                 true_XS = np.zeros([samples.shape[0],len(inf_ol_idx)])
                 true_x = np.zeros([len(inf_ol_idx)])
@@ -1418,7 +1548,7 @@ class make_plots:
                 rand_idx_kl_2 = np.linspace(0,self.params['n_samples']-1,num=self.params['n_samples'],dtype=np.int)
                 np.random.shuffle(rand_idx_kl_2)
                 rand_idx_kl_2 = rand_idx_kl_2[:1000]
-                kl_result.append(estimate(set1[rand_idx_kl,:],set2[rand_idx_kl_2,:],k=10,n_jobs=10) + estimate(set2[rand_idx_kl_2,:],set1[rand_idx_kl,:],k=10,n_jobs=10))
+                kl_result.append(estimate(set1[rand_idx_kl,:],set2[rand_idx_kl_2,:],k=10,n_jobs=1) + estimate(set2[rand_idx_kl_2,:],set1[rand_idx_kl,:],k=10,n_jobs=1))
                 
                 kl_result = np.mean(kl_result)
                 return kl_result
@@ -1462,7 +1592,21 @@ class make_plots:
         label_idx = 0
         vi_pred_made = None
 
-        
+        """
+        # Compute the JS of Dynesty with itself
+        dynesty_v_dynesty = np.zeros((params['r']))
+        d1 = load_samples(params, 'dynesty', pp_plot=True, samp_run='1')
+        d2 = load_samples(params, 'dynesty', pp_plot=True, samp_run='2')
+        for r in range(0,params['r']):
+            dynesty_v_dynesty[r] = compute_kl(d1[r],d2[r],['dynesty','dynesty'])
+            print('Computed JS for test sample %d' % r)
+        mean_par_JS = np.mean(dynesty_v_dynesty)
+        print('Mean JS is %.3f' % (mean_par_JS))
+        np.savetxt('plotting_data_%s/JS_fullPar_dyn_v_dyn.txt' % params['run_label'], dynesty_v_dynesty)
+        print()
+        exit()
+        """    
+
         if params['load_plot_data'] == False:
             try:
                 hf = h5py.File('plotting_data_%s/JS_plot_data.h5' % params['run_label'], 'w')
@@ -1515,7 +1659,7 @@ class make_plots:
                             elif sampler1 == 'vitamin' and vi_pred_made == None:
                                 set1 = np.zeros((params['r'], params['n_samples'], len(params['bilby_pars'])))
                                 for sig_test_idx in range(params['r']):
-                                    samples,_ = np.array(gen_samples(model, np.expand_dims(sig_test[sig_test_idx], axis=0), ramp=1, nsamples=params['n_samples'])) 
+                                    samples,_,_ = gen_samples(model, np.expand_dims(sig_test[sig_test_idx], axis=0), ramp=1, nsamples=params['n_samples']) 
                                     set1[sig_test_idx,:,:] = extract_correct_sample_idx(samples, inf_ol_idx)
                                 vi_pred_made = [set1]
                             if sampler2 != 'vitamin':
@@ -1523,7 +1667,7 @@ class make_plots:
                             elif sampler1 == 'vitamin' and vi_pred_made == None:
                                 set2 = np.zeros((params['r'], params['n_samples'], len(params['bilby_pars'])))
                                 for sig_test_idx in range(params['r']):
-                                    samples,_ = np.array(gen_samples(model, np.expand_dims(sig_test[sig_test_idx], axis=0), ramp=1, nsamples=params['n_samples']))
+                                    samples,_,_ = gen_samples(model, np.expand_dims(sig_test[sig_test_idx], axis=0), ramp=1, nsamples=params['n_samples'])
                                     set2[sig_test_idx,:,:] = extract_correct_sample_idx(samples, inf_ol_idx)
                                 vi_pred_made = [set2]
 

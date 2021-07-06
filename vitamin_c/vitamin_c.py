@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from sys import exit
 import tensorflow as tf
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
@@ -24,7 +25,14 @@ import kerastuner as kt
 import matplotlib
 from matplotlib.lines import Line2D
 from tensorflow.keras import backend as K
+from tensorflow.keras import mixed_precision
+mixed_precision.set_global_policy('float32')
 import pickle
+
+# constants
+fourpisq = 4.0*np.pi*np.pi
+lntwopi = tf.math.log(2.0*np.pi)
+lnfourpi = tf.math.log(4.0*np.pi)
 
 def psiphi_to_psiX(psi,phi):
     """
@@ -217,8 +225,8 @@ def load_data(params,bounds,fixed_vals,input_dir,inf_pars,test_data=False,max_sa
             data['y_data_noisefree'].append(download_file['y_data_noisefree'][:])
             if test_data:
                 data['y_data_noisy'].append(download_file['y_data_noisy'][:])
-            data['rand_pars'] = download_file['rand_pars'][:]
-            data['snrs'].append(download_file['snrs'][:])
+            data['rand_pars'] = download_file['rand_pars'][:] # shape is (15,)
+            data['snrs'].append(download_file['snrs'][:]) # shape is (1000,3)
             if not silent:
                 print('...... Loaded file ' + dataLocations[0] + '/' + filename)
         except OSError:
@@ -599,10 +607,10 @@ def plot_posterior(samples,x_truth,epoch,idx,snrs_test=None,noisy_sig=None,noise
                     true_post[:,cnt] = (other_samples[:,bilby_idx] * (bounds[bilby_par+'_max'] - bounds[bilby_par+'_min'])) + bounds[bilby_par + '_min']
                     cnt += 1
                 if i == 0:
-                    ax_sky = plot_sky(true_post[:NskyPlotSamples,sky_mask],filled=False,cmap=sky_color_map_cycle[i],col=sky_color_cycle[i],trueloc=true_x[sky_mask])
+                    ax_sky = plot_sky(true_post[:NskyPlotSamples,skymap_mask],filled=False,cmap=sky_color_map_cycle[i],col=sky_color_cycle[i],trueloc=true_x[skymap_mask])
                 else:
-                    ax_sky = plot_sky(true_post[:NskyPlotSamples,sky_mask],filled=False,cmap=sky_color_map_cycle[i],col=sky_color_cycle[i],trueloc=true_x[sky_mask],ax=ax_sky)
-            ax_sky = plot_sky(true_XS[:NskyPlotSamples,sky_mask],filled=True,trueloc=true_x[sky_mask],ax=ax_sky)
+                    ax_sky = plot_sky(true_post[:NskyPlotSamples,skymap_mask],filled=False,cmap=sky_color_map_cycle[i],col=sky_color_cycle[i],trueloc=true_x[skymap_mask],ax=ax_sky)
+            ax_sky = plot_sky(true_XS[:NskyPlotSamples,skymap_mask],filled=True,trueloc=true_x[skymap_mask],ax=ax_sky)
 
         matplotlib.rc('text', usetex=True)
         if noisy_sig != None:
@@ -610,8 +618,9 @@ def plot_posterior(samples,x_truth,epoch,idx,snrs_test=None,noisy_sig=None,noise
             left, bottom, width, height = [0.67, 0.48, 0.3, 0.2] # swtiched with skymap positioning
             ax2 = figure.add_axes([left, bottom, width, height])
             ax2.plot(np.linspace(0,1,params['ndata']),noisefree_sig,color='cyan',zorder=50)
-            snr = round(snrs_test,2)
-            ax2.plot(np.linspace(0,1,params['ndata']),noisy_sig,color='darkblue', label='SNR: '+str(snr))
+            snrs_tot = np.round(np.sqrt(np.sum(snrs_test**2)), 2)
+            ax2.plot(np.linspace(0,1,params['ndata']),noisy_sig,color='darkblue', 
+                     label='Network SNR: '+str(snrs_tot)+'; IndiSNRs: ['+str(np.round(snrs_test[0],2))+', '+str(np.round(snrs_test[1],2))+', '+str(np.round(snrs_test[2],2))+']')
             ax2.set_xlabel(r"$\textrm{time (seconds)}$",fontsize=16)
             ax2.yaxis.set_visible(False)
             ax2.tick_params(axis="x", labelsize=12)
@@ -687,7 +696,7 @@ def plot_latent(mu_r1, logw_r1, z_r1, mu_q, z_q, epoch, idx, run='testing'):
     z_dim = z_r1.shape[1]
     axes = np.array(figure.axes).reshape((z_dim, z_dim))
 
-    # Loop over the histograms
+    # Loop over the histograms and plot means
     for yi in range(z_dim):
         for xi in range(yi):
             ax = axes[yi, xi]
@@ -723,7 +732,7 @@ def plot_latent(mu_r1, logw_r1, z_r1, mu_q, z_q, epoch, idx, run='testing'):
         plt.savefig('%s/latent_weight_epoch_%d_event_%d.png' % (run,epoch,idx))
     plt.close()
 
-def plot_r2hist(logw_r2, epoch, idx, run='testing'):
+def plot_r2hist(data, epoch, idx, name='test', run='testing'):
 
     # define general plotting arguments
     defaults_kwargs = dict(
@@ -734,26 +743,23 @@ def plot_r2hist(logw_r2, epoch, idx, run='testing'):
                     plot_density=False, plot_datapoints=True,
                     max_n_ticks=3)
 
+    # Get corner parnames to use in plotting labels
+    parnames = []
+    for k_idx,k in enumerate(params['rand_pars']):
+        if np.isin(k, params['inf_pars']):
+            parnames.append(params['corner_labels'][k])
+
     # 1-d hist kwargs for normalisation
     hist_kwargs = dict(density=True,color='tab:red')
 
     try:
-        figure = corner.corner(logw_r2, **defaults_kwargs,
-                           color='tab:red',
+        figure = corner.corner(np.array(data) + np.random.normal(loc=0.0,scale=1e-6,size=data.shape), **defaults_kwargs,
+                           color='tab:red', #labels=parnames,
                            show_titles=True, hist_kwargs=hist_kwargs)
-        plt.savefig('/data/www.astro/chrism/vitamin_c/%s/r2_logweight_%d_event_%d.png' % (run,epoch,idx))
+        plt.savefig('/data/www.astro/chrism/vitamin_c/%s/r2_%s_%d_event_%d.png' % (run,name,epoch,idx))
         plt.close()
     except:
-        pass
-
-    try:
-        w_r2 = tf.math.l2_normalize(tf.exp(logw_r2), axis=1)
-        figure = corner.corner(w_r2, **defaults_kwargs,
-                           color='tab:blue',
-                           show_titles=True, hist_kwargs=hist_kwargs)
-        plt.savefig('/data/www.astro/chrism/vitamin_c/%s/r2_weight_%d_event_%d.png' % (run,epoch,idx))
-        plt.close()
-    except:
+        print('Unable to plot r2 hist data {}'.format(name))
         pass
 
 params = './params_files/params.json'
@@ -771,24 +777,22 @@ with open(fixed_vals, 'r') as fp:
     fixed_vals = json.load(fp)
 
 # if doing hour angle, use hour angle bounds on RA
-#bounds['ra_min'] = convert_ra_to_hour_angle(bounds['ra_min'],params,None,single=True)
-#bounds['ra_max'] = convert_ra_to_hour_angle(bounds['ra_max'],params,None,single=True)
-#print('... converted RA bounds to hour angle')
 inf_ol_mask, inf_ol_idx, inf_ol_len = get_param_index(params['inf_pars'],params['bilby_pars'])
 bilby_ol_mask, bilby_ol_idx, bilby_ol_len = get_param_index(params['bilby_pars'],params['inf_pars'])
 
 # identify the indices of different sets of physical parameters
 vonmise_mask, vonmise_idx_mask, vonmise_len = get_param_index(params['inf_pars'],params['vonmise_pars'])
 gauss_mask, gauss_idx_mask, gauss_len = get_param_index(params['inf_pars'],params['gauss_pars'])
-sky_mask, sky_idx_mask, sky_len = get_param_index(params['bilby_pars'],params['sky_pars'])
+sky_mask, sky_idx_mask, sky_len = get_param_index(params['inf_pars'],params['sky_pars'])
+skymap_mask, skymap_idx_mask, skymap_len = get_param_index(params['bilby_pars'],params['sky_pars'])
 ra_mask, ra_idx_mask, ra_len = get_param_index(params['inf_pars'],['ra'])
 dec_mask, dec_idx_mask, dec_len = get_param_index(params['inf_pars'],['dec'])
 m1_mask, m1_idx_mask, m1_len = get_param_index(params['inf_pars'],['mass_1'])
 m2_mask, m2_idx_mask, m2_len = get_param_index(params['inf_pars'],['mass_2'])
 psi_mask, psi_idx_mask, psi_len = get_param_index(params['inf_pars'],['psi'])
 psiphi_mask, psiphi_idx_mask, psiphi_len = get_param_index(params['inf_pars'],['psi','phase'])
-periodic_mask, periodic_idx_mask, periodic_len = get_param_index(params['inf_pars'],['ra','phase','psi','phi_12','phi_jl'])
-nonperiodic_mask, nonperiodic_idx_mask, nonperiodic_len = get_param_index(params['inf_pars'],['mass_1','mass_2','luminosity_distance','geocent_time','theta_jn','dec','a_1','a_2','tilt_1','tilt_2'])
+periodic_mask, periodic_idx_mask, periodic_len = get_param_index(params['inf_pars'],['phase','psi','phi_12','phi_jl'])
+nonperiodic_mask, nonperiodic_idx_mask, nonperiodic_len = get_param_index(params['inf_pars'],['mass_1','mass_2','luminosity_distance','geocent_time','theta_jn','a_1','a_2','tilt_1','tilt_2'])
 #idx_mask = np.argsort(gauss_idx_mask + vonmise_idx_mask + m1_idx_mask + m2_idx_mask + sky_idx_mask) # + dist_idx_mask)
 idx_mask = np.argsort(m1_idx_mask + m2_idx_mask + gauss_idx_mask + vonmise_idx_mask) # + sky_idx_mask)
 dist_mask, dist_idx_mask, dist_len = get_param_index(params['inf_pars'],['luminosity_distance'])
@@ -803,7 +807,7 @@ idx_xyz_mask = np.argsort(xyz_idx_mask + not_xyz_idx_mask)
 idx_dist_mask = np.argsort(not_dist_idx_mask + dist_idx_mask)
 idx_phase_mask = np.argsort(not_phase_idx_mask + phase_idx_mask)
 idx_geocent_mask = np.argsort(not_geocent_idx_mask + geocent_idx_mask)
-idx_periodic_mask = np.argsort(nonperiodic_idx_mask + periodic_idx_mask)
+idx_periodic_mask = np.argsort(nonperiodic_idx_mask + periodic_idx_mask + ra_idx_mask + dec_idx_mask)
 print(xyz_mask)
 print(not_xyz_mask)
 print(idx_xyz_mask)
@@ -815,6 +819,8 @@ print(m1_mask,m1_idx_mask)
 print(m2_mask,m2_idx_mask)
 print(sky_mask,sky_idx_mask)
 print(idx_mask)
+
+print(nonperiodic_len,periodic_len)
 
 # define which gpu to use during training
 gpu_num = str(params['gpu_num'])   
@@ -948,38 +954,66 @@ if make_psiphi_plots:
 
 def compute_loss(model, x, y, ramp=1.0, noise_ramp=1.0):
 
+    # for mixed precision stuff
+    ramp = tf.cast(ramp,dtype=tf.float32)
+
     # add noise and randomise distance again
     y = (y + noise_ramp*tf.random.normal(shape=tf.shape(y), mean=0.0, stddev=1.0, dtype=tf.float32))/params['y_normscale']
-    mean_r1, logvar_r1, logweight_r1 = model.encode_r1(y=y)
-    scale_r1 = EPS + tf.sqrt(tf.exp(logvar_r1))
-    gm_r1 = tfd.MixtureSameFamily(mixture_distribution=tfd.Categorical(logits=logweight_r1),
-            components_distribution=tfd.MultivariateNormalDiag(
-            loc=mean_r1,
-            scale_diag=scale_r1))
-    mean_q, logvar_q = model.encode_q(x=x,y=y)
-    scale_q = EPS + tf.sqrt(tf.exp(logvar_q))
-    mvn_q = tfp.distributions.MultivariateNormalDiag(
-                          loc=mean_q,
-                          scale_diag=scale_q)
-    z_samp = mvn_q.sample()
-    mean_r2, logvar_r2, logweight_r2 = model.decode_r2(z=z_samp,y=y)
-    scale_r2 = EPS + tf.sqrt(tf.exp(logvar_r2))
 
-    tmvn_r2 = tfp.distributions.TruncatedNormal(
-            loc=tf.boolean_mask(tf.squeeze(mean_r2),nonperiodic_mask,axis=1),
-            scale=tf.boolean_mask(tf.squeeze(scale_r2),nonperiodic_mask,axis=1),
+    # define r1 encoder
+    mean_r1, logvar_r1, logweight_r1 = model.encode_r1(y=y,training=True)
+    gm_r1 = tfd.MixtureSameFamily(mixture_distribution=tfd.Categorical(logits=tf.cast(logweight_r1,dtype=tf.float32)),
+            components_distribution=tfd.MultivariateNormalDiag(
+            loc=tf.cast(mean_r1,dtype=tf.float32),
+            scale_diag=tf.cast(EPS + tf.sqrt(tf.exp(logvar_r1)),dtype=tf.float32)))
+
+    # define q encoder
+    mean_q, logvar_q = model.encode_q(x=x,y=y)
+    mvn_q = tfp.distributions.MultivariateNormalDiag(
+            loc=mean_q,
+            scale_diag=EPS + tf.sqrt(tf.exp(logvar_q)))
+    z_samp = mvn_q.sample()
+
+    # define r2 encoder
+    mean_np_r2, mean_p_r2, mean_s_r2, logvar_np_r2, logvar_p_r2, logvar_s_r2 = model.decode_r2(z=z_samp,y=y)
+
+    
+    # truncated normal for non-periodic params
+    tmvn_np_r2 = tfp.distributions.TruncatedNormal(
+            loc=tf.cast(mean_np_r2,dtype=tf.float32),
+            scale=tf.cast(EPS + tf.sqrt(tf.exp(logvar_np_r2)),dtype=tf.float32),
             low=-10.0 + ramp*10.0, high=1.0 + 10.0 - ramp*10.0)
-    tmvn_r2_cost_recon = -1.0*tf.reduce_mean(tf.reduce_sum(tmvn_r2.log_prob(tf.boolean_mask(x,nonperiodic_mask,axis=1)),axis=1),axis=0)
+    tmvn_r2_cost_recon = -1.0*tf.reduce_mean(tf.reduce_sum(tmvn_np_r2.log_prob(tf.boolean_mask(x,nonperiodic_mask,axis=1)),axis=1),axis=0)
+
+    # 2D representations of periodic params
+    mean_x_r2, mean_y_r2 = tf.split(mean_p_r2, num_or_size_splits=2, axis=1)   # split the means into x and y coords [size (batch,p) each]
+    mean_angle_r2 = tf.math.floormod(tf.math.atan2(tf.cast(mean_y_r2,dtype=tf.float32),tf.cast(mean_x_r2,dtype=tf.float32)),2.0*np.pi)  # the mean angle (0,2pi) [size (batch,p)]
+    scale_p_r2 = EPS + tf.sqrt(tf.exp(logvar_p_r2))  # define the 2D Gaussian scale [size (batch,2*p)]
     vm_r2 = tfp.distributions.VonMises(
-            loc=2.0*np.pi*tf.boolean_mask(tf.squeeze(mean_r2),periodic_mask,axis=1),
-            concentration=tf.math.reciprocal(tf.math.square(tf.boolean_mask(tf.squeeze(2.0*np.pi*scale_r2),periodic_mask,axis=1)))
+            loc=tf.cast(mean_angle_r2,dtype=tf.float32), #tf.cast(2.0*np.pi*mean_p_r2,dtype=tf.float32), 
+            concentration=tf.cast(tf.math.reciprocal(EPS + fourpisq*tf.exp(logvar_p_r2)),dtype=tf.float32)
     )
-    vm_r2_cost_recon = -1.0*tf.reduce_mean(tf.reduce_sum(tf.math.log(2.0*np.pi) + vm_r2.log_prob(2.0*np.pi*tf.boolean_mask(x,periodic_mask,axis=1)),axis=1),axis=0)
-    simple_cost_recon = tmvn_r2_cost_recon + vm_r2_cost_recon
+    vm_r2_cost_recon = -1.0*tf.reduce_mean(tf.reduce_sum(lntwopi + vm_r2.log_prob(2.0*np.pi*tf.boolean_mask(x,periodic_mask,axis=1)),axis=1),axis=0)
+
+    # Fisher Von Mises
+    fvm_loc = tf.reshape(tf.math.l2_normalize(mean_s_r2, axis=1),[-1,3])
+    fvm_con = tf.squeeze(tf.math.reciprocal(EPS + tf.exp(logvar_s_r2)), axis=1)
+    fvm_r2 = tfp.distributions.VonMisesFisher(
+            mean_direction = tf.cast(fvm_loc,dtype=tf.float32),
+            concentration = tf.cast(fvm_con,dtype=tf.float32)
+    )
+    ra_sky = tf.reshape(2*np.pi*tf.boolean_mask(x,ra_mask,axis=1),(-1,1))       # convert the scaled 0->1 true RA value back to radians
+    dec_sky = tf.reshape(np.pi*(tf.boolean_mask(x,dec_mask,axis=1) - 0.5),(-1,1)) # convert the scaled 0>1 true dec value back to radians
+    xyz_unit = tf.concat([tf.cos(ra_sky)*tf.cos(dec_sky),tf.sin(ra_sky)*tf.cos(dec_sky),tf.sin(dec_sky)],axis=1)   # construct the true parameter unit vector
+    test = tf.math.l2_normalize(xyz_unit,axis=1)
+    test2 = fvm_r2.log_prob(tf.reshape(test,(-1,3)))
+    fvm_r2_cost_recon = -1.0*tf.reduce_mean(lnfourpi + fvm_r2.log_prob(test),axis=0)
+
+    simple_cost_recon = tmvn_r2_cost_recon + vm_r2_cost_recon #+ fvm_r2_cost_recon
 
     selfent_q = -1.0*tf.reduce_mean(mvn_q.entropy())
-    log_r1_q = gm_r1.log_prob(z_samp)   # evaluate the log prob of r1 at the q samples
-    cost_KL = selfent_q - tf.reduce_mean(log_r1_q)
+    log_r1_q = gm_r1.log_prob(tf.cast(z_samp,dtype=tf.float32))   # evaluate the log prob of r1 at the q samples
+    cost_KL = tf.cast(selfent_q,dtype=tf.float32) - tf.reduce_mean(log_r1_q)
     return simple_cost_recon, cost_KL
 
 def ramp_func(epoch,start,ramp_length, n_cycles):
@@ -1030,38 +1064,49 @@ def paper_plots(test_dataset, y_data_test, x_data_test, model, params, plot_dir,
     """
     epoch = 'pub_plot'; ramp = 1
     plotter = plotting.make_plots(params, None, None, x_data_test)
+    try:
+        os.mkdir('plotting_data_%s' % params['run_label'])
+    except:
+        pass
+    try:
+        os.mkdir('%s/latest_%s' % (plot_dir,params['run_label']))
+    except:
+        pass
 
-    # Make Sky only plots at JS decade intervals
-    JS_data = h5py.File('plotting_data_%s/JS_plot_data.h5' % params['run_label'], 'r')
-    plotting.sky_JS_decade_plots(params, JS_data, test_dataset, model, bilby_samples, bilby_ol_idx, bilby_ol_len, bounds, sky_mask, inf_ol_idx, inf_ol_len)
-    exit()
-
+    """
     # Make corner plots
     for step, (x_batch_test, y_batch_test) in test_dataset.enumerate():
-        #mu_r1, logw_r1, z_r1, mu_q, z_q = gen_z_samples(model, x_batch_test, y_batch_test, nsamples=8000)
-        #plot_latent(mu_r1,logw_r1,z_r1,mu_q,z_q,epoch,step,run=plot_dir)
-        start_time_test = time.time()
-        samples,_ = gen_samples(model, y_batch_test, ramp=ramp, nsamples=params['n_samples'])
-        end_time_test = time.time()
-        if np.any(np.isnan(samples)):
-            print('Found nans in samples. Not making plots')
-            for k,s in enumerate(samples):
-                if np.any(np.isnan(s)):
-                    print(k,s)
-            KL_est = [-1,-1,-1]
-        else:
-            print('Run {} Testing time elapsed for {} samples: {}'.format(run,params['n_samples'],end_time_test - start_time_test))
-            KL_est = plot_posterior(samples,x_batch_test[0,:],epoch,step,snrs_test[int(step),0],y_batch_test[0,:,0],y_data_test_noisefree[int(step),:,0],all_other_samples=bilby_samples[:,step,:],run=plot_dir)
-            _ = plot_posterior(samples,x_batch_test[0,:],epoch,step,snrs_test[int(step),0],y_batch_test[0,:,0],y_data_test_noisefree[int(step),:,0],run=plot_dir)
+        # Make mode plots
+#        mode_samples = gen_mode_samples(model,y_batch_test, ramp=ramp, nsamples=1000) # 4,1000,15
+#        plot_mode_posterior(mode_samples,x_batch_test[0,:],epoch,step,run=plot_dir)
+        # Make latent plots
+        mu_r1, logw_r1, z_r1, mu_q, z_q = gen_z_samples(model, x_batch_test, y_batch_test, nsamples=8000)
+        plot_latent(mu_r1,logw_r1,z_r1,mu_q,z_q,epoch,step,run=plot_dir)
+        exit()
+        if int(step) == 41 or int(step) == 184 or int(step) == 213 or int(step)==164:
+            start_time_test = time.time()
+            samples,_,_ = gen_samples(model, y_batch_test, ramp=ramp, nsamples=params['n_samples'])
+            end_time_test = time.time()
+            if np.any(np.isnan(samples)):
+                print('Found nans in samples. Not making plots')
+                for k,s in enumerate(samples):
+                    if np.any(np.isnan(s)):
+                        print(k,s)
+                KL_est = [-1,-1,-1]
+            else:
+                print('Run {} Testing time elapsed for {} samples: {}'.format(run,params['n_samples'],end_time_test - start_time_test))
+                KL_est = plot_posterior(samples,x_batch_test[0,:],epoch,step,snrs_test[int(step),:],y_batch_test[0,:,0],y_data_test_noisefree[int(step),:,0],all_other_samples=bilby_samples[:,step,:],run=plot_dir)
+                _ = plot_posterior(samples,x_batch_test[0,:],epoch,step,snrs_test[int(step),:],y_batch_test[0,:,0],y_data_test_noisefree[int(step),:,0],run=plot_dir)
     print('... Finished making posterior plots! Congrats fam.')
     exit()
+    """
 
     # Make p-p plots
 #    plotter.plot_pp(model, y_data_test, x_data_test, params, bounds, inf_ol_idx, bilby_ol_idx)
 #    print('... Finished making p-p plots!')
 #    exit()    
 
-    # Make KL plots
+    # Make JS plots
 #    plotter.gen_kl_plots(model,y_data_test, x_data_test, params, bounds, inf_ol_idx, bilby_ol_idx)
 #    print('... Finished making KL plots!')    
 #    exit() 
@@ -1072,8 +1117,8 @@ def paper_plots(test_dataset, y_data_test, x_data_test, model, params, plot_dir,
 #    exit()
 
     # Make individual parameter JS plots
-#    plotting.indiPar_JS_plots(model,y_data_test, x_data_test, params, bounds, inf_ol_idx, bilby_ol_idx)
-#    exit()
+    plotting.indiPar_JS_plots(model,y_data_test, x_data_test, params, bounds, inf_ol_idx, bilby_ol_idx)
+    exit()
 
     return
 
@@ -1163,16 +1208,18 @@ class CVAE(tf.keras.Model):
         #print(self.decoder_r2.summary())
     """
 
-    def __init__(self, x_dim, y_dim, n_channels, z_dim, n_modes, ramp, curr_total_epoch, same_real, ramp_start, ramp_length, ramp_cycles, n_modes_r2=1):
+    def __init__(self, x_dim_np, x_dim_p, y_dim, n_channels, z_dim, n_modes, ramp, curr_total_epoch, same_real, ramp_start, ramp_length, ramp_cycles, n_modes_r2=1):
         super(CVAE, self).__init__()
         self.z_dim = z_dim
         self.n_modes = n_modes
         self.n_modes_r2 = n_modes_r2
         self.x_modes = 1   # hardcoded for testing
-        self.x_dim = x_dim
+        self.x_dim_np = x_dim_np
+        self.x_dim_p = x_dim_p
+        self.x_dim = self.x_dim_np + self.x_dim_p + 2 # extra 2 for sky
         self.y_dim = y_dim
         self.n_channels = n_channels
-        self.act = tf.keras.layers.LeakyReLU(alpha=0.3)
+        self.act = 'relu'
         self.kern_reg = regularizers.l2(0.001)
         self.ramp = ramp
         self.curr_total_epoch = curr_total_epoch
@@ -1183,18 +1230,22 @@ class CVAE(tf.keras.Model):
 
         # the r1 network
         all_input_y = tf.keras.Input(shape=(self.y_dim, self.n_channels))
-        r1c = tf.keras.layers.Conv1D(filters=96, kernel_size=64, strides=1, kernel_regularizer=self.kern_reg, activation=self.act)(all_input_y)
-        r1c = tf.keras.layers.BatchNormalization(name='batchnorm_1')(r1c)
-        r1c = tf.keras.layers.Conv1D(filters=96, kernel_size=32, strides=4, kernel_regularizer=self.kern_reg, activation=self.act)(r1c)
-        r1c = tf.keras.layers.BatchNormalization(name='batchnorm_2')(r1c)
-        r1c = tf.keras.layers.Conv1D(filters=96, kernel_size=32, strides=1, kernel_regularizer=self.kern_reg, activation=self.act)(r1c)
-        r1c = tf.keras.layers.BatchNormalization(name='batchnorm_3')(r1c)
-        r1c = tf.keras.layers.Conv1D(filters=96, kernel_size=16, strides=2, kernel_regularizer=self.kern_reg, activation=self.act)(r1c)
-        r1c = tf.keras.layers.BatchNormalization(name='batchnorm_4')(r1c)
-        r1c = tf.keras.layers.Conv1D(filters=96, kernel_size=16, strides=1, kernel_regularizer=self.kern_reg, activation=self.act)(r1c)
-        r1c = tf.keras.layers.BatchNormalization(name='batchnorm_5')(r1c)
-        r1c = tf.keras.layers.Conv1D(filters=96, kernel_size=16, strides=2, kernel_regularizer=self.kern_reg, activation=self.act)(r1c)
-        r1c = tf.keras.layers.BatchNormalization(name='batchnorm_6')(r1c)
+        r1c = tf.keras.layers.Conv1D(filters=512, kernel_size=32, strides=1, activation=self.act)(all_input_y)
+        r1c = tf.keras.layers.MaxPool1D(pool_size=2, strides=2)(r1c)
+#        r1c = tf.keras.layers.BatchNormalization(name='batchnorm_1')(r1c)
+        r1c = tf.keras.layers.Conv1D(filters=256, kernel_size=16, strides=1, activation=self.act)(r1c)
+        r1c = tf.keras.layers.MaxPool1D(pool_size=2, strides=2)(r1c)
+#        r1c = tf.keras.layers.BatchNormalization(name='batchnorm_2')(r1c)
+        r1c = tf.keras.layers.Conv1D(filters=128, kernel_size=8, strides=1, activation=self.act)(r1c)
+        r1c = tf.keras.layers.MaxPool1D(pool_size=2, strides=2)(r1c)
+#        r1c = tf.keras.layers.BatchNormalization(name='batchnorm_3')(r1c)
+        r1c = tf.keras.layers.Conv1D(filters=64, kernel_size=4, strides=1, activation=self.act)(r1c)
+        r1c = tf.keras.layers.MaxPool1D(pool_size=2, strides=2)(r1c)
+#        r1c = tf.keras.layers.BatchNormalization(name='batchnorm_4')(r1c)
+        r1c = tf.keras.layers.Conv1D(filters=32, kernel_size=1, strides=1, activation=self.act)(r1c)
+#        r1c = tf.keras.layers.BatchNormalization(name='batchnorm_5')(r1c)
+#        r1c = tf.keras.layers.Conv1D(filters=96, kernel_size=16, strides=2, kernel_regularizer=self.kern_reg, activation=self.act)(r1c)
+#        r1c = tf.keras.layers.BatchNormalization(name='batchnorm_6')(r1c)
         r1c = tf.keras.layers.Flatten()(r1c)
 #        r1c = tf.keras.layers.Flatten()(all_input_y)
         r1 = tf.keras.layers.Dense(4096,activation=self.act)(r1c)
@@ -1225,10 +1276,13 @@ class CVAE(tf.keras.Model):
         r2 = tf.keras.layers.Dense(4096,activation=self.act)(r2)
         r2 = tf.keras.layers.Dense(2048,activation=self.act)(r2)
         r2 = tf.keras.layers.Dense(1024,activation=self.act)(r2)
-        r2mu = tf.keras.layers.Dense(self.x_dim*self.n_modes_r2,activation='sigmoid')(r2)
-        r2logvar = -1.0*tf.keras.layers.Dense(self.x_dim*self.n_modes_r2,activation=self.act,use_bias=True,bias_initializer=tf.keras.initializers.Constant(value=2.0))(r2)
-        r2w = tf.keras.layers.Dense(self.n_modes_r2,use_bias=True,bias_initializer='Zeros')(r2)
-        r2 = tf.keras.layers.concatenate([r2mu,r2logvar,r2w])
+        r2mu_np = tf.keras.layers.Dense(self.x_dim_np,activation='sigmoid')(r2)
+        r2logvar_np = tf.keras.layers.Dense(self.x_dim_np,use_bias=True)(r2)
+        r2mu_p = tf.keras.layers.Dense(2*self.x_dim_p,use_bias=True)(r2)
+        r2logvar_p = tf.keras.layers.Dense(self.x_dim_p,use_bias=True)(r2)
+        r2mu_s = tf.keras.layers.Dense(3,use_bias=True)(r2)
+        r2logvar_s = tf.keras.layers.Dense(1,use_bias=True)(r2)
+        r2 = tf.keras.layers.concatenate([r2mu_np,r2mu_p,r2mu_s,r2logvar_np,r2logvar_p,r2logvar_s])
         self.decoder_r2 = tf.keras.Model(inputs=[all_input_y, r2_input_z], outputs=r2)
         print(self.decoder_r2.summary())
 
@@ -1238,8 +1292,8 @@ class CVAE(tf.keras.Model):
 #    def call():
 #        return
 
-    def encode_r1(self, y=None):
-        mean, logvar, weight = tf.split(self.encoder_r1(y), num_or_size_splits=[self.z_dim*self.n_modes, self.z_dim*self.n_modes,self.n_modes], axis=1)
+    def encode_r1(self, y=None,training=True):
+        mean, logvar, weight = tf.split(self.encoder_r1(y,training=training), num_or_size_splits=[self.z_dim*self.n_modes, self.z_dim*self.n_modes,self.n_modes], axis=1)
         mean = tf.reshape(mean,[-1,self.n_modes,self.z_dim])
         logvar = tf.reshape(logvar,[-1,self.n_modes,self.z_dim])
         weight = tf.reshape(weight,[-1,self.n_modes])
@@ -1249,8 +1303,7 @@ class CVAE(tf.keras.Model):
         return tf.split(self.encoder_q([y,x]), num_or_size_splits=[self.z_dim,self.z_dim], axis=1)
 
     def decode_r2(self, y=None, z=None, apply_sigmoid=False):
-        mean, logvar, weight = tf.split(self.decoder_r2([y,z]), num_or_size_splits=[self.x_dim*self.n_modes_r2, self.x_dim*self.n_modes_r2, self.n_modes_r2], axis=1)
-        return tf.reshape(mean,[-1,self.n_modes_r2,self.x_dim]), tf.reshape(logvar,[-1,self.n_modes_r2,self.x_dim]), 0.0*tf.reshape(weight,[-1,self.n_modes_r2])
+        return tf.split(self.decoder_r2([y,z]), num_or_size_splits=[self.x_dim_np, 2*self.x_dim_p, 3, self.x_dim_np, self.x_dim_p, 1], axis=1)
 
     def compile(self, optimizer, loss):
         super(CVAE, self).compile()
@@ -1267,7 +1320,9 @@ class CVAE(tf.keras.Model):
         with tf.GradientTape() as tape:
             r_loss, kl_loss = self.loss(self, x, y, ramp=self.ramp)
             loss = r_loss + self.ramp*kl_loss
-        gradients = tape.gradient(loss, self.trainable_variables)
+            scaled_loss = self.optimizer.get_scaled_loss(loss)
+        scaled_gradients = tape.gradient(scaled_loss, self.trainable_variables)
+        gradients = self.optimizer.get_unscaled_gradients(scaled_gradients)
         self.optimizer.apply_gradients(zip(gradients, self.trainable_variables))
         return {"r_train_loss": r_loss, "kl_train_loss": kl_loss, "total_train_loss": loss, "ramp": self.ramp}
 
@@ -1308,74 +1363,104 @@ def gen_samples(model, y, ramp=1.0, nsamples=1000, max_samples=1000):
     y = y/params['y_normscale']
     y = tf.tile(y,(max_samples,1,1))
     samp_iterations = int(nsamples/max_samples)
+    ramp = tf.cast(ramp,dtype=tf.float32)
     for i in range(samp_iterations):
         mean_r1, logvar_r1, logweight_r1 = model.encode_r1(y=y)
         scale_r1 = EPS + tf.sqrt(tf.exp(logvar_r1))
-        gm_r1 = tfd.MixtureSameFamily(mixture_distribution=tfd.Categorical(logits=logweight_r1),
+        gm_r1 = tfd.MixtureSameFamily(mixture_distribution=tfd.Categorical(logits=tf.cast(logweight_r1,dtype=tf.float32)),
             components_distribution=tfd.MultivariateNormalDiag(
-            loc=mean_r1,
-            scale_diag=scale_r1))
+            loc=tf.cast(mean_r1,dtype=tf.float32),
+            scale_diag=tf.cast(scale_r1,dtype=tf.float32)))
         z_samp = gm_r1.sample()
-        mean_r2, logvar_r2, logweight_r2 = model.decode_r2(z=z_samp,y=y)
-        scale_r2 = EPS + tf.sqrt(tf.exp(logvar_r2))
-        tmvn_r2 = tfp.distributions.TruncatedNormal(
-            loc=tf.boolean_mask(tf.squeeze(mean_r2),nonperiodic_mask,axis=1),
-            scale=tf.boolean_mask(tf.squeeze(scale_r2),nonperiodic_mask,axis=1),
+        mean_np_r2_temp, mean_p_r2_temp, mean_s_r2_temp, logvar_np_r2_temp, logvar_p_r2_temp, logvar_s_r2_temp = model.decode_r2(z=z_samp,y=y)
+        scale_np_r2 = EPS + tf.sqrt(tf.exp(logvar_np_r2_temp))
+        tmvn_np_r2 = tfp.distributions.TruncatedNormal(
+            loc=tf.cast(mean_np_r2_temp,dtype=tf.float32),
+            scale=tf.cast(scale_np_r2,dtype=tf.float32),
             low=-10.0 + ramp*10.0, high=1.0 + 10.0 - ramp*10.0)
+        mean_x_r2, mean_y_r2 = tf.split(mean_p_r2_temp, num_or_size_splits=2, axis=1)
+        mean_angle_r2 = tf.math.floormod(tf.math.atan2(tf.cast(mean_y_r2,dtype=tf.float32),tf.cast(mean_x_r2,dtype=tf.float32)),2.0*np.pi)
+
+
         vm_r2 = tfp.distributions.VonMises(
-            loc=2.0*np.pi*tf.boolean_mask(tf.squeeze(mean_r2),periodic_mask,axis=1),
-            concentration=tf.math.reciprocal(tf.math.square(tf.boolean_mask(tf.squeeze(2.0*np.pi*scale_r2),periodic_mask,axis=1)))
+            loc=tf.cast(mean_angle_r2,dtype=tf.float32), #tf.cast(2.0*np.pi*mean_p_r2_temp,dtype=tf.float32),
+            concentration=tf.cast(tf.math.reciprocal(EPS + fourpisq*tf.exp(logvar_p_r2_temp)),dtype=tf.float32)
         )
 
+        fvm_loc = tf.reshape(tf.math.l2_normalize(mean_s_r2_temp, axis=1),[max_samples,3])
+        fvm_con = tf.reshape(tf.math.reciprocal(EPS + tf.exp(logvar_s_r2_temp)),[max_samples])
+        fvm_r2 = tfp.distributions.VonMisesFisher(
+            mean_direction = tf.cast(fvm_loc,dtype=tf.float32),
+            concentration = tf.cast(fvm_con,dtype=tf.float32)
+        )
+
+        tmvn_x_sample = tmvn_np_r2.sample()
+        vm_x_sample = tf.math.floormod(vm_r2.sample(),(2.0*np.pi))/(2.0*np.pi)  # samples are output on range [-pi,pi] so rescale to [0,1]
+        xyz = tf.reshape(fvm_r2.sample(),[max_samples,3])          # sample the distribution
+        samp_ra = tf.math.floormod(tf.math.atan2(tf.slice(xyz,[0,1],[max_samples,1]),tf.slice(xyz,[0,0],[max_samples,1])),2.0*np.pi)/(2.0*np.pi)   # convert to the rescaled 0->1 RA from the unit vector
+        samp_dec = (tf.asin(tf.slice(xyz,[0,2],[max_samples,1])) + 0.5*np.pi)/np.pi                       # convert to the rescaled 0->1 dec from the unit vector
+        fvm_x_sample = tf.reshape(tf.concat([samp_ra,samp_dec],axis=1),[max_samples,2])             # group the sky samples        
+
         if i==0:
-            tmvn_x_sample = tmvn_r2.sample()
-            vm_x_sample = tf.math.floormod(vm_r2.sample(),(2.0*np.pi))/(2.0*np.pi)  # samples are output on range [-pi,pi] so rescale to [0,1]
-            x_sample = tf.gather(tf.concat([tmvn_x_sample,vm_x_sample],axis=1),idx_periodic_mask,axis=1)
-            print(mean_r2.shape,scale_r2.shape,x_sample.shape)
+            x_sample = tf.gather(tf.concat([tmvn_x_sample,vm_x_sample,fvm_x_sample],axis=1),idx_periodic_mask,axis=1)
+            mean_r2 = tf.concat([mean_np_r2_temp,mean_p_r2_temp,mean_s_r2_temp],axis=1)
+            logvar_r2 = tf.concat([logvar_np_r2_temp,logvar_p_r2_temp,logvar_s_r2_temp],axis=1)
         else:
-            tmvn_x_sample = tmvn_r2.sample()
-            vm_x_sample = tf.math.floormod(vm_r2.sample(),(2.0*np.pi))/(2.0*np.pi)  # samples are output on range [-pi,pi] so rescale to [0,1]
-            x_sample = tf.concat([x_sample,tf.gather(tf.concat([tmvn_x_sample,vm_x_sample],axis=1),idx_periodic_mask,axis=1)],axis=0)
-    return x_sample, logweight_r2
+            x_sample = tf.concat([x_sample,tf.gather(tf.concat([tmvn_x_sample,vm_x_sample,fvm_x_sample],axis=1),idx_periodic_mask,axis=1)],axis=0)
+            mean_r2 = tf.concat([mean_r2,tf.concat([mean_np_r2_temp,mean_p_r2_temp,mean_s_r2_temp],axis=1)],axis=0)
+            logvar_r2 = tf.concat([logvar_r2,tf.concat([logvar_np_r2_temp,logvar_p_r2_temp,logvar_s_r2_temp],axis=1)],axis=0)
+    return x_sample, mean_r2, logvar_r2
 
 def gen_mode_samples(model, y, ramp=1.0, nsamples=1000, max_samples=1000):
 
     y = y/params['y_normscale']
     y = tf.tile(y,(max_samples,1,1))
     samp_iterations = int(nsamples/max_samples)
+    ramp = tf.cast(ramp,dtype=tf.float32)
     x_sample = []
     for k in range(min(4,params['n_modes'])):
         for i in range(samp_iterations):
             mean_r1, logvar_r1, logweight_r1 = model.encode_r1(y=y)
             scale_r1 = EPS + tf.sqrt(tf.exp(logvar_r1))
-            idx = np.argsort(logweight_r1[0,:])[::-1]
+            idx = np.argsort(logweight_r1[0,:])[::-1]    # get order of weights in reverse order
             weights = np.zeros(params['n_modes'])
-            weights[idx] = 1.0
+            weights[idx[k]] = 1.0   # make the k'th highest mode the only mode   
             gm_r1 = tfd.MixtureSameFamily(mixture_distribution=tfd.Categorical(probs=tf.cast(weights,dtype=tf.float32)),
                 components_distribution=tfd.MultivariateNormalDiag(
-                loc=mean_r1,
-                scale_diag=scale_r1))
+                loc=tf.cast(mean_r1,dtype=tf.float32),
+                scale_diag=tf.cast(scale_r1,dtype=tf.float32)))
             z_samp = gm_r1.sample()
-            mean_r2, logvar_r2, logweight_r2 = model.decode_r2(z=z_samp,y=y)
-            scale_r2 = EPS + tf.sqrt(tf.exp(logvar_r2))
-            tmvn_r2 = tfp.distributions.TruncatedNormal(
-                loc=tf.boolean_mask(tf.squeeze(mean_r2),nonperiodic_mask,axis=1),
-                scale=tf.boolean_mask(tf.squeeze(scale_r2),nonperiodic_mask,axis=1),
+            mean_np_r2, mean_p_r2, mean_s_r2, logvar_np_r2, logvar_p_r2, logvar_s_r2 = model.decode_r2(z=z_samp,y=y)
+            scale_np_r2 = EPS + tf.sqrt(tf.exp(logvar_np_r2))
+            tmvn_np_r2 = tfp.distributions.TruncatedNormal(
+                loc=tf.cast(mean_np_r2,dtype=tf.float32),
+                scale=tf.cast(scale_np_r2,dtype=tf.float32),
                 low=-10.0 + ramp*10.0, high=1.0 + 10.0 - ramp*10.0)
+            mean_cos_r2, mean_sin_r2 = tf.split(mean_p_r2, num_or_size_splits=2, axis=1)
+            mean_angle_r2 = tf.math.floormod(tf.math.atan2(tf.cast(mean_sin_r2,dtype=tf.float32),tf.cast(mean_cos_r2,dtype=tf.float32)),2.0*np.pi)
+
+            # rotate sample in +ve mean_angle direction
             vm_r2 = tfp.distributions.VonMises(
-                loc=2.0*np.pi*tf.boolean_mask(tf.squeeze(mean_r2),periodic_mask,axis=1),
-                concentration=tf.math.reciprocal(tf.math.square(tf.boolean_mask(tf.squeeze(2.0*np.pi*scale_r2),periodic_mask,axis=1)))
+                loc=tf.cast(mean_angle_r2,dtype=tf.float32), #tf.cast(2.0*np.pi*mean_p_r2,dtype=tf.float32),
+                concentration=tf.cast(tf.math.reciprocal(EPS + fourpisq*tf.exp(logvar_p_r2)),dtype=tf.float32)
             )
+            fvm_loc = tf.reshape(tf.math.l2_normalize(mean_s_r2, axis=1),[max_samples,3])
+            fvm_con = tf.reshape(tf.math.reciprocal(EPS + tf.exp(logvar_s_r2)),[max_samples])
+            fvm_r2 = tfp.distributions.VonMisesFisher(
+                mean_direction = tf.cast(fvm_loc,dtype=tf.float32),
+                concentration = tf.cast(fvm_con,dtype=tf.float32)
+            )
+
+            tmvn_x_sample = tmvn_np_r2.sample()
+            vm_x_sample = tf.math.floormod(vm_r2.sample(),(2.0*np.pi))/(2.0*np.pi)  # samples are output on range [-pi,pi] so rescale to [0,1]
+            xyz = tf.reshape(fvm_r2.sample(),[max_samples,3])          # sample the distribution
+            samp_ra = tf.math.floormod(tf.math.atan2(tf.slice(xyz,[0,1],[max_samples,1]),tf.slice(xyz,[0,0],[max_samples,1])),2.0*np.pi)/(2.0*np.pi)   # convert to the rescaled 0->1 RA from the unit vector
+            samp_dec = (tf.asin(tf.slice(xyz,[0,2],[max_samples,1])) + 0.5*np.pi)/np.pi                       # convert to the rescaled 0->1 dec from the unit vector
+            fvm_x_sample = tf.reshape(tf.concat([samp_ra,samp_dec],axis=1),[max_samples,2])             # group the sky samples
             if i==0:
-                tmvn_x_sample = tmvn_r2.sample()
-                vm_x_sample = tf.math.floormod(vm_r2.sample(),(2.0*np.pi))/(2.0*np.pi)  # samples are output on range [-pi,pi] so rescale to [0,1]
-                temp_x_sample = tf.gather(tf.concat([tmvn_x_sample,vm_x_sample],axis=1),idx_periodic_mask,axis=1)
-                #temp_x_sample = tmvn_r2.sample()
+                temp_x_sample = tf.gather(tf.concat([tmvn_x_sample,vm_x_sample,fvm_x_sample],axis=1),idx_periodic_mask,axis=1)
             else:
-                tmvn_x_sample = tmvn_r2.sample()
-                vm_x_sample = tf.math.floormod(vm_r2.sample(),(2.0*np.pi))/(2.0*np.pi)  # samples are output on range [-pi,pi] so rescale to [0,1]
-                temp_x_sample = tf.concat([temp_x_sample,tf.gather(tf.concat([tmvn_x_sample,vm_x_sample],axis=1),idx_periodic_mask,axis=1)],axis=0)
-                #temp_x_sample = tf.concat([temp_x_sample,tmvn_r2.sample()],axis=0)
+                temp_x_sample = tf.concat([temp_x_sample,tf.gather(tf.concat([tmvn_x_sample,vm_x_sample,fvm_x_sample],axis=1),idx_periodic_mask,axis=1)],axis=0)
         x_sample.append(temp_x_sample)
     return x_sample
 
@@ -1475,6 +1560,9 @@ def run_vitc(params, x_data_train, y_data_train, x_data_val, y_data_val, x_data_
     hyper_par_tune = False
     """ Skip doing any plotting involving test samples"""
     skip_test_plotting = params['use_real_events']
+    initial_learning_rate=1e-4
+    optimizer = tf.keras.optimizers.Adam(initial_learning_rate)
+    optimizer = mixed_precision.LossScaleOptimizer(optimizer)
 
     """ Currently following: https://stackoverflow.com/questions/55363728/how-to-feed-h5-files-in-tf-data-pipeline-in-tensorflow-model
     and https://www.tensorflow.org/guide/data#applying_arbitrary_python_logic
@@ -1497,8 +1585,15 @@ def run_vitc(params, x_data_train, y_data_train, x_data_val, y_data_val, x_data_
         # load precomputed samples
         bilby_samples = []
         for sampler in params['samplers'][1:]:
+#        for sampler in ['dynesty']:
             bilby_samples.append(load_samples(params,sampler))
         bilby_samples = np.array(bilby_samples)
+    # If deadling with real signals
+    else:
+        #x_data_test, y_data_test_noisefree, y_data_test, snrs_test = load_data(params,bounds,fixed_vals,params['test_set_dir'],params['inf_pars'],test_data=True)
+        #y_data_test = y_data_test[:params['r'],:,:]; x_data_test = x_data_test[:params['r'],:]
+        print('Was able to load real event waveform by itself')
+        exit()
 
     # Convert datasets to tensorflow
 #    if not make_paper_plots:
@@ -1530,8 +1625,8 @@ def run_vitc(params, x_data_train, y_data_train, x_data_val, y_data_val, x_data_
     #####################
     class CustomCallback(tf.keras.callbacks.Callback):
         def on_epoch_begin(self, epoch, logs=None):
-            current_decayed_lr = self.model.optimizer._decayed_lr(tf.float32).numpy()
-            print("current decayed lr: {:0.7f}".format(current_decayed_lr))
+#            current_decayed_lr = self.model.optimizer._decayed_lr(tf.float32).numpy()
+#            print("current decayed lr: {:0.7f}".format(current_decayed_lr))
 
             # apply ramp
             ramp = tf.convert_to_tensor(ramp_func((self.model.curr_total_epoch+tf.cast(epoch, tf.float32)),self.model.ramp_start,self.model.ramp_length,self.model.ramp_cycles), dtype=tf.float32)
@@ -1600,7 +1695,6 @@ def run_vitc(params, x_data_train, y_data_train, x_data_val, y_data_val, x_data_
     path = params['plot_dir']
     shutil.copy('./vitamin_c.py',path)
     shutil.copy('./params_files/params.json',path)
-    initial_learning_rate=1e-4
     decay_steps=100000
     lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
     initial_learning_rate,
@@ -1616,7 +1710,7 @@ def run_vitc(params, x_data_train, y_data_train, x_data_val, y_data_val, x_data_
     if make_paper_plots:
         print('... Making plots for publication.')
         # Load the previously saved weights
-        model = CVAE(x_data_test.shape[1], params['ndata'],
+        model = CVAE(int(nonperiodic_len), int(periodic_len), params['ndata'],
                          y_data_test.shape[2], params['z_dimension'], params['n_modes'], ramp,
                          tf.Variable(0, trainable=False, dtype=tf.float32), same_real, ramp_start, ramp_length, ramp_cycles)    
         
@@ -1624,6 +1718,7 @@ def run_vitc(params, x_data_train, y_data_train, x_data_val, y_data_val, x_data_
         model.ramp.assign(tf.Variable(ramp, trainable=False))
         latest = tf.train.latest_checkpoint(checkpoint_dir)
 
+        """
         # Load optimizer weights from previously saved file
         with open('inverse_model_%s/opt_weights.pkl' % params['run_label'], 'rb') as f:
             weight_values = pickle.load(f)
@@ -1643,17 +1738,23 @@ def run_vitc(params, x_data_train, y_data_train, x_data_val, y_data_val, x_data_
                             print()
                             print(layer.get_weights())
                         batchnorm_idx+=1
+        """
 
         model.load_weights(latest)
         print('... loading in previous model %s' % checkpoint_path)
         paper_plots(test_dataset, y_data_test, x_data_test, model, params, plot_dir, run, bilby_samples, y_data_test_noisefree, snrs_test)
         return
 
-    model = CVAE(x_data_train.shape[1], params['ndata'],
+    model = CVAE(int(nonperiodic_len), int(periodic_len), params['ndata'],
                          y_data_train.shape[2], params['z_dimension'], params['n_modes'], ramp,
                          tf.Variable(0, trainable=False, dtype=tf.float32), same_real, ramp_start, ramp_length, ramp_cycles)
+    model.compile(
+            optimizer=optimizer,
+            loss=compute_loss,
+        )
 
     if params['resume_training']:
+        """
         # Load optimizer weights from previously saved file
         with open('inverse_model_%s/opt_weights.pkl' % params['run_label'], 'rb') as f:
             weight_values = pickle.load(f)
@@ -1673,6 +1774,7 @@ def run_vitc(params, x_data_train, y_data_train, x_data_val, y_data_val, x_data_
                             print()
                             print(layer.get_weights())
                         batchnorm_idx+=1
+        """
 
         # Load the previously saved weights
         latest = tf.train.latest_checkpoint(checkpoint_dir)
@@ -1680,11 +1782,6 @@ def run_vitc(params, x_data_train, y_data_train, x_data_val, y_data_val, x_data_
         print('... loading in previous model %s' % checkpoint_path)
     else:
         print('... Training new model.')
-
-    model.compile(
-            optimizer=tf.keras.optimizers.Adam(learning_rate=initial_learning_rate),
-            loss=compute_loss,
-        )
 
 
     for epoch in range(1, epochs + 1):
@@ -1720,6 +1817,7 @@ def run_vitc(params, x_data_train, y_data_train, x_data_val, y_data_val, x_data_
 
         # generate and plot posterior samples for the latent space and the parameter space 
         plot_cadence = int(params['plot_interval']/same_real)
+        #plot_cadence = int(1)
         if epoch % plot_cadence == 0 and not skip_test_plotting:
             for step, (x_batch_test, y_batch_test) in test_dataset.enumerate():
                 # Make mode plots
@@ -1729,9 +1827,10 @@ def run_vitc(params, x_data_train, y_data_train, x_data_val, y_data_val, x_data_
                 mu_r1, logw_r1, z_r1, mu_q, z_q = gen_z_samples(model, x_batch_test, y_batch_test, nsamples=8000)
                 plot_latent(mu_r1,logw_r1,z_r1,mu_q,z_q,epoch*same_real,step,run=plot_dir)
                 start_time_test = time.time()
-                samples, logw_r2 = gen_samples(model, y_batch_test, ramp=ramp, nsamples=params['n_samples'])
+                samples, mu_r2, logvar_r2 = gen_samples(model, y_batch_test, ramp=ramp, nsamples=params['n_samples'])
                 # Make r2 histogram plots
-                plot_r2hist(logw_r2,epoch,step,run=run)
+                #plot_r2hist(tf.squeeze(mu_r2),epoch,step,name='mu',run=run)
+                #plot_r2hist(tf.squeeze(logvar_r2),epoch,step,name='logvar',run=run)
                 end_time_test = time.time()
                 if np.any(np.isnan(samples)):
                     print('Epoch: {}, found nans in samples. Not making plots'.format(epoch*same_real))
@@ -1767,6 +1866,7 @@ def run_vitc(params, x_data_train, y_data_train, x_data_val, y_data_val, x_data_
         x_data_train = tf.gather(tf.concat([tf.reshape(tf.boolean_mask(x_data_train,not_phase_mask,axis=1),[-1,tf.shape(x_data_train)[1]-1]), tf.reshape(new_x,[-1,1])],axis=1),tf.constant(idx_phase_mask),axis=1)
 
         if np.any([r=='geocent_time' for r in params['inf_pars']]):
+
             old_geocent = bounds['geocent_time_min'] + tf.boolean_mask(x_data_train,geocent_mask,axis=1)*(bounds['geocent_time_max'] - bounds['geocent_time_min'])
             new_x = tf.random.uniform(shape=tf.shape(old_geocent), minval=0.0, maxval=1.0, dtype=tf.dtypes.float32)
             new_geocent = bounds['geocent_time_min'] + new_x*(bounds['geocent_time_max'] - bounds['geocent_time_min'])

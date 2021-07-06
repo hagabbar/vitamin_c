@@ -19,6 +19,7 @@ import lal
 import time
 import h5py
 from scipy.ndimage.interpolation import shift
+from scipy import signal
 import argparse
 from gwpy.timeseries import TimeSeries
 
@@ -122,8 +123,11 @@ def gen_template(duration,
     if sampling_frequency>4096:
         print('EXITING: bilby doesn\'t seem to generate noise above 2048Hz so lower the sampling frequency')
         exit(0)
-
+    real_data_psd = True
     # compute the number of time domain samples
+    if real_data_psd:
+        # Always using a buffer of an additional 1s for real data psd
+        duration = 2
     Nt = int(sampling_frequency*duration)
 
     # define the start time of the timeseries
@@ -164,13 +168,20 @@ def gen_template(duration,
     if len(psd_files) > 0:
         type_psd = psd_files[0].split('/')[-1].split('_')[-1].split('.')[0]
         for int_idx,ifo in enumerate(ifos):
-            if type_psd == 'psd':
-                ifo.power_spectral_density = bilby.gw.detector.PowerSpectralDensity(psd_file=psd_files[0])
-            elif type_psd == 'asd':
-                ifo.power_spectral_density = bilby.gw.detector.PowerSpectralDensity(asd_file=psd_files[0])
+            if real_data_psd:
+                #psd_array = np.array(h5py.File(psd_files[0], 'r')['%s_psd_array' % ifo.name])
+                psd_array = np.load('psd_estimates/O1_psd_%s_2sTS.npy' % ifo.name)
+                psd_frequencies = np.linspace(0, len(psd_array), num=len(psd_array)) 
+                ifo.power_spectral_density = bilby.gw.detector.PowerSpectralDensity(
+        frequency_array=psd_frequencies, psd_array=psd_array)
             else:
-                print('Could not determine whether psd or asd ...')
-                exit()
+                if type_psd == 'psd':
+                    ifo.power_spectral_density = bilby.gw.detector.PowerSpectralDensity(psd_file=psd_files[0])
+                elif type_psd == 'asd':
+                    ifo.power_spectral_density = bilby.gw.detector.PowerSpectralDensity(asd_file=psd_files[0])
+                else:
+                    print('Could not determine whether psd or asd ...')
+                    exit()
 
     ifos.set_strain_data_from_power_spectral_densities(
     sampling_frequency=sampling_frequency, duration=duration,
@@ -184,7 +195,29 @@ def gen_template(duration,
     whitened_signal_td_all = []
     whitened_h_td_all = [] 
     # iterate over ifos
-    for i in range(len(pars['det'])):
+
+    """
+    def real_data_whitening(time_series, estimated_psd, duration, sampling_frequency):
+        tukey_win = signal.windows.tukey(len(time_series), alpha=0.5)
+        time_series = tukey_win*time_series
+        # Transform time series to frequency domain
+        hf = np.fft.rfft(np.array(time_series))
+        # Whiten
+        real_noise = hf / np.sqrt(estimated_psd) * norm
+        # irfft
+        noise_sample = np.fft.irfft(real_noise, n=Nt)
+        # Apply butterworth high-pass filter to supress low frequency noise at 10Hz
+        fband = [40, 950]
+        b, a = signal.butter(4, [fband[0]/sampling_frequency, fband[1]/sampling_frequency], 'band')
+        normalization = np.sqrt((fband[1]-fband[0])/(sampling_frequency/2))
+        noise_sample_before_butterworth = np.array(noise_sample)
+        noise_sample = signal.filtfilt(b, a, np.array(noise_sample)) / normalization
+        real_noise_data = real_noise_data[int( ((duration*0.5)-0.5)*sampling_frequency ):int( ((duration*0.5)+0.5)*sampling_frequency )]
+        return real_noise_data
+    """
+
+    for i_idx,i in enumerate(range(len(pars['det']))):
+
         # get frequency domain noise-free signal at detector
         signal_fd = ifos[i].get_detector_response(freq_signal, injection_parameters) 
 
@@ -203,11 +236,16 @@ def gen_template(duration,
     
         # inverse FFT noisy signal back to time domain and normalise
         whitened_h_td = np.sqrt(2.0*Nt)*np.fft.irfft(whitened_h_fd)
-        
+      
+        if real_data_psd:
+            whitened_h_td = whitened_h_td[int( ((duration*0.5)-0.5)*sampling_frequency ):int( ((duration*0.5)+0.5)*sampling_frequency )]   
+            whitened_signa_td = whitened_signal_td[int( ((duration*0.5)-0.5)*sampling_frequency ):int( ((duration*0.5)+0.5)*sampling_frequency )]
+
         whitened_h_td_all.append([whitened_h_td])
         whitened_signal_td_all.append([whitened_signal_td])
 
     print('... Whitened signals')
+    exit()
     return np.squeeze(np.array(whitened_signal_td_all),axis=1),np.squeeze(np.array(whitened_h_td_all),axis=1),injection_parameters,ifos,waveform_generator
 
 def run(sampling_frequency=256.0,
@@ -313,12 +351,12 @@ def run(sampling_frequency=256.0,
         priors['a_2'] = fixed_vals['a_2']
 
     if np.any([r=='tilt_1' for r in rand_pars]):
-        priors['tilt_1'] = bilby.gw.prior.Uniform(name='tilt_1', minimum=bounds['tilt_1_min'], maximum=bounds['tilt_1_max'])
+        priors['tilt_1'] = bilby.core.prior.Sine(name='tilt_1')
     else:
         priors['tilt_1'] = fixed_vals['tilt_1']
 
     if np.any([r=='tilt_2' for r in rand_pars]):
-       priors['tilt_2'] = bilby.gw.prior.Uniform(name='tilt_2', minimum=bounds['tilt_2_min'], maximum=bounds['tilt_2_max'])
+        priors['tilt_2'] = bilby.core.prior.Sine(name='tilt_2')
     else:
         priors['tilt_2'] = fixed_vals['tilt_2']
 
@@ -338,7 +376,7 @@ def run(sampling_frequency=256.0,
         priors['ra'] = fixed_vals['ra']
 
     if np.any([r=='dec' for r in rand_pars]):
-        pass
+        priors['dec'] = bilby.core.prior.Cosine(name='dec')
     else:
         priors['dec'] = fixed_vals['dec']
 
@@ -348,7 +386,7 @@ def run(sampling_frequency=256.0,
         priors['psi'] = fixed_vals['psi']
 
     if np.any([r=='theta_jn' for r in rand_pars]):
-        pass
+        priors['theta_jn'] = bilby.core.prior.Sine(name='theta_jn')
     else:
         priors['theta_jn'] = fixed_vals['theta_jn']
 
@@ -432,7 +470,7 @@ def run(sampling_frequency=256.0,
 
         # Initialise the likelihood by passing in the interferometer data (ifos) and
         # the waveform generator
-        phase_marginalization=True
+        phase_marginalization=False
         likelihood = bilby.gw.GravitationalWaveTransient(
             interferometers=ifos, waveform_generator=waveform_generator, phase_marginalization=phase_marginalization,
             priors=priors)
@@ -468,7 +506,7 @@ def run(sampling_frequency=256.0,
             # Run sampler dynesty 1 sampler
 
             result = bilby.run_sampler(
-                likelihood=likelihood, priors=priors, sampler='dynesty', npoints=1000, nact=50, npool=8, dlogz=27.0,
+                likelihood=likelihood, priors=priors, sampler='dynesty', npoints=1000, nact=50, npool=8, dlogz=0.1,
                 injection_parameters=injection_parameters, outdir=out_dir+'_'+samplers[-1], label=label,
                 save='hdf5', plot=True)
             run_endt = time.time()

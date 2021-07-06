@@ -92,7 +92,7 @@ inf_pars=['mass_1','mass_2','luminosity_distance','geocent_time','phase',
 #rand_pars = ["mass_1","mass_2","luminosity_distance","geocent_time","phase","theta_jn","psi","ra","dec","a_1","a_2","tilt_1","tilt_2","phi_12","phi_jl"]
 #bilby_pars = ["mass_1","mass_2","luminosity_distance","geocent_time","theta_jn","psi","ra","dec","a_1","a_2","tilt_1","tilt_2","phi_12","phi_jl"]
 #inf_pars = ["mass_1","mass_2","luminosity_distance","geocent_time","phase","theta_jn","psi","ra","dec","a_1","a_2","tilt_1","tilt_2","phi_12","phi_jl"]
-batch_size = int(1500)                                                                 
+batch_size = int(512)                                                                 
 weight_init = 'xavier'                                                            
 n_modes=32; n_modes_q=1                                                                      
 initial_training_rate=1e-4                                                     
@@ -131,15 +131,15 @@ n_weights_q = [n_fc,n_fc,n_fc]
 #############################
 # optional tunable variables
 #############################
-run_label = 'vitamin_c_run49'#'vitamin_c_run31_fast_testing'#'demo_%ddet_%dpar_%dHz_hour_angle_with_late_kl_start' % (len(det),len(rand_pars),ndata) 
-gpu_num =2
+run_label = 'vitamin_c_run53'#'vitamin_c_run31_fast_testing'#'demo_%ddet_%dpar_%dHz_hour_angle_with_late_kl_start' % (len(det),len(rand_pars),ndata) 
+gpu_num = 2
 
 # 1024 Hz label
 #bilby_results_label = 'weichangfeng_theta_jn_issue'                                             
 # 256 Hz label
 bilby_results_label = '1024Hz_full_15par'
 
-r = 10 # 251                                                         
+r = 2 # 251                                                         
 pe_test_num = 256                                                               
 tot_dataset_size = int(1e7)                                                     
 
@@ -374,7 +374,7 @@ def get_params():
         __definition__figure_sampler_names='matplotlib figure sampler labels (e.g. [ptemcee,CPNest,emcee])',
         y_normscale = y_normscale,
         __definition__y_normscale='arbitrary normalization factor on all time series waveforms (helps convergence in training)',
-        gauss_pars=['luminosity_distance','geocent_time','theta_jn','a_1','a_2','tilt_1','tilt_2','ra','dec','phase','psi','phi_12','phi_jl'],         
+        gauss_pars=['luminosity_distance','geocent_time','theta_jn','a_1','a_2','tilt_1','tilt_2','ra','dec'],         
         __definition__gauss_pars='parameters that require a truncated gaussian distribution',
         vonmise_pars=['phase','phi_12','phi_jl','psi'],                                        
         __definition__vonmises_pars='parameters that get wrapped on the 1D parameter', 
